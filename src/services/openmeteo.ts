@@ -30,7 +30,8 @@ const round = (v: number) => (Math.round(v / WEATHER_REQUEST.coordRoundDeg) * WE
 
 // Hourly forecast for every point, in one request. Covers from `past_hours` ago until `untilMs`.
 // Coordinates are rounded so small route changes hit the cache.
-export async function fetchForecast(points: LatLon[], untilMs: number): Promise<Forecast[]> {
+// fresh: skip the cache (live mode refresh).
+export async function fetchForecast(points: LatLon[], untilMs: number, fresh = false): Promise<Forecast[]> {
   const days = Math.ceil((untilMs - Date.now()) / DAY_MS) + 1;
   if (days > WEATHER_REQUEST.maxForecastDays) throw new Error(`Hava tahmini en fazla ${WEATHER_REQUEST.maxForecastDays - 1} gün ilerisi için var.`);
   const url =
@@ -38,7 +39,7 @@ export async function fetchForecast(points: LatLon[], untilMs: number): Promise<
     `&hourly=${HOURLY}&daily=sunrise,sunset&timeformat=unixtime&timezone=auto&past_hours=${WEATHER_REQUEST.pastHours}&forecast_days=${Math.max(WEATHER_REQUEST.minForecastDays, days)}`;
   let data: OmLocation | OmLocation[];
   try {
-    data = await getJson<OmLocation | OmLocation[]>(url);
+    data = await getJson<OmLocation | OmLocation[]>(url, 15000, fresh);
   } catch (e) {
     if (e instanceof HttpError && e.status === 429) throw new Error("Hava servisi şu an yoğun, biraz sonra tekrar deneyin.");
     throw new Error("Hava durumu alınamadı.");

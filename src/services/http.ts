@@ -3,7 +3,8 @@ const cache = new Map<string, Promise<unknown>>();
 
 export const isCached = (url: string): boolean => cache.has(url);
 
-export function getJson<T>(url: string, timeoutMs = 15000): Promise<T> {
+export function getJson<T>(url: string, timeoutMs = 15000, fresh = false): Promise<T> {
+  if (fresh) cache.delete(url);
   let p = cache.get(url);
   if (!p) {
     p = fetch(url, { signal: AbortSignal.timeout(timeoutMs) }).then(async (r) => {

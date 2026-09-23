@@ -24,6 +24,7 @@ export function createMap(el: HTMLElement, onClick: (p: LatLon) => void) {
   const poiLayer = L.layerGroup().addTo(map);
   const breakLayer = L.layerGroup().addTo(map);
   let poiMarkers: L.Marker[] = [];
+  let liveDot: L.CircleMarker | null = null;
   let weatherMarkers: L.Marker[] = [];
 
   // Shows only capsules that do not overlap the previous shown one, so the route stays visible
@@ -135,6 +136,18 @@ export function createMap(el: HTMLElement, onClick: (p: LatLon) => void) {
     },
 
     closePopup: () => map.closePopup(),
+
+    // The rider's position in live mode; follow pans the map to it.
+    setLivePosition(p: LatLon | null, follow: boolean) {
+      if (!p) {
+        liveDot?.remove();
+        liveDot = null;
+        return;
+      }
+      if (!liveDot) liveDot = L.circleMarker(toLatLng(p), { radius: 9, className: "live-dot", interactive: false }).addTo(map);
+      else liveDot.setLatLng(toLatLng(p));
+      if (follow) map.panTo(toLatLng(p));
+    },
 
     // Fits the points into the part of the map the sheet does not cover.
     fit(points: LatLon[], insets: { left: number; bottom: number }) {
