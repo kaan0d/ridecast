@@ -88,3 +88,7 @@ src/ui/        Leaflet map, address inputs, panel
 - Break advice uses the forecast of the sample point nearest to the break and hourly steps.
 - Map tiles are OSM standard tiles muted with CSS filters; keyless muted basemaps (CARTO) now watermark browser requests. OSM tiles are for light use only.
 - Breaks are stored as map points. On another route (alternative, or new stops) they snap to its nearest point, which can be far from where they were meant to be.
+
+## License
+
+All rights reserved. The source is public so you can read it and learn from it; copying, modifying or reusing it needs written permission. See [LICENSE](LICENSE).

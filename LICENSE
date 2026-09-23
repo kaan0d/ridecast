@@ -1,0 +1,28 @@
+Copyright (c) 2026 Kaan Dinç. All rights reserved.
+
+This repository contains ridecast, a route weather web application by
+Kaan Dinç: its source code, tests, design, styles, icons, text, and other
+content.
+
+The source is published so that people can read it and learn from it.
+You may view the repository, read the code, and study how it works. You may
+use the general ideas and techniques you learn here in your own work, written
+by you from scratch.
+
+No license or permission is granted to copy, modify, merge, publish,
+distribute, sublicense, sell, deploy, or otherwise use any part of this
+repository, in whole or in part, in source or built form, without prior
+written permission from the copyright holder. This includes running a copy
+of the application as a service and presenting the code or design as your own.
+
+The only exception is the rights that the GitHub Terms of Service grant to
+users of GitHub for public repositories, namely viewing the repository and
+forking it on GitHub. Those rights do not include reusing the code or design
+in any other project or site.
+
+Third-party components are not covered by this notice. Leaflet and the other
+npm dependencies remain the property of their authors and are used under
+their own licenses. Map data comes from OpenStreetMap contributors under the
+Open Database License; weather data comes from Open-Meteo under its own terms.
+
+Permission requests: kaan.dnc.7505@gmail.com
