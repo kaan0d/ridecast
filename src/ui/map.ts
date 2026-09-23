@@ -21,7 +21,9 @@ export function createMap(el: HTMLElement, onClick: (p: LatLon) => void) {
   const riskLayer = L.layerGroup().addTo(map);
   const stopLayer = L.layerGroup().addTo(map);
   const weatherLayer = L.layerGroup().addTo(map);
+  const poiLayer = L.layerGroup().addTo(map);
   const breakLayer = L.layerGroup().addTo(map);
+  let poiMarkers: L.Marker[] = [];
   let weatherMarkers: L.Marker[] = [];
 
   // Shows only capsules that do not overlap the previous shown one, so the route stays visible
@@ -114,6 +116,25 @@ export function createMap(el: HTMLElement, onClick: (p: LatLon) => void) {
       map.panTo(m.getLatLng());
       m.openPopup();
     },
+
+    // Fuel and rest stops; each popup is built by the caller (it holds the "add break" button).
+    setPois(pois: { pos: LatLon; pin: string; popup: () => HTMLElement }[]) {
+      poiLayer.clearLayers();
+      poiMarkers = pois.map((p) =>
+        L.marker(toLatLng(p.pos), { icon: L.divIcon({ className: "poi-marker", html: p.pin, iconSize: [26, 26] }) })
+          .bindPopup(p.popup, { className: "wx-popup", closeButton: false, offset: [0, -6] })
+          .addTo(poiLayer),
+      );
+    },
+
+    openPoi(i: number) {
+      const m = poiMarkers[i];
+      if (!m) return;
+      map.panTo(m.getLatLng());
+      m.openPopup();
+    },
+
+    closePopup: () => map.closePopup(),
 
     // Fits the points into the part of the map the sheet does not cover.
     fit(points: LatLon[], insets: { left: number; bottom: number }) {

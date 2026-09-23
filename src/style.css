@@ -914,6 +914,99 @@ button {
   color: var(--ink-2);
 }
 
+.stops-load {
+  margin: 10px 12px;
+}
+
+.stop-list li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 8px;
+}
+
+.stop-list li + li {
+  border-top: 1px solid var(--separator);
+}
+
+.stop-open {
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 12px;
+  align-items: center;
+  padding: 10px 0 10px 16px;
+  text-align: left;
+}
+
+.stop-open .icon {
+  grid-row: span 2;
+  color: var(--ink-2);
+}
+
+.stop-list li.recommended .stop-open .icon {
+  color: var(--focus);
+}
+
+.stop-name {
+  font-size: 0.9375rem;
+}
+
+.stop-meta {
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+.stop-list .empty {
+  padding: 12px 16px;
+  color: var(--ink-2);
+}
+
+.error-text {
+  color: var(--error);
+}
+
+.poi-marker {
+  background: none;
+  border: none;
+}
+
+.stop-pin {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--ink-2);
+  box-shadow: var(--shadow-small);
+}
+
+.stop-pin .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.stop-pin.recommended {
+  color: var(--focus);
+  box-shadow: 0 0 0 2px var(--focus), var(--shadow-small);
+}
+
+.poi-card {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+}
+
+.poi-card span {
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+.poi-card .button-secondary {
+  margin-top: 6px;
+}
+
 .break-advice {
   grid-column: 1 / -1;
   margin: 6px 0 0;
