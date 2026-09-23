@@ -2,18 +2,23 @@ import { DEFAULT_VEHICLE, ROAD_TYPE_RULES, SPEED_LIMITS_KMH, VEHICLES, type Vehi
 import type { SpeedSetting } from "../core/eta/eta";
 import type { RoadType } from "../core/route/roadType";
 
+export type DepartMode = "now" | "at" | "best";
+
 export interface TripSettings {
   vehicle: VehicleType;
   speed: SpeedSetting;
   departMs: number;
+  departMode: DepartMode;
 }
 
 const ROADS: RoadType[] = ["motorway", "primary", "urban"];
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
-// Wires the vehicle / speed / departure controls. Returns a reader that gives the
-// current settings, or an error message when an input is invalid.
-export function bindSettings(onChange: () => void): () => TripSettings | string {
+// Wires the vehicle / speed / departure controls. `read` gives the current settings, or an error
+// message when an input is invalid. In "best" mode the departure is whatever `setBest` chose last
+// (until then, the next full hour).
+export function bindSettings(onChange: () => void) {
+  let best: number | null = null;
   const form = $<HTMLFormElement>("settings");
   const vehicleGroup = $("vehicle");
   const avg = $<HTMLInputElement>("kmh-average");
@@ -49,6 +54,7 @@ export function bindSettings(onChange: () => void): () => TripSettings | string 
     $("speed-average").hidden = radio("speed-mode") !== "average";
     $("speed-road").hidden = radio("speed-mode") !== "road";
     departAt.hidden = radio("depart") !== "at";
+    $("depart-best").hidden = radio("depart") !== "best";
   };
 
   fillSpeeds();
@@ -62,7 +68,7 @@ export function bindSettings(onChange: () => void): () => TripSettings | string 
   });
   form.addEventListener("submit", (e) => e.preventDefault());
 
-  return () => {
+  const read = (): TripSettings | string => {
     const kmh = (el: HTMLInputElement) => {
       const v = el.valueAsNumber;
       return v >= SPEED_LIMITS_KMH.min && v <= SPEED_LIMITS_KMH.max ? v : null;
@@ -78,9 +84,19 @@ export function bindSettings(onChange: () => void): () => TripSettings | string 
       speed = { mode: "road", kmh: Object.fromEntries(ROADS.map((r, i) => [r, vals[i]])) as Record<RoadType, number>, rules: ROAD_TYPE_RULES };
     }
     // datetime-local is parsed as local time; valueAsNumber would treat it as UTC.
-    const departMs = radio("depart") === "now" ? Date.now() : new Date(departAt.value).getTime();
+    const mode = radio("depart") as DepartMode;
+    const departMs =
+      mode === "now" ? Date.now() : mode === "best" ? (best ?? Math.ceil(Date.now() / 3_600_000) * 3_600_000) : new Date(departAt.value).getTime();
     if (Number.isNaN(departMs)) return "Çıkış tarihi ve saati seçin.";
-    return { vehicle: radio("vehicle") as VehicleType, speed, departMs };
+    return { vehicle: radio("vehicle") as VehicleType, speed, departMs, departMode: mode };
+  };
+
+  return {
+    read,
+    best: () => best,
+    setBest(ms: number) {
+      best = ms;
+    },
   };
 }
 

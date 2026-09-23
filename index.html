@@ -60,8 +60,10 @@
             <div class="segmented" role="radiogroup" aria-label="Çıkış zamanı">
               <label><input type="radio" name="depart" value="now" checked /><span>Şimdi</span></label>
               <label><input type="radio" name="depart" value="at" /><span>Tarih ve saat</span></label>
+              <label><input type="radio" name="depart" value="best" /><span>En iyi saat</span></label>
             </div>
             <input type="datetime-local" id="depart-at" aria-label="Çıkış tarihi ve saati" hidden />
+            <div id="depart-best" hidden></div>
           </div>
         </form>
 

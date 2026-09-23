@@ -35,7 +35,7 @@ export async function fetchForecast(points: LatLon[], untilMs: number): Promise<
   if (days > WEATHER_REQUEST.maxForecastDays) throw new Error(`Hava tahmini en fazla ${WEATHER_REQUEST.maxForecastDays - 1} gün ilerisi için var.`);
   const url =
     `${BASE}?latitude=${points.map((p) => round(p.lat)).join(",")}&longitude=${points.map((p) => round(p.lon)).join(",")}` +
-    `&hourly=${HOURLY}&daily=sunrise,sunset&timeformat=unixtime&timezone=auto&past_hours=${WEATHER_REQUEST.pastHours}&forecast_days=${Math.max(1, days)}`;
+    `&hourly=${HOURLY}&daily=sunrise,sunset&timeformat=unixtime&timezone=auto&past_hours=${WEATHER_REQUEST.pastHours}&forecast_days=${Math.max(WEATHER_REQUEST.minForecastDays, days)}`;
   let data: OmLocation | OmLocation[];
   try {
     data = await getJson<OmLocation | OmLocation[]>(url);
