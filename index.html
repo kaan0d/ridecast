@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Rota Hava Durumu</title>
+  </head>
+  <body>
+    <aside id="panel">
+      <h1>Rota Hava Durumu</h1>
+      <ol id="stops"></ol>
+      <div class="actions">
+        <button type="button" id="add-via">+ Ara durak</button>
+        <button type="button" id="locate">Konumumu kullan</button>
+      </div>
+      <p class="hint">Adres arayın ya da haritaya tıklayarak nokta ekleyin.</p>
+      <p id="status" role="status" aria-live="polite"></p>
+      <ul id="routes"></ul>
+    </aside>
+    <main id="map" aria-label="Harita"></main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
