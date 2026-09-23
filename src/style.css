@@ -174,6 +174,81 @@ button:hover {
   color: var(--error);
 }
 
+#settings {
+  margin-top: 16px;
+}
+
+fieldset {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin: 10px 0 0;
+  padding: 8px 10px 10px;
+}
+
+legend {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0 4px;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.choice {
+  display: flex;
+  gap: 16px;
+}
+
+select,
+input[type="number"],
+input[type="datetime-local"] {
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 6px;
+}
+
+input[type="number"] {
+  width: 5em;
+}
+
+input[type="datetime-local"] {
+  width: 100%;
+  margin-top: 8px;
+}
+
+input:invalid {
+  border-color: var(--error);
+}
+
+#summary dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+}
+
+#summary dt {
+  color: var(--muted);
+}
+
+#summary dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+#summary .error dd {
+  color: var(--error);
+}
+
 .icon-btn {
   padding: 4px 10px;
 }

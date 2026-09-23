@@ -1,8 +1,12 @@
+import { ROAD_TYPE_RULES } from "../config/vehicles";
+import { buildTimeline, type Timeline } from "../core/eta/eta";
 import { type LatLon } from "../core/geo";
+import { roadBreakdown } from "../core/route/roadType";
 import { reverseLabel } from "../services/nominatim";
 import { getRoutes, type Route } from "../services/osrm";
 import { createMap, type StopKind } from "./map";
 import { placeInput } from "./search";
+import { bindSettings } from "./settings";
 
 interface Stop {
   label: string;
@@ -17,13 +21,16 @@ export function startApp() {
     { label: "", pos: null },
   ];
   let routes: Route[] = [];
+  let routedTitles: string[] = []; // titles of the stops the current routes pass through
   let selected = 0;
   let routeSeq = 0;
 
   const stopsEl = $("stops");
   const routesEl = $("routes");
   const statusEl = $("status");
+  const summaryEl = $("summary");
   const map = createMap($("map"), onMapClick);
+  const readSettings = bindSettings(renderRoutes);
 
   const kindOf = (i: number): StopKind => (i === 0 ? "start" : i === stops.length - 1 ? "end" : "via");
   const titleOf = (i: number) => ({ start: "Başlangıç", end: "Bitiş", via: `Ara durak ${i}` })[kindOf(i)];
@@ -71,6 +78,8 @@ export function startApp() {
       selected,
       selectRoute,
     );
+    const settings = readSettings();
+    const timelines = typeof settings === "string" ? null : routes.map((r) => buildTimeline(r.steps, settings.departMs, settings.speed));
     routesEl.replaceChildren(
       ...routes.map((r, i) => {
         const li = document.createElement("li");
@@ -81,13 +90,46 @@ export function startApp() {
         const name = document.createElement("strong");
         name.textContent = i === 0 ? "Önerilen rota" : `Alternatif ${i}`;
         const info = document.createElement("span");
-        info.textContent = `${formatKm(r.distanceM)} · ${formatDuration(r.durationS)}`;
+        info.textContent = `${formatKm(r.distanceM)} · ${timelines ? formatDuration(totalS(timelines[i])) : "–"}`;
         b.append(name, info);
         b.addEventListener("click", () => selectRoute(i));
         li.append(b);
         return li;
       }),
     );
+    if (typeof settings === "string") return renderSummary([["", settings]], true);
+    const t = timelines?.[selected];
+    if (!t) return renderSummary([]);
+    const rows: [string, string][] = [
+      ["Toplam süre", formatDuration(totalS(t))],
+      ["Çıkış", formatTime(t.timeMs[0])],
+      ...t.legArrivalMs.map((ms, i): [string, string] => [`${routedTitles[i + 1]} varış`, formatTime(ms)]),
+    ];
+    if (settings.speed.mode === "road") {
+      const b = roadBreakdown(routes[selected].steps, ROAD_TYPE_RULES);
+      const parts: [string, number][] = [
+        ["Otoyol", b.motorway],
+        ["Ana yol", b.primary],
+        ["Şehir içi", b.urban],
+        ["Feribot", b.ferry],
+      ];
+      const text = parts.filter(([, m]) => m > 0).map(([n, m]) => `${n} ${formatKm(m)}`);
+      rows.push(["Yol tipi (tahmin)", text.join(" · ")]);
+    }
+    renderSummary(rows);
+  }
+
+  function renderSummary(rows: [string, string][], error = false) {
+    const dl = document.createElement("dl");
+    for (const [k, v] of rows) {
+      const dt = document.createElement("dt");
+      dt.textContent = k;
+      const dd = document.createElement("dd");
+      dd.textContent = v;
+      dl.append(dt, dd);
+    }
+    dl.classList.toggle("error", error);
+    summaryEl.replaceChildren(...(rows.length ? [dl] : []));
   }
 
   function stopsChanged() {
@@ -134,10 +176,12 @@ export function startApp() {
       return;
     }
     status("Rota hesaplanıyor…", "loading");
+    const routed = stops.flatMap((s, i) => (s.pos ? [{ pos: s.pos, title: titleOf(i) }] : []));
     try {
-      const result = await getRoutes(stops.flatMap((s) => (s.pos ? [s.pos] : [])));
+      const result = await getRoutes(routed.map((s) => s.pos));
       if (my !== routeSeq) return;
       routes = result;
+      routedTitles = routed.map((s) => s.title);
       selected = 0;
       renderRoutes();
       map.fit(result.flatMap((r) => r.coords));
@@ -170,6 +214,11 @@ export function startApp() {
 }
 
 const formatKm = (m: number) => `${(m / 1000).toFixed(m < 10000 ? 1 : 0)} km`;
+
+const totalS = (t: Timeline) => (t.timeMs[t.timeMs.length - 1] - t.timeMs[0]) / 1000;
+
+const timeFormat = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "short", weekday: "short", hour: "2-digit", minute: "2-digit" });
+const formatTime = (ms: number) => timeFormat.format(ms);
 
 function formatDuration(s: number) {
   const min = Math.round(s / 60);

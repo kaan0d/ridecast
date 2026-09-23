@@ -1,4 +1,5 @@
 import { fromLonLat, toLonLatString, type LatLon } from "../core/geo";
+import type { Step } from "../core/route/roadType";
 import { getJson, HttpError } from "./http";
 
 const BASE = "https://router.project-osrm.org/route/v1/driving";
@@ -7,16 +8,22 @@ export interface Route {
   coords: LatLon[];
   distanceM: number;
   durationS: number;
+  steps: Step[];
 }
 
 interface OsrmResponse {
   code: string;
-  routes?: { distance: number; duration: number; geometry: { coordinates: number[][] } }[];
+  routes?: {
+    distance: number;
+    duration: number;
+    geometry: { coordinates: number[][] };
+    legs: { steps: { distance: number; duration: number; mode: string; ref?: string }[] }[];
+  }[];
 }
 
 // OSRM only returns alternatives for routes with exactly two stops.
 export async function getRoutes(stops: LatLon[]): Promise<Route[]> {
-  const url = `${BASE}/${stops.map(toLonLatString).join(";")}?alternatives=true&overview=full&geometries=geojson`;
+  const url = `${BASE}/${stops.map(toLonLatString).join(";")}?alternatives=true&overview=full&geometries=geojson&steps=true`;
   let data: OsrmResponse;
   try {
     data = await getJson<OsrmResponse>(url);
@@ -31,5 +38,8 @@ export async function getRoutes(stops: LatLon[]): Promise<Route[]> {
     coords: r.geometry.coordinates.map(fromLonLat),
     distanceM: r.distance,
     durationS: r.duration,
+    steps: r.legs.flatMap((leg, i) =>
+      leg.steps.map((s) => ({ distanceM: s.distance, durationS: s.duration, ref: s.ref ?? "", ferry: s.mode === "ferry", leg: i })),
+    ),
   }));
 }
