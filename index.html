@@ -45,6 +45,24 @@
       <p id="status" role="status" aria-live="polite"></p>
       <ul id="routes"></ul>
       <section id="summary" aria-live="polite"></section>
+      <section id="breaks-panel">
+        <h2>Molalar</h2>
+        <p class="hint">Seçili rotaya tıklayarak mola ekleyin, işaretini sürükleyerek taşıyın.</p>
+        <ol id="breaks"></ol>
+        <form id="auto-breaks">
+          <span>Her</span>
+          <input type="number" id="auto-every" min="1" step="1" required aria-label="Otomatik mola aralığı" />
+          <select id="auto-unit" aria-label="Aralık birimi">
+            <option value="km">km'de</option>
+            <option value="min">dk sürüşte</option>
+          </select>
+          <span class="nowrap"
+            ><input type="number" id="auto-duration" list="break-presets" required aria-label="Otomatik mola süresi (dk)" /> dk mola</span
+          >
+          <button type="submit">Otomatik mola ekle</button>
+        </form>
+        <datalist id="break-presets"></datalist>
+      </section>
     </aside>
     <main id="map" aria-label="Harita"></main>
     <script type="module" src="/src/main.ts"></script>

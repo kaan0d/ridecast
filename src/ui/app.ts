@@ -1,9 +1,13 @@
+import { DEFAULT_BREAK_MIN } from "../config/breaks";
 import { ROAD_TYPE_RULES } from "../config/vehicles";
-import { buildTimeline, type Timeline } from "../core/eta/eta";
+import { autoBreakDistances, buildTimeline, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
 import { type LatLon } from "../core/geo";
+import { lineLength, makeLine, pointAtDistance, snapToLine, type Line } from "../core/route/line";
 import { roadBreakdown } from "../core/route/roadType";
 import { reverseLabel } from "../services/nominatim";
 import { getRoutes, type Route } from "../services/osrm";
+import { bindBreaks } from "./breaks";
+import { formatCoord, formatDuration, formatKm, formatTime } from "./format";
 import { createMap, type StopKind } from "./map";
 import { placeInput } from "./search";
 import { bindSettings } from "./settings";
@@ -11,6 +15,12 @@ import { bindSettings } from "./settings";
 interface Stop {
   label: string;
   pos: LatLon | null;
+}
+
+interface BreakPoint {
+  pos: LatLon; // where the user put it; shown snapped to the selected route
+  durationMin: number;
+  auto: boolean; // made by the automatic rule and not edited since
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -21,6 +31,8 @@ export function startApp() {
     { label: "", pos: null },
   ];
   let routes: Route[] = [];
+  let lines: Line[] = []; // geometry of each route, for snapping
+  let breaks: BreakPoint[] = []; // ordered along the selected route
   let routedTitles: string[] = []; // titles of the stops the current routes pass through
   let selected = 0;
   let routeSeq = 0;
@@ -31,6 +43,17 @@ export function startApp() {
   const summaryEl = $("summary");
   const map = createMap($("map"), onMapClick);
   const readSettings = bindSettings(renderRoutes);
+  const renderBreakList = bindBreaks({
+    onDuration(i, min) {
+      breaks[i] = { ...breaks[i], durationMin: min, auto: false };
+      renderRoutes();
+    },
+    onRemove(i) {
+      breaks.splice(i, 1);
+      renderRoutes();
+    },
+    onAuto: addAutoBreaks,
+  });
 
   const kindOf = (i: number): StopKind => (i === 0 ? "start" : i === stops.length - 1 ? "end" : "via");
   const titleOf = (i: number) => ({ start: "Başlangıç", end: "Bitiş", via: `Ara durak ${i}` })[kindOf(i)];
@@ -69,17 +92,83 @@ export function startApp() {
 
   function selectRoute(i: number) {
     selected = i;
+    resnapBreaks();
     renderRoutes();
+  }
+
+  // Clicking the selected route adds a break there; clicking an alternative selects it.
+  function onRouteClick(i: number, p: LatLon) {
+    if (i !== selected) return selectRoute(i);
+    breaks.push({ pos: p, durationMin: DEFAULT_BREAK_MIN, auto: false });
+    resnapBreaks();
+    renderRoutes();
+  }
+
+  function moveBreak(i: number, p: LatLon) {
+    breaks[i] = { ...breaks[i], pos: p, auto: false };
+    resnapBreaks();
+    renderRoutes();
+  }
+
+  // OSRM step distances and the drawn geometry differ slightly; this maps line meters to step meters.
+  const scaleOf = (i: number) => {
+    const len = lineLength(lines[i]);
+    return len > 0 ? routes[i].distanceM / len : 1;
+  };
+
+  const breaksOn = (i: number): Break[] =>
+    breaks.map((b) => ({ distM: snapToLine(lines[i], b.pos).distM * scaleOf(i), durationS: b.durationMin * 60 }));
+
+  // Orders breaks along the selected route. Positions are kept, so switching back to
+  // another route shows them where they were.
+  function resnapBreaks() {
+    const line = lines[selected];
+    if (!line) return;
+    breaks = breaks
+      .map((b) => ({ b, d: snapToLine(line, b.pos).distM }))
+      .sort((x, y) => x.d - y.d)
+      .map((x) => x.b);
+  }
+
+  function addAutoBreaks(rule: AutoBreakRule, durationMin: number) {
+    if (!routes.length) return status("Önce bir rota oluşturun.", "error");
+    const settings = readSettings();
+    if (typeof settings === "string") return status(settings, "error");
+    // Positions come from riding time only, so existing breaks do not shift them.
+    const ride = buildTimeline(routes[selected].steps, settings.departMs, settings.speed);
+    const dists = autoBreakDistances(ride, rule);
+    const scale = scaleOf(selected);
+    breaks = breaks
+      .filter((b) => !b.auto)
+      .concat(dists.map((d) => ({ pos: pointAtDistance(lines[selected], d / scale), durationMin, auto: true })));
+    resnapBreaks();
+    renderRoutes();
+    status(dists.length ? "" : "Bu aralıkla rota üzerinde mola noktası çıkmadı.");
   }
 
   function renderRoutes() {
     map.setRoutes(
       routes.map((r) => r.coords),
       selected,
-      selectRoute,
+      onRouteClick,
+    );
+    map.setBreaks(
+      routes.length ? breaks.map((b) => snapToLine(lines[selected], b.pos).pos) : [],
+      (p) => snapToLine(lines[selected], p).pos,
+      moveBreak,
     );
     const settings = readSettings();
-    const timelines = typeof settings === "string" ? null : routes.map((r) => buildTimeline(r.steps, settings.departMs, settings.speed));
+    const timelines =
+      typeof settings === "string" ? null : routes.map((r, i) => buildTimeline(r.steps, settings.departMs, settings.speed, breaksOn(i)));
+    const tl = timelines?.[selected];
+    renderBreakList(
+      routes.length
+        ? breaks.map((b, i) => {
+            const at = tl?.breaks[i];
+            return { auto: b.auto, durationMin: b.durationMin, distM: at?.distM, startMs: at?.startMs, endMs: at?.endMs };
+          })
+        : [],
+    );
     routesEl.replaceChildren(
       ...routes.map((r, i) => {
         const li = document.createElement("li");
@@ -102,6 +191,9 @@ export function startApp() {
     if (!t) return renderSummary([]);
     const rows: [string, string][] = [
       ["Toplam süre", formatDuration(totalS(t))],
+      ...(t.breaks.length
+        ? [["Molalar", `${t.breaks.length} mola · ${formatDuration(t.breaks.reduce((s, b) => s + b.endMs - b.startMs, 0) / 1000)}`] as [string, string]]
+        : []),
       ["Çıkış", formatTime(t.timeMs[0])],
       ...t.legArrivalMs.map((ms, i): [string, string] => [`${routedTitles[i + 1]} varış`, formatTime(ms)]),
     ];
@@ -181,8 +273,10 @@ export function startApp() {
       const result = await getRoutes(routed.map((s) => s.pos));
       if (my !== routeSeq) return;
       routes = result;
+      lines = result.map((r) => makeLine(r.coords));
       routedTitles = routed.map((s) => s.title);
       selected = 0;
+      resnapBreaks();
       renderRoutes();
       map.fit(result.flatMap((r) => r.coords));
       status("");
@@ -213,17 +307,4 @@ export function startApp() {
   renderStops();
 }
 
-const formatKm = (m: number) => `${(m / 1000).toFixed(m < 10000 ? 1 : 0)} km`;
-
 const totalS = (t: Timeline) => (t.timeMs[t.timeMs.length - 1] - t.timeMs[0]) / 1000;
-
-const timeFormat = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "short", weekday: "short", hour: "2-digit", minute: "2-digit" });
-const formatTime = (ms: number) => timeFormat.format(ms);
-
-function formatDuration(s: number) {
-  const min = Math.round(s / 60);
-  const h = Math.floor(min / 60);
-  return h ? `${h} sa ${min % 60} dk` : `${min} dk`;
-}
-
-const formatCoord = (p: LatLon) => `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`;

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { guessRoadType, roadBreakdown, type RoadTypeRules, type Step } from "../route/roadType";
-import { buildTimeline, etaAtDistance, type SpeedSetting } from "./eta";
+import { autoBreakDistances, buildTimeline, distanceAtTime, etaAtDistance, type SpeedSetting } from "./eta";
 
 const rules: RoadTypeRules = { motorwayMinKmh: 90, primaryMinKmh: 70, motorwayRef: /^O-?\d/, primaryRef: /^D-?\d/ };
 const H = 3600_000;
@@ -58,5 +58,47 @@ describe("buildTimeline", () => {
     expect(etaAtDistance(t, 75_000)).toBe(T0 + 1.5 * H);
     expect(etaAtDistance(t, -5)).toBe(T0);
     expect(etaAtDistance(t, 1e9)).toBe(T0 + 2 * H);
+  });
+});
+
+describe("breaks", () => {
+  const avg50: SpeedSetting = { mode: "average", kmh: 50 };
+  const M = 60_000;
+
+  test("a break shifts every later time by its duration, not earlier ones", () => {
+    const steps = [step(50, 50, { leg: 0 }), step(50, 50, { leg: 1 })];
+    const plain = buildTimeline(steps, T0, avg50);
+    const t = buildTimeline(steps, T0, avg50, [{ distM: 25_000, durationS: 15 * 60 }]);
+    expect(etaAtDistance(t, 20_000)).toBe(etaAtDistance(plain, 20_000));
+    expect(etaAtDistance(t, 25_000)).toBe(T0 + 30 * M); // arrival at the break
+    expect(etaAtDistance(t, 75_000)).toBe(etaAtDistance(plain, 75_000) + 15 * M);
+    expect(t.legArrivalMs).toEqual([T0 + H + 15 * M, T0 + 2 * H + 15 * M]);
+    expect(t.breaks).toEqual([{ distM: 25_000, startMs: T0 + 30 * M, endMs: T0 + 45 * M }]);
+  });
+
+  test("breaks are sorted, stack up, and a break at a stop starts after the arrival", () => {
+    const steps = [step(50, 50, { leg: 0 }), step(50, 50, { leg: 1 })];
+    const t = buildTimeline(steps, T0, avg50, [
+      { distM: 75_000, durationS: 30 * 60 },
+      { distM: 50_000, durationS: 10 * 60 },
+    ]);
+    expect(t.legArrivalMs[0]).toBe(T0 + H); // stop reached before its break
+    // 60 min riding + 10 min break + 30 min riding
+    expect(t.breaks.map((b) => b.startMs)).toEqual([T0 + H, T0 + 100 * M]);
+    expect(t.timeMs.at(-1)).toBe(T0 + 2 * H + 40 * M);
+  });
+
+  test("breaks past the end are dropped", () => {
+    const t = buildTimeline([step(50, 50)], T0, avg50, [{ distM: 60_000, durationS: 600 }]);
+    expect(t.breaks).toEqual([]);
+    expect(t.timeMs.at(-1)).toBe(T0 + H);
+  });
+
+  test("auto breaks every N km or N minutes of riding", () => {
+    const ride = buildTimeline([step(100, 50), step(150, 50)], T0, avg50); // 250 km, 5 h
+    expect(autoBreakDistances(ride, { every: 100, unit: "km" })).toEqual([100_000, 200_000]);
+    expect(autoBreakDistances(ride, { every: 90, unit: "min" })).toEqual([75_000, 150_000, 225_000]);
+    expect(autoBreakDistances(ride, { every: 0, unit: "km" })).toEqual([]);
+    expect(distanceAtTime(ride, T0 + 2.5 * H)).toBe(125_000);
   });
 });

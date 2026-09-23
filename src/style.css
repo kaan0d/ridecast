@@ -10,6 +10,7 @@
   --start: #2e7d32;
   --via: #ef6c00;
   --end: #c62828;
+  --break: #6a1b9a;
   color-scheme: light dark;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -24,6 +25,7 @@
     --accent: #4c9aff;
     --alt: #7d8894;
     --error: #ff6b6b;
+    --break: #ab47bc;
   }
 }
 
@@ -247,6 +249,62 @@ input:invalid {
 
 #summary .error dd {
   color: var(--error);
+}
+
+h2 {
+  font-size: 1rem;
+  margin: 20px 0 4px;
+}
+
+.break-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 2px 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.break-title::before {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 6px;
+  background: var(--break);
+}
+
+.break-info {
+  grid-column: 1 / -1;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.break-duration,
+.nowrap {
+  white-space: nowrap;
+}
+
+#auto-breaks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.break-marker {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--break);
+  border: 2px solid #fff;
+  color: #fff;
+  font: 600 12px/1 system-ui, sans-serif;
+  cursor: grab;
 }
 
 .icon-btn {

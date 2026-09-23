@@ -13,6 +13,7 @@ export function createMap(el: HTMLElement, onClick: (p: LatLon) => void) {
 
   const routeLayer = L.layerGroup().addTo(map);
   const stopLayer = L.layerGroup().addTo(map);
+  const breakLayer = L.layerGroup().addTo(map);
 
   return {
     setStops(stops: { pos: LatLon; kind: StopKind }[]) {
@@ -22,20 +23,34 @@ export function createMap(el: HTMLElement, onClick: (p: LatLon) => void) {
       }
     },
 
-    setRoutes(routes: LatLon[][], selected: number, onSelect: (i: number) => void) {
+    setRoutes(routes: LatLon[][], selected: number, onRouteClick: (i: number, p: LatLon) => void) {
       routeLayer.clearLayers();
       // Draw alternatives first so the selected route stays on top.
       const order = routes.map((_, i) => i).sort((a, b) => Number(a === selected) - Number(b === selected));
       for (const i of order) {
         const line = L.polyline(routes[i].map(toLatLng), {
-          weight: i === selected ? 6 : 5,
+          weight: i === selected ? 7 : 5,
           className: i === selected ? "route route-selected" : "route route-alt",
         }).addTo(routeLayer);
         line.on("click", (e) => {
           L.DomEvent.stopPropagation(e);
-          onSelect(i);
+          onRouteClick(i, fromLatLng(e.latlng));
         });
       }
+    },
+
+    // Draggable break markers that stay on the route while dragged.
+    setBreaks(points: LatLon[], snap: (p: LatLon) => LatLon, onMove: (i: number, p: LatLon) => void) {
+      breakLayer.clearLayers();
+      points.forEach((p, i) => {
+        const m = L.marker(toLatLng(p), {
+          draggable: true,
+          title: `Mola ${i + 1}`,
+          icon: L.divIcon({ className: "break-marker", html: `<span>${i + 1}</span>`, iconSize: [24, 24] }),
+        }).addTo(breakLayer);
+        m.on("drag", () => m.setLatLng(toLatLng(snap(fromLatLng(m.getLatLng())))));
+        m.on("dragend", () => onMove(i, fromLatLng(m.getLatLng())));
+      });
     },
 
     fit(points: LatLon[]) {
