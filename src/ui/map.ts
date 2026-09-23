@@ -18,6 +18,7 @@ export function createMap(el: HTMLElement, onClick: (p: LatLon) => void) {
   map.on("click", (e) => onClick(fromLatLng(e.latlng)));
 
   const routeLayer = L.layerGroup().addTo(map);
+  const riskLayer = L.layerGroup().addTo(map);
   const stopLayer = L.layerGroup().addTo(map);
   const weatherLayer = L.layerGroup().addTo(map);
   const breakLayer = L.layerGroup().addTo(map);
@@ -83,6 +84,16 @@ export function createMap(el: HTMLElement, onClick: (p: LatLon) => void) {
         m.on("drag", () => m.setLatLng(toLatLng(snap(fromLatLng(m.getLatLng())))));
         m.on("dragend", () => onMove(i, fromLatLng(m.getLatLng())));
       });
+    },
+
+    // Risk colours over the selected route and a dotted pattern on dark parts. Not clickable,
+    // so a click still reaches the route below (adds a break).
+    setRisk(segments: { coords: LatLon[]; level: number }[], night: LatLon[][]) {
+      riskLayer.clearLayers();
+      for (const s of segments) {
+        if (s.level > 0) L.polyline(s.coords.map(toLatLng), { weight: 6, interactive: false, className: `route route-risk-${s.level}` }).addTo(riskLayer);
+      }
+      for (const n of night) L.polyline(n.map(toLatLng), { weight: 3, interactive: false, className: "route route-night" }).addTo(riskLayer);
     },
 
     // Weather capsules with a card popup each.

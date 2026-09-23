@@ -17,6 +17,11 @@ export interface WeatherHour {
 
 export type WeatherSeries = WeatherHour[]; // sorted by time
 
+export interface Forecast {
+  hours: WeatherSeries;
+  sun: { riseMs: number; setMs: number }[]; // one entry per forecast day
+}
+
 // Distances (m) from start to end inclusive, evenly spaced so that there is roughly one point per
 // `intervalMin` of the route's own driving time, capped at `maxPoints`.
 export function sampleDistances(totalM: number, durationS: number, intervalMin: number, maxPoints: number): number[] {
@@ -27,9 +32,17 @@ export function sampleDistances(totalM: number, durationS: number, intervalMin: 
 
 // The forecast hour closest to `ms`, or null when the nearest one is more than `maxGapMin` away.
 export function nearestHour(series: WeatherSeries, ms: number, maxGapMin: number): WeatherHour | null {
-  let best: WeatherHour | null = null;
-  for (const h of series) if (!best || Math.abs(h.timeMs - ms) < Math.abs(best.timeMs - ms)) best = h;
-  return best && Math.abs(best.timeMs - ms) <= maxGapMin * 60_000 ? best : null;
+  const i = nearestHourIndex(series, ms, maxGapMin);
+  return i < 0 ? null : series[i];
+}
+
+// Index of the closest forecast hour, or -1 when none is within maxGapMin.
+export function nearestHourIndex(series: WeatherSeries, ms: number, maxGapMin: number): number {
+  let best = -1;
+  series.forEach((h, i) => {
+    if (best < 0 || Math.abs(h.timeMs - ms) < Math.abs(series[best].timeMs - ms)) best = i;
+  });
+  return best >= 0 && Math.abs(series[best].timeMs - ms) <= maxGapMin * 60_000 ? best : -1;
 }
 
 export type Condition = "clear" | "partly" | "cloudy" | "fog" | "drizzle" | "rain" | "snow" | "storm";

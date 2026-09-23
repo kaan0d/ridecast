@@ -102,3 +102,16 @@ export function autoBreakDistances(ride: Timeline, rule: AutoBreakRule): number[
   }
   return out;
 }
+
+// Moving speed (km/h) at a distance: the slope of the timeline, ignoring break boundaries.
+export function speedAtDistance(t: Timeline, d: number): number {
+  const last = t.distM.length - 1;
+  const clamped = Math.min(Math.max(d, 0), lastOf(t.distM));
+  let i = 1;
+  while (i < last && (t.distM[i] < clamped || t.distM[i] === t.distM[i - 1])) i++;
+  // Step back over zero-length boundaries (a break, a zero-distance step) to a moving segment.
+  while (i > 1 && t.distM[i] === t.distM[i - 1]) i--;
+  const dd = t.distM[i] - t.distM[i - 1];
+  const dt = t.timeMs[i] - t.timeMs[i - 1];
+  return dd > 0 && dt > 0 ? (dd / dt) * 3600 : 0;
+}

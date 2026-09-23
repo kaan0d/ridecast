@@ -64,3 +64,23 @@ export function pointAtDistance(line: Line, d: number): LatLon {
   const b = coords[i];
   return { lat: a.lat + f * (b.lat - a.lat), lon: a.lon + f * (b.lon - a.lon) };
 }
+
+// The part of the line between two distances, including the cut points.
+export function sliceLine(line: Line, from: number, to: number): LatLon[] {
+  const a = Math.max(0, Math.min(from, to));
+  const b = Math.min(lineLength(line), Math.max(from, to));
+  const out = [pointAtDistance(line, a)];
+  for (let i = 0; i < line.coords.length; i++) if (line.cumM[i] > a && line.cumM[i] < b) out.push(line.coords[i]);
+  out.push(pointAtDistance(line, b));
+  return out;
+}
+
+// Direction of travel at a distance, degrees clockwise from north, over a short window.
+export function bearingAt(line: Line, d: number, windowM = 100): number {
+  const len = lineLength(line);
+  const p = pointAtDistance(line, Math.max(0, Math.min(len - windowM, d - windowM / 2)));
+  const q = pointAtDistance(line, Math.min(len, Math.max(windowM, d + windowM / 2)));
+  const y = Math.sin((q.lon - p.lon) * RAD) * Math.cos(q.lat * RAD);
+  const x = Math.cos(p.lat * RAD) * Math.sin(q.lat * RAD) - Math.sin(p.lat * RAD) * Math.cos(q.lat * RAD) * Math.cos((q.lon - p.lon) * RAD);
+  return ((Math.atan2(y, x) / RAD) + 360) % 360;
+}

@@ -1,13 +1,17 @@
 import { DEFAULT_BREAK_MIN } from "../config/breaks";
 import { WEATHER_REQUEST, WEATHER_SAMPLE } from "../config/weather";
 import { ROAD_TYPE_RULES } from "../config/vehicles";
-import { autoBreakDistances, buildTimeline, etaAtDistance, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
+import { autoBreakDistances, buildTimeline, etaAtDistance, speedAtDistance, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
+import { assessPoint, breakAdvice, type Level } from "../core/risk/risk";
+import { BREAK_ADVICE, RISK, WET_ROAD } from "../config/risk";
+import type { VehicleType } from "../config/vehicles";
 import { type LatLon } from "../core/geo";
-import { lineLength, makeLine, pointAtDistance, snapToLine, type Line } from "../core/route/line";
+import { bearingAt, lineLength, makeLine, pointAtDistance, sliceLine, snapToLine, type Line } from "../core/route/line";
 import { roadBreakdown } from "../core/route/roadType";
-import { nearestHour, sampleDistances } from "../core/weather/weather";
+import { nearestHourIndex, sampleDistances, type Forecast } from "../core/weather/weather";
 import { fetchForecast } from "../services/openmeteo";
-import { cardHtml, pinHtml, renderStrip, type WeatherPoint } from "./weather";
+import { cardHtml, collectWarnings, pinHtml, renderStrip, renderWarnings, type WeatherPoint } from "./weather";
+import type { BreakRow } from "./breaks";
 import { reverseLabel } from "../services/nominatim";
 import { getRoutes, type Route } from "../services/osrm";
 import { bindBreaks } from "./breaks";
@@ -48,6 +52,8 @@ export function startApp() {
   const statusEl = $("status");
   const summaryEl = $("summary");
   const weatherEl = $("weather");
+  const warningsEl = $("warnings");
+  let breakRows: BreakRow[] = [];
   let weatherSeq = 0;
   let weatherTimer: number | undefined;
   let weatherPoints: WeatherPoint[] = [];
@@ -143,52 +149,120 @@ export function startApp() {
 
   // Sample points depend only on the route; their ETAs follow the timeline. The forecast request
   // is keyed by rounded coordinates, so ETA-only changes are served from the cache.
-  function updateWeather(tl: Timeline | null) {
+  function updateWeather(tl: Timeline | null, vehicle: VehicleType) {
     clearTimeout(weatherTimer);
     const my = ++weatherSeq;
     const route = routes[selected];
     if (!route || !tl) {
       weatherPoints = [];
       map.setWeather([]);
+      map.setRisk([], []);
+      renderWarnings(warningsEl, [], false, () => {});
       return renderStrip(weatherEl, { points: [], loading: false, onRetry: () => {}, onOpen: () => {} });
     }
     const scale = scaleOf(selected);
+    const line = lines[selected];
     const samples = sampleDistances(route.distanceM, route.durationS, WEATHER_SAMPLE.intervalMin, WEATHER_SAMPLE.maxPoints).map((d) => ({
       distM: d,
       pos: pointAtDistance(lines[selected], d / scale),
       etaMs: etaAtDistance(tl, d),
     }));
-    const show = (points: WeatherPoint[], loading: boolean, error?: string) => {
+    const openPoint = (i: number) => {
+      sheet.collapse();
+      map.openWeather(i);
+    };
+    const show = (points: WeatherPoint[], loading: boolean, error?: string, forecasts?: Forecast[]) => {
       weatherPoints = points;
       map.setWeather(points.map((p) => ({ pos: p.pos, pin: pinHtml(p), card: cardHtml(p) })));
+      if (!loading) {
+        paintRisk(points, route.distanceM, scale, line);
+        const advices = forecasts ? adviseBreaks(tl, samples, forecasts) : [];
+        renderBreakList(breakRows.map((r, i) => ({ ...r, advice: advices[i] })));
+        const warnings = collectWarnings(points);
+        advices.forEach((a, i) => {
+          const b = tl.breaks[i];
+          if (a) warnings.push({ level: 2, text: `Mola ${i + 1}: ${a}`, when: `${formatClock(b.startMs)}–${formatClock(b.endMs)}`, where: `km ${Math.round(b.distM / 1000)}` });
+        });
+        renderWarnings(warningsEl, warnings, !error && points.length > 0, openPoint);
+      }
       renderStrip(weatherEl, {
         points,
         loading,
         error,
-        onRetry: () => updateWeather(tl),
-        onOpen: (i) => {
-          sheet.collapse();
-          map.openWeather(i);
-        },
+        onRetry: () => updateWeather(tl, vehicle),
+        onOpen: openPoint,
       });
     };
     // Keep the old capsules (dimmed) while the next forecast loads.
     show(weatherPoints.length === samples.length ? weatherPoints : [], true);
     weatherTimer = window.setTimeout(async () => {
       try {
-        const series = await fetchForecast(
+        const forecasts = await fetchForecast(
           samples.map((s) => s.pos),
           samples[samples.length - 1].etaMs,
         );
         if (my !== weatherSeq) return;
-        show(
-          samples.map((s, i) => ({ ...s, hour: nearestHour(series[i] ?? [], s.etaMs, WEATHER_REQUEST.maxHourGapMin) })),
-          false,
-        );
+        const points = samples.map((s, i): WeatherPoint => {
+          const f = forecasts[i] ?? { hours: [], sun: [] };
+          const idx = nearestHourIndex(f.hours, s.etaMs, WEATHER_REQUEST.maxHourGapMin);
+          if (idx < 0) return { ...s, hour: null, risk: null };
+          const risk = assessPoint(
+            { hours: f.hours, i: idx, etaMs: s.etaMs, rideKmh: speedAtDistance(tl, s.distM), headingDeg: bearingAt(line, s.distM / scale), sun: f.sun },
+            RISK[vehicle],
+            WET_ROAD,
+          );
+          return { ...s, hour: f.hours[idx], risk };
+        });
+        show(points, false, undefined, forecasts);
       } catch (e) {
         if (my === weatherSeq) show([], false, (e as Error).message);
       }
     }, 300);
+  }
+
+  // Each sample point colours the route halfway to its neighbours; runs of the same level merge.
+  function paintRisk(points: WeatherPoint[], totalM: number, scale: number, line: Line) {
+    const segs = points.map((p, k) => ({
+      from: k === 0 ? 0 : (points[k - 1].distM + p.distM) / 2,
+      to: k === points.length - 1 ? totalM : (p.distM + points[k + 1].distM) / 2,
+      level: (p.risk?.level ?? 0) as Level,
+      dark: p.risk?.dark ?? false,
+    }));
+    const runs = (key: (s: (typeof segs)[number]) => number) => {
+      const out: { from: number; to: number; v: number }[] = [];
+      for (const s of segs) {
+        const v = key(s);
+        const last = out[out.length - 1];
+        if (last && last.v === v) last.to = s.to;
+        else out.push({ from: s.from, to: s.to, v });
+      }
+      return out;
+    };
+    const cut = (r: { from: number; to: number }) => sliceLine(line, r.from / scale, r.to / scale);
+    map.setRisk(
+      runs((s) => s.level).map((r) => ({ coords: cut(r), level: r.v })),
+      runs((s) => Number(s.dark))
+        .filter((r) => r.v === 1)
+        .map(cut),
+    );
+  }
+
+  // Rain during each break, read from the sample point nearest to it.
+  function adviseBreaks(tl: Timeline, samples: { distM: number }[], forecasts: Forecast[]): (string | undefined)[] {
+    return tl.breaks.map((b) => {
+      let k = 0;
+      samples.forEach((s, j) => {
+        if (Math.abs(s.distM - b.distM) < Math.abs(samples[k].distM - b.distM)) k = j;
+      });
+      const a = breakAdvice(forecasts[k]?.hours ?? [], b.startMs, b.endMs, BREAK_ADVICE.rainMm, BREAK_ADVICE.maxExtendMin);
+      const minutes = Math.round((b.endMs - b.startMs) / 60_000);
+      if (a?.kind === "rainStarts")
+        return a.atMin === 0
+          ? "Mola başlarken yağmur başlıyor."
+          : `Yağmur molanın ${a.atMin}. dakikasında başlıyor. Molayı ${a.atMin} dk'ya kısaltırsan yağmurdan önce yola çıkarsın.`;
+      if (a?.kind === "rainStops") return `Molanın sonunda yağmur var, ${a.extendMin} dk sonra diniyor. Molayı ${minutes + a.extendMin} dk'ya uzatmayı düşün.`;
+      return undefined;
+    });
   }
 
   function addAutoBreaks(rule: AutoBreakRule, durationMin: number) {
@@ -222,15 +296,14 @@ export function startApp() {
     const timelines =
       typeof settings === "string" ? null : routes.map((r, i) => buildTimeline(r.steps, settings.departMs, settings.speed, breaksOn(i)));
     const tl = timelines?.[selected];
-    updateWeather(tl ?? null);
-    renderBreakList(
-      routes.length
-        ? breaks.map((b, i) => {
-            const at = tl?.breaks[i];
-            return { auto: b.auto, durationMin: b.durationMin, distM: at?.distM, startMs: at?.startMs, endMs: at?.endMs };
-          })
-        : [],
-    );
+    breakRows = routes.length
+      ? breaks.map((b, i) => {
+          const at = tl?.breaks[i];
+          return { auto: b.auto, durationMin: b.durationMin, distM: at?.distM, startMs: at?.startMs, endMs: at?.endMs };
+        })
+      : [];
+    renderBreakList(breakRows);
+    updateWeather(tl ?? null, typeof settings === "string" ? "motorcycle" : settings.vehicle);
     routesEl.replaceChildren(
       ...routes.map((r, i) => {
         const li = document.createElement("li");

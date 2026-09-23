@@ -1,6 +1,6 @@
 import { WEATHER_REQUEST } from "../config/weather";
 import type { LatLon } from "../core/geo";
-import type { WeatherSeries } from "../core/weather/weather";
+import type { Forecast } from "../core/weather/weather";
 import { getJson, HttpError } from "./http";
 
 const BASE = "https://api.open-meteo.com/v1/forecast";
@@ -23,18 +23,19 @@ interface OmLocation {
     visibility: number[];
     is_day: number[];
   };
+  daily: { sunrise: number[]; sunset: number[] };
 }
 
 const round = (v: number) => (Math.round(v / WEATHER_REQUEST.coordRoundDeg) * WEATHER_REQUEST.coordRoundDeg).toFixed(2);
 
 // Hourly forecast for every point, in one request. Covers from `past_hours` ago until `untilMs`.
 // Coordinates are rounded so small route changes hit the cache.
-export async function fetchForecast(points: LatLon[], untilMs: number): Promise<WeatherSeries[]> {
+export async function fetchForecast(points: LatLon[], untilMs: number): Promise<Forecast[]> {
   const days = Math.ceil((untilMs - Date.now()) / DAY_MS) + 1;
   if (days > WEATHER_REQUEST.maxForecastDays) throw new Error(`Hava tahmini en fazla ${WEATHER_REQUEST.maxForecastDays - 1} gün ilerisi için var.`);
   const url =
     `${BASE}?latitude=${points.map((p) => round(p.lat)).join(",")}&longitude=${points.map((p) => round(p.lon)).join(",")}` +
-    `&hourly=${HOURLY}&timeformat=unixtime&timezone=auto&past_hours=${WEATHER_REQUEST.pastHours}&forecast_days=${Math.max(1, days)}`;
+    `&hourly=${HOURLY}&daily=sunrise,sunset&timeformat=unixtime&timezone=auto&past_hours=${WEATHER_REQUEST.pastHours}&forecast_days=${Math.max(1, days)}`;
   let data: OmLocation | OmLocation[];
   try {
     data = await getJson<OmLocation | OmLocation[]>(url);
@@ -43,8 +44,9 @@ export async function fetchForecast(points: LatLon[], untilMs: number): Promise<
     throw new Error("Hava durumu alınamadı.");
   }
   // One location comes back as an object, several as an array.
-  return (Array.isArray(data) ? data : [data]).map(({ hourly: h }) =>
-    h.time.map((t, i) => ({
+  return (Array.isArray(data) ? data : [data]).map(({ hourly: h, daily: d }) => ({
+    sun: d.sunrise.map((rise, i) => ({ riseMs: rise * 1000, setMs: d.sunset[i] * 1000 })),
+    hours: h.time.map((t, i) => ({
       timeMs: t * 1000,
       tempC: h.temperature_2m[i],
       feelsC: h.apparent_temperature[i],
@@ -58,5 +60,5 @@ export async function fetchForecast(points: LatLon[], untilMs: number): Promise<
       visibilityM: h.visibility[i],
       isDay: h.is_day[i] === 1,
     })),
-  );
+  }));
 }

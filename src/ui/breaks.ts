@@ -9,6 +9,7 @@ export interface BreakRow {
   distM?: number; // missing when no timeline (invalid settings)
   startMs?: number;
   endMs?: number;
+  advice?: string; // weather during the break
 }
 
 interface Handlers {
@@ -80,6 +81,12 @@ export function bindBreaks(h: Handlers) {
         rm.addEventListener("click", () => h.onRemove(i));
 
         li.append(title, durLabel, rm, info);
+        if (b.advice) {
+          const adv = document.createElement("p");
+          adv.className = "break-advice";
+          adv.textContent = b.advice;
+          li.append(adv);
+        }
         return li;
       }),
     );

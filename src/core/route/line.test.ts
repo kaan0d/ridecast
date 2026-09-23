@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { haversineM, lineLength, makeLine, pointAtDistance, snapToLine } from "./line";
+import { bearingAt, haversineM, lineLength, makeLine, pointAtDistance, sliceLine, snapToLine } from "./line";
 
 // Along the equator 0.01° of longitude is about 1113 m.
 const line = makeLine([
@@ -33,4 +33,17 @@ test("pointAtDistance is the inverse of snap and clamps", () => {
   expect(p.lat).toBeCloseTo(0.005, 4);
   expect(pointAtDistance(line, -1)).toEqual({ lat: 0, lon: 0 });
   expect(pointAtDistance(line, 1e9)).toEqual({ lat: 0.01, lon: 0.01 });
+});
+
+test("sliceLine cuts at both distances and keeps the vertices between", () => {
+  const s = sliceLine(line, 556, 1112 + 556);
+  expect(s[0].lon).toBeCloseTo(0.005, 6);
+  expect(s[1]).toEqual({ lat: 0, lon: 0.01 });
+  expect(s[2].lat).toBeCloseTo(0.005, 4);
+  expect(s).toHaveLength(3);
+});
+
+test("bearingAt gives the direction of travel", () => {
+  expect(bearingAt(line, 500)).toBeCloseTo(90, 3); // east along the equator
+  expect(bearingAt(line, 1600)).toBeCloseTo(0, 3); // then north
 });

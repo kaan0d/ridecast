@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { guessRoadType, roadBreakdown, type RoadTypeRules, type Step } from "../route/roadType";
-import { autoBreakDistances, buildTimeline, distanceAtTime, etaAtDistance, type SpeedSetting } from "./eta";
+import { autoBreakDistances, buildTimeline, distanceAtTime, etaAtDistance, speedAtDistance, type SpeedSetting } from "./eta";
 
 const rules: RoadTypeRules = { motorwayMinKmh: 90, primaryMinKmh: 70, motorwayRef: /^O-?\d/, primaryRef: /^D-?\d/ };
 const H = 3600_000;
@@ -101,4 +101,13 @@ describe("breaks", () => {
     expect(autoBreakDistances(ride, { every: 0, unit: "km" })).toEqual([]);
     expect(distanceAtTime(ride, T0 + 2.5 * H)).toBe(125_000);
   });
+});
+
+test("speedAtDistance is the moving speed, also next to a break", () => {
+  const t = buildTimeline([step(50, 50), step(50, 50)], T0, { mode: "road", kmh: { motorway: 120, primary: 80, urban: 40 }, rules }, [
+    { distM: 50_000, durationS: 900 },
+  ]);
+  expect(speedAtDistance(t, 10_000)).toBeCloseTo(40, 6); // OSRM 50 km/h counts as urban
+  expect(speedAtDistance(t, 50_000)).toBeCloseTo(40, 6); // at the break itself
+  expect(speedAtDistance(t, 100_000)).toBeCloseTo(40, 6);
 });

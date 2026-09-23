@@ -16,8 +16,11 @@
   --route: #000000;
   --route-casing: #ffffff;
   --alt: #9a9aa0;
-  --break: #ff9f0a;
-  --on-break: #1c1c1e;
+  --break: #5e5ce6;
+  --on-break: #ffffff;
+  --risk-1: #e6b800;
+  --risk-2: #ff8a00;
+  --risk-3: #ff3b30;
   --error: #d70015;
   --focus: #0a84ff;
   --map-filter: grayscale(0.85) contrast(0.92) brightness(1.04);
@@ -55,6 +58,10 @@
     --route-casing: #000000;
     --alt: #7c7c82;
     --error: #ff6961;
+    --break: #7d7aff;
+    --risk-1: #ffd60a;
+    --risk-2: #ff9f0a;
+    --risk-3: #ff453a;
     --focus: #409cff;
     --map-filter: invert(1) hue-rotate(180deg) grayscale(0.9) brightness(0.82) contrast(0.95);
   }
@@ -209,6 +216,46 @@ button {
 .route-alt {
   stroke: var(--alt);
   stroke-opacity: 0.85;
+}
+
+.route-risk-1 {
+  stroke: var(--risk-1);
+}
+
+.route-risk-2 {
+  stroke: var(--risk-2);
+}
+
+.route-risk-3 {
+  stroke: var(--risk-3);
+}
+
+/* Dark parts of the ride: a dotted pattern over the line. */
+.route-night {
+  stroke: var(--route-casing);
+  stroke-dasharray: 0.1 9;
+  stroke-linecap: round;
+}
+
+.risk-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--separator);
+}
+
+.risk-dot.risk-1 {
+  background: var(--risk-1);
+}
+
+.risk-dot.risk-2 {
+  background: var(--risk-2);
+}
+
+.risk-dot.risk-3 {
+  background: var(--risk-3);
 }
 
 .pin {
@@ -582,6 +629,18 @@ button {
   cursor: pointer;
 }
 
+.wx-pin.risk-1 {
+  box-shadow: 0 0 0 2px var(--risk-1), var(--shadow-small);
+}
+
+.wx-pin.risk-2 {
+  box-shadow: 0 0 0 2px var(--risk-2), var(--shadow-small);
+}
+
+.wx-pin.risk-3 {
+  box-shadow: 0 0 0 2px var(--risk-3), var(--shadow-small);
+}
+
 .wx-pin .icon {
   width: 18px;
   height: 18px;
@@ -691,6 +750,19 @@ button {
   stroke-width: 2.25;
 }
 
+.wx-warn {
+  margin: 10px 0 0;
+  display: grid;
+  gap: 6px;
+  font-size: 0.875rem;
+}
+
+.wx-warn li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .wx-source,
 .wx-empty {
   margin: 8px 0 0;
@@ -769,6 +841,61 @@ button {
 .link-button {
   color: var(--focus);
   font-weight: 600;
+}
+
+/* ---------- Warnings ---------- */
+
+.warn-list {
+  padding: 0;
+}
+
+.warn-list li + li {
+  border-top: 1px solid var(--separator);
+}
+
+.warn {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 12px;
+  width: 100%;
+  padding: 11px 16px;
+  text-align: left;
+}
+
+.warn:disabled {
+  cursor: default;
+}
+
+.warn:not(:disabled):hover {
+  background: var(--fill);
+}
+
+.warn .risk-dot {
+  grid-row: span 2;
+}
+
+.warn-text {
+  font-size: 0.9375rem;
+}
+
+.warn-meta {
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.warn-list .empty {
+  padding: 12px 16px;
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+}
+
+.break-advice {
+  grid-column: 1 / -1;
+  margin: 6px 0 0;
+  color: var(--ink);
+  font-size: 0.8125rem;
 }
 
 /* ---------- Route options ---------- */
