@@ -67,3 +67,10 @@ export const WET_ROAD = {
 
 // A break gets advice when rain starts within it, or stops within this many minutes after it.
 export const BREAK_ADVICE = { rainMm: 0.1, maxExtendMin: 90 };
+
+// Route risk score: distance-weighted mean of these weights per level (none, low, medium, high).
+// Squared-ish steps so a stretch of high risk outweighs a long stretch of low risk.
+export const RISK_WEIGHTS = [0, 1, 3, 9] as const;
+
+// The safest route is only suggested over the fastest when its score is at least this much lower.
+export const SAFEST_MIN_DROP = 0.1;

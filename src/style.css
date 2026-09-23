@@ -939,6 +939,41 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+.route-item {
+  flex-wrap: wrap;
+}
+
+.route-risk {
+  white-space: nowrap;
+}
+
+.route-risk .risk-dot {
+  width: 8px;
+  height: 8px;
+  margin-right: 5px;
+  vertical-align: 0;
+}
+
+.safest {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--separator);
+  font-size: 0.875rem;
+}
+
+.safest b {
+  font-weight: 700;
+}
+
+.safest span {
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
 .route-item[aria-pressed="true"] {
   box-shadow: inset 0 0 0 2px var(--ink);
 }
