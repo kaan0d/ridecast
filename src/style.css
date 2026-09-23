@@ -1007,6 +1007,57 @@ button {
   margin-top: 6px;
 }
 
+.share-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 4px 0;
+}
+
+.share-row[hidden] {
+  display: none;
+}
+
+.copy-field {
+  width: 100%;
+  font-size: 0.8125rem;
+  padding: 6px 8px;
+  border: 1px solid var(--separator);
+  border-radius: 8px;
+  background: var(--fill);
+}
+
+#copy-status {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+.recent-list li + li {
+  border-top: 1px solid var(--separator);
+}
+
+.recent-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.9375rem;
+}
+
+.recent-item:hover {
+  background: var(--fill);
+}
+
+.recent-date {
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
 .break-advice {
   grid-column: 1 / -1;
   margin: 6px 0 0;

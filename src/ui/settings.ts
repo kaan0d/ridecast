@@ -1,6 +1,7 @@
 import { DEFAULT_VEHICLE, ROAD_TYPE_RULES, SPEED_LIMITS_KMH, VEHICLES, type VehicleType } from "../config/vehicles";
 import type { SpeedSetting } from "../core/eta/eta";
 import type { RoadType } from "../core/route/roadType";
+import type { TripState } from "../core/share/state";
 
 export type DepartMode = "now" | "at" | "best";
 
@@ -91,8 +92,26 @@ export function bindSettings(onChange: () => void) {
     return { vehicle: radio("vehicle") as VehicleType, speed, departMs, departMode: mode };
   };
 
+  // Puts shared settings into the form (no change event: the caller re-plans once).
+  const setRadio = (name: string, value: string) => {
+    const el = form.querySelector<HTMLInputElement>(`input[name="${name}"][value="${value}"]`);
+    if (el) el.checked = true;
+  };
+  function apply(s: Pick<TripState, "vehicle" | "speed" | "depart">) {
+    setRadio("vehicle", s.vehicle);
+    fillSpeeds();
+    setRadio("speed-mode", s.speed.mode);
+    if (s.speed.mode === "average") avg.value = String(s.speed.kmh);
+    else for (const r of ROADS) road[r].value = String(s.speed[r]);
+    setRadio("depart", s.depart.mode);
+    if (s.depart.mode === "at") departAt.value = toLocalInput(new Date(s.depart.ms));
+    best = null;
+    syncVisibility();
+  }
+
   return {
     read,
+    apply,
     best: () => best,
     setBest(ms: number) {
       best = ms;

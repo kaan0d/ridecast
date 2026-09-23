@@ -14,6 +14,11 @@ import { fetchForecast } from "../services/openmeteo";
 import { cardHtml, collectWarnings, LEVEL_LABEL, pinHtml, renderStrip, renderWarnings, type WeatherPoint } from "./weather";
 import type { BreakRow } from "./breaks";
 import { renderClothing } from "./advice";
+import { decodeState, encodeState, type TripState } from "../core/share/state";
+import { addRecent, parseRecent, type RecentRoute } from "../core/share/recent";
+import { SHARE } from "../config/share";
+import { SPEED_LIMITS_KMH } from "../config/vehicles";
+import { BREAK_LIMITS_MIN } from "../config/breaks";
 import { pickStops, type Poi, type StopOnRoute } from "../core/advice/stops";
 import { STOPS } from "../config/stops";
 import { fetchStops } from "../services/overpass";
@@ -70,6 +75,7 @@ export function startApp() {
   let breakRows: BreakRow[] = [];
   let routeScores: (RouteScore | null)[] = []; // per route, filled when their forecasts arrive
   let lastTimelines: Timeline[] | null = null;
+  let pendingSelected = 0; // route index from a shared link, applied when the routes arrive
   let weatherSeq = 0;
   let weatherTimer: number | undefined;
   let weatherPoints: WeatherPoint[] = [];
@@ -494,6 +500,8 @@ export function startApp() {
     renderBreakList(breakRows);
     renderRouteList(timelines);
     renderStopsPanel();
+    syncHash();
+    renderRecent();
     updateWeather(timelines, typeof settings === "string" ? null : settings);
     if (typeof settings === "string") return renderSummary(null, [], settings);
     const t = timelines?.[selected];
@@ -607,6 +615,145 @@ export function startApp() {
     summaryEl.replaceChildren(head, dl);
   }
 
+  // ---------- share link and recent routes ----------
+
+  const shortLabel = (l: string) => l.split(",").slice(0, 2).join(",").trim().slice(0, SHARE.maxLabel);
+
+  // The trip as it is set now, or null while the start or end is missing or a setting is invalid.
+  function currentState(): TripState | null {
+    const settings = readSettings();
+    const filled = stops.filter((s) => s.pos);
+    if (typeof settings === "string" || !stops[0].pos || !stops[stops.length - 1].pos) return null;
+    const sp = settings.speed;
+    return {
+      stops: filled.map((s) => ({ label: shortLabel(s.label), lat: s.pos!.lat, lon: s.pos!.lon })),
+      breaks: breaks.map((b) => ({ lat: b.pos.lat, lon: b.pos.lon, min: b.durationMin, auto: b.auto })),
+      vehicle: settings.vehicle,
+      speed: sp.mode === "average" ? { mode: "average", kmh: sp.kmh } : { mode: "road", ...sp.kmh },
+      depart: settings.departMode === "at" ? { mode: "at", ms: settings.departMs } : { mode: settings.departMode },
+      selected,
+    };
+  }
+
+  // Keeps the address bar in step with the trip, so a reload or a copied URL restores it.
+  function syncHash() {
+    const s = currentState();
+    const hash = s ? "#" + encodeState(s) : "";
+    if (location.hash !== hash) history.replaceState(null, "", hash || location.pathname + location.search);
+    $("share").hidden = !s || !routes.length;
+  }
+
+  function applyState(s: TripState) {
+    stops.splice(0, stops.length, ...s.stops.map((x) => ({ label: x.label, pos: { lat: x.lat, lon: x.lon } })));
+    breaks = s.breaks.map((b) => ({ pos: { lat: b.lat, lon: b.lon }, durationMin: b.min, auto: b.auto }));
+    settingsCtl.apply(s);
+    pendingSelected = s.selected;
+    routeScores = [];
+    poiState = null;
+    stopsChanged();
+  }
+
+  function applyHash(): boolean {
+    if (!location.hash) return false;
+    const s = decodeState(location.hash, {
+      minKmh: SPEED_LIMITS_KMH.min,
+      maxKmh: SPEED_LIMITS_KMH.max,
+      minBreak: BREAK_LIMITS_MIN.min,
+      maxBreak: BREAK_LIMITS_MIN.max,
+    });
+    if (!s) {
+      status("Bu link okunamadı; rota yüklenmedi.", "error");
+      syncHash(); // put the current trip back in the address bar
+      return false;
+    }
+    applyState(s);
+    return true;
+  }
+
+  // Browser storage can be missing or blocked (private mode); the app works without it.
+  function loadRecent(): RecentRoute[] {
+    try {
+      return parseRecent(localStorage.getItem(SHARE.storageKey));
+    } catch {
+      return [];
+    }
+  }
+
+  function saveRecent() {
+    const s = currentState();
+    if (!s) return;
+    const first = s.stops[0].label.split(",")[0] || "Başlangıç";
+    const last = s.stops[s.stops.length - 1].label.split(",")[0] || "Bitiş";
+    const entry: RecentRoute = {
+      key: s.stops.map((x) => `${x.lat.toFixed(4)},${x.lon.toFixed(4)}`).join(";"),
+      title: `${first} → ${last}`,
+      hash: encodeState(s),
+      savedMs: Date.now(),
+    };
+    try {
+      localStorage.setItem(SHARE.storageKey, JSON.stringify(addRecent(loadRecent(), entry, SHARE.maxRecent)));
+    } catch {
+      // not saved; nothing else depends on it
+    }
+    renderRecent();
+  }
+
+  function renderRecent() {
+    const el = $("recent");
+    const list = routes.length ? [] : loadRecent();
+    if (!list.length) return el.replaceChildren();
+    const title = document.createElement("h2");
+    title.className = "group-title";
+    title.textContent = "Son rotalar";
+    const ol = document.createElement("ol");
+    ol.className = "group recent-list";
+    for (const r of list) {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "recent-item";
+      const t = document.createElement("span");
+      t.textContent = r.title;
+      const d = document.createElement("span");
+      d.className = "recent-date";
+      d.textContent = formatDay(r.savedMs);
+      b.append(t, d);
+      b.addEventListener("click", () => {
+        history.replaceState(null, "", "#" + r.hash);
+        applyHash();
+      });
+      li.append(b);
+      ol.append(li);
+    }
+    el.replaceChildren(title, ol);
+  }
+
+  $("copy-link").addEventListener("click", async () => {
+    syncHash();
+    const note = $("copy-status");
+    try {
+      // A clipboard request can hang (e.g. waiting on a permission prompt); fall back after a moment.
+      await Promise.race([
+        navigator.clipboard.writeText(location.href),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("clipboard timeout")), SHARE.clipboardTimeoutMs)),
+      ]);
+      note.textContent = "Kopyalandı";
+    } catch {
+      // Clipboard can be blocked; show the link selected so it can be copied by hand.
+      const field = document.createElement("input");
+      field.readOnly = true;
+      field.className = "copy-field";
+      field.value = location.href;
+      field.setAttribute("aria-label", "Paylaşım linki");
+      note.replaceChildren(field);
+      field.select();
+      return;
+    }
+    setTimeout(() => (note.textContent = ""), 2500);
+  });
+
+  addEventListener("hashchange", () => applyHash());
+
   function stopsChanged() {
     renderStops();
     updateRoute();
@@ -659,8 +806,10 @@ export function startApp() {
       lines = result.map((r) => makeLine(r.coords));
       routeScores = []; // scores belong to the old routes
       routedTitles = routed.map((s) => s.title);
-      selected = 0;
+      selected = pendingSelected < result.length ? pendingSelected : 0;
+      pendingSelected = 0;
       resnapBreaks();
+      saveRecent();
       renderRoutes();
       map.fit(result.flatMap((r) => r.coords), sheet.insets());
       status("");
@@ -692,6 +841,7 @@ export function startApp() {
   });
 
   renderStops();
+  if (!applyHash()) renderRecent();
 }
 
 const totalS = (t: Timeline) => (t.timeMs[t.timeMs.length - 1] - t.timeMs[0]) / 1000;
