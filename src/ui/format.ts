@@ -14,4 +14,7 @@ const clock = new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-dig
 export const formatTime = (ms: number) => dateTime.format(ms);
 export const formatClock = (ms: number) => clock.format(ms);
 
+const day = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "short", weekday: "short" });
+export const formatDay = (ms: number) => day.format(ms);
+
 export const formatCoord = (p: LatLon) => `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`;

@@ -1,6 +1,7 @@
 import { AUTO_BREAK_DEFAULT, BREAK_LIMITS_MIN, BREAK_PRESETS_MIN } from "../config/breaks";
 import type { AutoBreakRule } from "../core/eta/eta";
 import { formatClock } from "./format";
+import { icons } from "./icons";
 
 export interface BreakRow {
   auto: boolean;
@@ -74,7 +75,7 @@ export function bindBreaks(h: Handlers) {
         const rm = document.createElement("button");
         rm.type = "button";
         rm.className = "icon-btn";
-        rm.textContent = "×";
+        rm.innerHTML = icons.close;
         rm.setAttribute("aria-label", `Mola ${i + 1} sil`);
         rm.addEventListener("click", () => h.onRemove(i));
 
@@ -84,7 +85,7 @@ export function bindBreaks(h: Handlers) {
     );
     if (!rows.length) {
       const li = document.createElement("li");
-      li.className = "hint";
+      li.className = "empty";
       li.textContent = "Mola yok.";
       list.append(li);
     }

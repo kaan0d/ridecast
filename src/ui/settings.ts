@@ -15,36 +15,48 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 // current settings, or an error message when an input is invalid.
 export function bindSettings(onChange: () => void): () => TripSettings | string {
   const form = $<HTMLFormElement>("settings");
-  const vehicle = $<HTMLSelectElement>("vehicle");
+  const vehicleGroup = $("vehicle");
   const avg = $<HTMLInputElement>("kmh-average");
   const road = Object.fromEntries(ROADS.map((r) => [r, $<HTMLInputElement>(`kmh-${r}`)])) as Record<RoadType, HTMLInputElement>;
   const departAt = $<HTMLInputElement>("depart-at");
 
-  vehicle.replaceChildren(...Object.entries(VEHICLES).map(([k, v]) => new Option(v.label, k)));
+  vehicleGroup.replaceChildren(
+    ...Object.entries(VEHICLES).map(([k, v]) => {
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = "vehicle";
+      input.value = k;
+      input.checked = k === DEFAULT_VEHICLE;
+      const text = document.createElement("span");
+      text.textContent = v.label;
+      label.append(input, text);
+      return label;
+    }),
+  );
   for (const input of [avg, ...Object.values(road)]) {
     input.min = String(SPEED_LIMITS_KMH.min);
     input.max = String(SPEED_LIMITS_KMH.max);
   }
 
+  const radio = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
   const fillSpeeds = () => {
-    const d = VEHICLES[vehicle.value as VehicleType];
+    const d = VEHICLES[radio("vehicle") as VehicleType];
     avg.value = String(d.avgKmh);
     for (const r of ROADS) road[r].value = String(d.roadKmh[r]);
   };
-  const radio = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
   const syncVisibility = () => {
     $("speed-average").hidden = radio("speed-mode") !== "average";
     $("speed-road").hidden = radio("speed-mode") !== "road";
     departAt.hidden = radio("depart") !== "at";
   };
 
-  vehicle.value = DEFAULT_VEHICLE;
   fillSpeeds();
   departAt.value = toLocalInput(nextHour());
   syncVisibility();
 
   form.addEventListener("input", (e) => {
-    if (e.target === vehicle) fillSpeeds();
+    if ((e.target as HTMLInputElement).name === "vehicle") fillSpeeds();
     syncVisibility();
     onChange();
   });
@@ -68,7 +80,7 @@ export function bindSettings(onChange: () => void): () => TripSettings | string 
     // datetime-local is parsed as local time; valueAsNumber would treat it as UTC.
     const departMs = radio("depart") === "now" ? Date.now() : new Date(departAt.value).getTime();
     if (Number.isNaN(departMs)) return "Çıkış tarihi ve saati seçin.";
-    return { vehicle: vehicle.value as VehicleType, speed, departMs };
+    return { vehicle: radio("vehicle") as VehicleType, speed, departMs };
   };
 }
 

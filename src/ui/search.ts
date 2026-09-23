@@ -4,14 +4,15 @@ const DEBOUNCE_MS = 600;
 const MIN_QUERY = 3;
 
 // Address input with Nominatim suggestions. Searches only after the user stops typing.
-export function placeInput(value: string, placeholder: string, onPick: (p: Place) => void): HTMLElement {
+export function placeInput(value: string, placeholder: string, label: string, onPick: (p: Place) => void): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = "place-input";
   const input = document.createElement("input");
   input.type = "search";
   input.value = value;
   input.placeholder = placeholder;
-  input.setAttribute("aria-label", placeholder);
+  input.setAttribute("aria-label", label);
+  input.autocomplete = "off";
   const list = document.createElement("ul");
   list.className = "suggestions";
   wrap.append(input, list);

@@ -7,10 +7,12 @@ import { roadBreakdown } from "../core/route/roadType";
 import { reverseLabel } from "../services/nominatim";
 import { getRoutes, type Route } from "../services/osrm";
 import { bindBreaks } from "./breaks";
-import { formatCoord, formatDuration, formatKm, formatTime } from "./format";
+import { formatClock, formatCoord, formatDay, formatDuration, formatKm, formatTime } from "./format";
+import { icons } from "./icons";
 import { createMap, type StopKind } from "./map";
 import { placeInput } from "./search";
 import { bindSettings } from "./settings";
+import { bindSheet } from "./sheet";
 
 interface Stop {
   label: string;
@@ -41,6 +43,7 @@ export function startApp() {
   const routesEl = $("routes");
   const statusEl = $("status");
   const summaryEl = $("summary");
+  const sheet = bindSheet();
   const map = createMap($("map"), onMapClick);
   const readSettings = bindSettings(renderRoutes);
   const renderBreakList = bindBreaks({
@@ -57,6 +60,7 @@ export function startApp() {
 
   const kindOf = (i: number): StopKind => (i === 0 ? "start" : i === stops.length - 1 ? "end" : "via");
   const titleOf = (i: number) => ({ start: "Başlangıç", end: "Bitiş", via: `Ara durak ${i}` })[kindOf(i)];
+  const placeholderOf = (i: number) => ({ start: "Nereden?", end: "Nereye?", via: "Ara durak" })[kindOf(i)];
 
   function status(text: string, kind: "info" | "error" | "loading" = "info") {
     statusEl.textContent = text;
@@ -68,15 +72,14 @@ export function startApp() {
       ...stops.map((s, i) => {
         const row = document.createElement("li");
         row.className = `stop-row stop-${kindOf(i)}`;
-        const title = document.createElement("span");
-        title.className = "stop-title";
-        title.textContent = titleOf(i);
-        row.append(title, placeInput(s.label, `${titleOf(i)} adresi`, (p) => setStop(i, p.label, p.pos)));
+        const glyph = document.createElement("span");
+        glyph.className = "stop-glyph";
+        row.append(glyph, placeInput(s.label, placeholderOf(i), `${titleOf(i)} adresi`, (p) => setStop(i, p.label, p.pos)));
         if (kindOf(i) === "via") {
           const rm = document.createElement("button");
           rm.type = "button";
           rm.className = "icon-btn";
-          rm.textContent = "×";
+          rm.innerHTML = icons.close;
           rm.setAttribute("aria-label", `${titleOf(i)} sil`);
           rm.addEventListener("click", () => {
             stops.splice(i, 1);
@@ -176,21 +179,26 @@ export function startApp() {
         b.type = "button";
         b.className = "route-item";
         b.setAttribute("aria-pressed", String(i === selected));
+        const text = document.createElement("span");
         const name = document.createElement("strong");
         name.textContent = i === 0 ? "Önerilen rota" : `Alternatif ${i}`;
-        const info = document.createElement("span");
-        info.textContent = `${formatKm(r.distanceM)} · ${timelines ? formatDuration(totalS(timelines[i])) : "–"}`;
-        b.append(name, info);
+        const sub = document.createElement("span");
+        sub.className = "sub";
+        sub.textContent = formatKm(r.distanceM);
+        text.append(name, sub);
+        const dur = document.createElement("span");
+        dur.className = "dur";
+        dur.textContent = timelines ? formatDuration(totalS(timelines[i])) : "–";
+        b.append(text, dur);
         b.addEventListener("click", () => selectRoute(i));
         li.append(b);
         return li;
       }),
     );
-    if (typeof settings === "string") return renderSummary([["", settings]], true);
+    if (typeof settings === "string") return renderSummary(null, [], settings);
     const t = timelines?.[selected];
-    if (!t) return renderSummary([]);
+    if (!t) return renderSummary(null, []);
     const rows: [string, string][] = [
-      ["Toplam süre", formatDuration(totalS(t))],
       ...(t.breaks.length
         ? [["Molalar", `${t.breaks.length} mola · ${formatDuration(t.breaks.reduce((s, b) => s + b.endMs - b.startMs, 0) / 1000)}`] as [string, string]]
         : []),
@@ -208,20 +216,43 @@ export function startApp() {
       const text = parts.filter(([, m]) => m > 0).map(([n, m]) => `${n} ${formatKm(m)}`);
       rows.push(["Yol tipi (tahmin)", text.join(" · ")]);
     }
-    renderSummary(rows);
+    renderSummary({ arrivalMs: t.timeMs[t.timeMs.length - 1], totalS: totalS(t), distanceM: routes[selected].distanceM }, rows);
   }
 
-  function renderSummary(rows: [string, string][], error = false) {
+  // Big arrival time, then the details as a grouped list.
+  function renderSummary(eta: { arrivalMs: number; totalS: number; distanceM: number } | null, rows: [string, string][], error?: string) {
+    if (error) {
+      const p = document.createElement("p");
+      p.className = "eta-error";
+      p.textContent = error;
+      return summaryEl.replaceChildren(p);
+    }
+    if (!eta) return summaryEl.replaceChildren();
+    const head = document.createElement("div");
+    head.className = "eta";
+    const time = document.createElement("strong");
+    time.className = "eta-time";
+    time.textContent = formatClock(eta.arrivalMs);
+    const small = document.createElement("small");
+    small.textContent = "varış";
+    time.append(small);
+    const meta = document.createElement("span");
+    meta.className = "eta-meta";
+    meta.textContent = `${formatDuration(eta.totalS)} · ${formatKm(eta.distanceM)} · ${formatDay(eta.arrivalMs)}`;
+    head.append(time, meta);
+
     const dl = document.createElement("dl");
+    dl.className = "group details";
     for (const [k, v] of rows) {
+      const row = document.createElement("div");
       const dt = document.createElement("dt");
       dt.textContent = k;
       const dd = document.createElement("dd");
       dd.textContent = v;
-      dl.append(dt, dd);
+      row.append(dt, dd);
+      dl.append(row);
     }
-    dl.classList.toggle("error", error);
-    summaryEl.replaceChildren(...(rows.length ? [dl] : []));
+    summaryEl.replaceChildren(head, dl);
   }
 
   function stopsChanged() {
@@ -278,7 +309,7 @@ export function startApp() {
       selected = 0;
       resnapBreaks();
       renderRoutes();
-      map.fit(result.flatMap((r) => r.coords));
+      map.fit(result.flatMap((r) => r.coords), sheet.insets());
       status("");
     } catch (e) {
       if (my !== routeSeq) return;
@@ -287,6 +318,9 @@ export function startApp() {
       status((e as Error).message, "error");
     }
   }
+
+  $("add-via").insertAdjacentHTML("afterbegin", icons.plus);
+  $("locate").innerHTML = icons.locate;
 
   $("add-via").addEventListener("click", () => {
     stops.splice(stops.length - 1, 0, { label: "", pos: null });

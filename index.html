@@ -2,69 +2,89 @@
 <html lang="tr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
-    <title>Rota Hava Durumu</title>
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <title>ridecast · Rota hava durumu</title>
   </head>
   <body>
-    <aside id="panel">
-      <h1>Rota Hava Durumu</h1>
-      <ol id="stops"></ol>
-      <div class="actions">
-        <button type="button" id="add-via">+ Ara durak</button>
-        <button type="button" id="locate">Konumumu kullan</button>
-      </div>
-      <p class="hint">Adres arayın ya da haritaya tıklayarak nokta ekleyin.</p>
-      <form id="settings">
-        <label class="field">Araç <select id="vehicle"></select></label>
-        <fieldset>
-          <legend>Hız</legend>
-          <div class="choice">
-            <label><input type="radio" name="speed-mode" value="average" checked /> Ortalama</label>
-            <label><input type="radio" name="speed-mode" value="road" /> Yol tipine göre</label>
-          </div>
-          <div id="speed-average">
-            <label class="field">Ortalama hız <span><input type="number" id="kmh-average" step="1" /> km/s</span></label>
-          </div>
-          <div id="speed-road" hidden>
-            <label class="field">Otoyol <span><input type="number" id="kmh-motorway" step="1" /> km/s</span></label>
-            <label class="field">Ana yol <span><input type="number" id="kmh-primary" step="1" /> km/s</span></label>
-            <label class="field">Şehir içi <span><input type="number" id="kmh-urban" step="1" /> km/s</span></label>
-            <p class="hint">Yol tipi OSRM verisinden tahmin edilir.</p>
-          </div>
-        </fieldset>
-        <fieldset>
-          <legend>Çıkış</legend>
-          <div class="choice">
-            <label><input type="radio" name="depart" value="now" checked /> Şimdi</label>
-            <label><input type="radio" name="depart" value="at" /> Tarih/saat</label>
-          </div>
-          <input type="datetime-local" id="depart-at" aria-label="Çıkış tarihi ve saati" hidden />
-        </fieldset>
-      </form>
-      <p id="status" role="status" aria-live="polite"></p>
-      <ul id="routes"></ul>
-      <section id="summary" aria-live="polite"></section>
-      <section id="breaks-panel">
-        <h2>Molalar</h2>
-        <p class="hint">Seçili rotaya tıklayarak mola ekleyin, işaretini sürükleyerek taşıyın.</p>
-        <ol id="breaks"></ol>
-        <form id="auto-breaks">
-          <span>Her</span>
-          <input type="number" id="auto-every" min="1" step="1" required aria-label="Otomatik mola aralığı" />
-          <select id="auto-unit" aria-label="Aralık birimi">
-            <option value="km">km'de</option>
-            <option value="min">dk sürüşte</option>
-          </select>
-          <span class="nowrap"
-            ><input type="number" id="auto-duration" list="break-presets" required aria-label="Otomatik mola süresi (dk)" /> dk mola</span
-          >
-          <button type="submit">Otomatik mola ekle</button>
-        </form>
-        <datalist id="break-presets"></datalist>
-      </section>
-    </aside>
     <main id="map" aria-label="Harita"></main>
+    <button type="button" id="locate" class="fab" aria-label="Konumumu başlangıç yap" title="Konumumu kullan"></button>
+
+    <section id="sheet" class="sheet" aria-label="Rota paneli">
+      <button type="button" id="sheet-toggle" class="sheet-grabber" aria-controls="sheet-body" aria-expanded="false">
+        <span class="sr-only">Paneli büyüt</span>
+      </button>
+      <div id="sheet-body" class="sheet-body">
+        <header class="brand">
+          <span class="wordmark">ridecast</span>
+          <span class="tagline">Rota hava durumu</span>
+        </header>
+
+        <div class="trip">
+          <ol id="stops" class="trip-stops"></ol>
+          <button type="button" id="add-via" class="trip-add">Ara durak ekle</button>
+        </div>
+        <p class="hint">Adres ara ya da haritaya dokun.</p>
+        <p id="status" role="status" aria-live="polite"></p>
+
+        <section id="summary" aria-live="polite"></section>
+        <ul id="routes" class="route-options" aria-label="Rotalar"></ul>
+
+        <form id="settings">
+          <h2 class="group-title">Araç</h2>
+          <div id="vehicle" class="segmented" role="radiogroup" aria-label="Araç"></div>
+
+          <h2 class="group-title">Hız</h2>
+          <div class="group">
+            <div class="segmented" role="radiogroup" aria-label="Hız modu">
+              <label><input type="radio" name="speed-mode" value="average" checked /><span>Ortalama</span></label>
+              <label><input type="radio" name="speed-mode" value="road" /><span>Yol tipine göre</span></label>
+            </div>
+            <div id="speed-average">
+              <label class="row">Ortalama hız <span class="row-value"><input type="number" id="kmh-average" step="1" /> km/s</span></label>
+            </div>
+            <div id="speed-road" hidden>
+              <label class="row">Otoyol <span class="row-value"><input type="number" id="kmh-motorway" step="1" /> km/s</span></label>
+              <label class="row">Ana yol <span class="row-value"><input type="number" id="kmh-primary" step="1" /> km/s</span></label>
+              <label class="row">Şehir içi <span class="row-value"><input type="number" id="kmh-urban" step="1" /> km/s</span></label>
+              <p class="footnote">Yol tipi OSRM verisinden tahmin edilir.</p>
+            </div>
+          </div>
+
+          <h2 class="group-title">Çıkış</h2>
+          <div class="group">
+            <div class="segmented" role="radiogroup" aria-label="Çıkış zamanı">
+              <label><input type="radio" name="depart" value="now" checked /><span>Şimdi</span></label>
+              <label><input type="radio" name="depart" value="at" /><span>Tarih ve saat</span></label>
+            </div>
+            <input type="datetime-local" id="depart-at" aria-label="Çıkış tarihi ve saati" hidden />
+          </div>
+        </form>
+
+        <section id="breaks-panel">
+          <h2 class="group-title">Molalar</h2>
+          <div class="group">
+            <ol id="breaks" class="break-list"></ol>
+            <p class="footnote">Seçili rotaya dokunarak mola ekle, işaretini sürükleyerek taşı.</p>
+            <form id="auto-breaks" class="auto-breaks">
+              <span>Her</span>
+              <input type="number" id="auto-every" min="1" step="1" required aria-label="Otomatik mola aralığı" />
+              <select id="auto-unit" aria-label="Aralık birimi">
+                <option value="km">km'de</option>
+                <option value="min">dk sürüşte</option>
+              </select>
+              <span class="nowrap"
+                ><input type="number" id="auto-duration" list="break-presets" required aria-label="Otomatik mola süresi (dk)" /> dk mola</span
+              >
+              <button type="submit" class="button-secondary">Otomatik mola ekle</button>
+            </form>
+          </div>
+          <datalist id="break-presets"></datalist>
+        </section>
+      </div>
+    </section>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
