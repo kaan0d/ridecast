@@ -437,6 +437,7 @@ export function startApp() {
         },
       })),
     );
+    $("stops-section").hidden = !route;
     if (!route) return stopsPanelEl.replaceChildren();
     renderStopList(stopsPanelEl, {
       stops: state?.pois ? shownStops : null,
