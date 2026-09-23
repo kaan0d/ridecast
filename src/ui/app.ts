@@ -13,6 +13,7 @@ import { nearestHourIndex, sampleDistances, type Forecast } from "../core/weathe
 import { fetchForecast } from "../services/openmeteo";
 import { cardHtml, collectWarnings, LEVEL_LABEL, pinHtml, renderStrip, renderWarnings, type WeatherPoint } from "./weather";
 import type { BreakRow } from "./breaks";
+import { renderClothing } from "./advice";
 import { reverseLabel } from "../services/nominatim";
 import { getRoutes, type Route } from "../services/osrm";
 import { bindBreaks } from "./breaks";
@@ -56,6 +57,7 @@ export function startApp() {
   const summaryEl = $("summary");
   const weatherEl = $("weather");
   const warningsEl = $("warnings");
+  const clothingEl = $("clothing");
   let breakRows: BreakRow[] = [];
   let routeScores: (RouteScore | null)[] = []; // per route, filled when their forecasts arrive
   let weatherSeq = 0;
@@ -252,6 +254,7 @@ export function startApp() {
       map.setWeather([]);
       map.setRisk([], []);
       renderWarnings(warningsEl, [], false, () => {});
+      clothingEl.replaceChildren();
       if (bestMode) renderBest({ top: [], loading: false });
       return renderStrip(weatherEl, { points: [], loading: false, onRetry: () => {}, onOpen: () => {} });
     }
@@ -274,6 +277,7 @@ export function startApp() {
           if (a) warnings.push({ level: 2, text: `Mola ${i + 1}: ${a}`, when: `${formatClock(b.startMs)}–${formatClock(b.endMs)}`, where: `km ${Math.round(b.distM / 1000)}` });
         });
         renderWarnings(warningsEl, warnings, !error && points.length > 0, openPoint);
+        renderClothing(clothingEl, error ? [] : points, vehicle);
       }
       renderStrip(weatherEl, { points, loading, error, onRetry: () => updateWeather(timelines, settings), onOpen: openPoint });
     };
