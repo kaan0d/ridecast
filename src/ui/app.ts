@@ -1,9 +1,13 @@
 import { DEFAULT_BREAK_MIN } from "../config/breaks";
+import { WEATHER_REQUEST, WEATHER_SAMPLE } from "../config/weather";
 import { ROAD_TYPE_RULES } from "../config/vehicles";
-import { autoBreakDistances, buildTimeline, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
+import { autoBreakDistances, buildTimeline, etaAtDistance, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
 import { type LatLon } from "../core/geo";
 import { lineLength, makeLine, pointAtDistance, snapToLine, type Line } from "../core/route/line";
 import { roadBreakdown } from "../core/route/roadType";
+import { nearestHour, sampleDistances } from "../core/weather/weather";
+import { fetchForecast } from "../services/openmeteo";
+import { cardHtml, pinHtml, renderStrip, type WeatherPoint } from "./weather";
 import { reverseLabel } from "../services/nominatim";
 import { getRoutes, type Route } from "../services/osrm";
 import { bindBreaks } from "./breaks";
@@ -43,6 +47,10 @@ export function startApp() {
   const routesEl = $("routes");
   const statusEl = $("status");
   const summaryEl = $("summary");
+  const weatherEl = $("weather");
+  let weatherSeq = 0;
+  let weatherTimer: number | undefined;
+  let weatherPoints: WeatherPoint[] = [];
   const sheet = bindSheet();
   const map = createMap($("map"), onMapClick);
   const readSettings = bindSettings(renderRoutes);
@@ -133,6 +141,56 @@ export function startApp() {
       .map((x) => x.b);
   }
 
+  // Sample points depend only on the route; their ETAs follow the timeline. The forecast request
+  // is keyed by rounded coordinates, so ETA-only changes are served from the cache.
+  function updateWeather(tl: Timeline | null) {
+    clearTimeout(weatherTimer);
+    const my = ++weatherSeq;
+    const route = routes[selected];
+    if (!route || !tl) {
+      weatherPoints = [];
+      map.setWeather([]);
+      return renderStrip(weatherEl, { points: [], loading: false, onRetry: () => {}, onOpen: () => {} });
+    }
+    const scale = scaleOf(selected);
+    const samples = sampleDistances(route.distanceM, route.durationS, WEATHER_SAMPLE.intervalMin, WEATHER_SAMPLE.maxPoints).map((d) => ({
+      distM: d,
+      pos: pointAtDistance(lines[selected], d / scale),
+      etaMs: etaAtDistance(tl, d),
+    }));
+    const show = (points: WeatherPoint[], loading: boolean, error?: string) => {
+      weatherPoints = points;
+      map.setWeather(points.map((p) => ({ pos: p.pos, pin: pinHtml(p), card: cardHtml(p) })));
+      renderStrip(weatherEl, {
+        points,
+        loading,
+        error,
+        onRetry: () => updateWeather(tl),
+        onOpen: (i) => {
+          sheet.collapse();
+          map.openWeather(i);
+        },
+      });
+    };
+    // Keep the old capsules (dimmed) while the next forecast loads.
+    show(weatherPoints.length === samples.length ? weatherPoints : [], true);
+    weatherTimer = window.setTimeout(async () => {
+      try {
+        const series = await fetchForecast(
+          samples.map((s) => s.pos),
+          samples[samples.length - 1].etaMs,
+        );
+        if (my !== weatherSeq) return;
+        show(
+          samples.map((s, i) => ({ ...s, hour: nearestHour(series[i] ?? [], s.etaMs, WEATHER_REQUEST.maxHourGapMin) })),
+          false,
+        );
+      } catch (e) {
+        if (my === weatherSeq) show([], false, (e as Error).message);
+      }
+    }, 300);
+  }
+
   function addAutoBreaks(rule: AutoBreakRule, durationMin: number) {
     if (!routes.length) return status("Önce bir rota oluşturun.", "error");
     const settings = readSettings();
@@ -164,6 +222,7 @@ export function startApp() {
     const timelines =
       typeof settings === "string" ? null : routes.map((r, i) => buildTimeline(r.steps, settings.departMs, settings.speed, breaksOn(i)));
     const tl = timelines?.[selected];
+    updateWeather(tl ?? null);
     renderBreakList(
       routes.length
         ? breaks.map((b, i) => {

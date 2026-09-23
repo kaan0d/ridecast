@@ -559,6 +559,217 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- Weather ---------- */
+
+.wx-marker {
+  background: none;
+  border: none;
+}
+
+.wx-pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transform: translate(-50%, -50%);
+  padding: 3px 9px 3px 5px;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--shadow-small);
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.wx-pin .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.wx-pin b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.wx-none {
+  padding: 3px 10px;
+  color: var(--ink-3);
+}
+
+.wx-popup .leaflet-popup-content-wrapper {
+  background: var(--material);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  color: var(--ink);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.wx-popup .leaflet-popup-content {
+  margin: 14px 16px;
+  font: inherit;
+  line-height: 1.35;
+}
+
+.wx-popup .leaflet-popup-tip {
+  background: var(--material);
+}
+
+.wx-head {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.wx-main {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 10px;
+  margin: 6px 0 10px;
+}
+
+.wx-big .icon {
+  width: 44px;
+  height: 44px;
+  stroke-width: 1.5;
+}
+
+.wx-big {
+  grid-row: span 2;
+}
+
+.wx-temp {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.wx-cond {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+
+.wx-rows {
+  margin: 0;
+  border-top: 1px solid var(--separator);
+}
+
+.wx-rows div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--separator);
+}
+
+.wx-rows dt {
+  color: var(--ink-2);
+}
+
+.wx-rows dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.wx-arrow {
+  display: inline-grid;
+}
+
+.wx-arrow .icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.25;
+}
+
+.wx-source,
+.wx-empty {
+  margin: 8px 0 0;
+  color: var(--ink-2);
+  font-size: 0.75rem;
+}
+
+.wx-empty {
+  font-size: 0.9375rem;
+}
+
+.wx-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding: 2px 2px 8px;
+  margin: 0 -2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--separator) transparent;
+  transition: opacity 0.2s var(--ease-out);
+}
+
+.wx-strip.stale {
+  opacity: 0.55;
+}
+
+.wx-strip button {
+  scroll-snap-align: start;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 62px;
+  padding: 10px 0 8px;
+  border-radius: var(--radius-card);
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--separator);
+  font-variant-numeric: tabular-nums;
+}
+
+.wx-strip button:hover {
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+
+.wx-t {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.wx-deg {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  min-height: 1.3em;
+}
+
+.wx-km {
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+}
+
+.wx-dash {
+  color: var(--ink-3);
+  height: 20px;
+}
+
+.wx-status {
+  margin: 0 4px;
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+
+.wx-status.error {
+  color: var(--error);
+}
+
+.link-button {
+  color: var(--focus);
+  font-weight: 600;
+}
+
 /* ---------- Route options ---------- */
 
 .route-options {

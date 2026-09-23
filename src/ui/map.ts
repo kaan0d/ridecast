@@ -19,7 +19,25 @@ export function createMap(el: HTMLElement, onClick: (p: LatLon) => void) {
 
   const routeLayer = L.layerGroup().addTo(map);
   const stopLayer = L.layerGroup().addTo(map);
+  const weatherLayer = L.layerGroup().addTo(map);
   const breakLayer = L.layerGroup().addTo(map);
+  let weatherMarkers: L.Marker[] = [];
+
+  // Shows only capsules that do not overlap the previous shown one, so the route stays visible
+  // when zoomed out. The arrival point always shows.
+  const MIN_GAP_PX = 64;
+  function thinWeather() {
+    weatherLayer.clearLayers();
+    let last: L.Point | null = null;
+    weatherMarkers.forEach((m, i) => {
+      const p = map.latLngToContainerPoint(m.getLatLng());
+      const isLast = i === weatherMarkers.length - 1;
+      if (last && p.distanceTo(last) < MIN_GAP_PX && !isLast) return;
+      m.addTo(weatherLayer);
+      last = p;
+    });
+  }
+  map.on("zoomend", thinWeather);
 
   const pin = (kind: StopKind) => {
     const size = kind === "via" ? 16 : 20;
@@ -65,6 +83,25 @@ export function createMap(el: HTMLElement, onClick: (p: LatLon) => void) {
         m.on("drag", () => m.setLatLng(toLatLng(snap(fromLatLng(m.getLatLng())))));
         m.on("dragend", () => onMove(i, fromLatLng(m.getLatLng())));
       });
+    },
+
+    // Weather capsules with a card popup each.
+    setWeather(points: { pos: LatLon; pin: string; card: string }[]) {
+      weatherMarkers = points.map((p) =>
+        L.marker(toLatLng(p.pos), { icon: L.divIcon({ className: "wx-marker", html: p.pin, iconSize: undefined }), keyboard: false }).bindPopup(
+          p.card,
+          { className: "wx-popup", closeButton: false, offset: [0, -8], maxWidth: 280, minWidth: 240 },
+        ),
+      );
+      thinWeather();
+    },
+
+    openWeather(i: number) {
+      const m = weatherMarkers[i];
+      if (!m) return;
+      m.addTo(weatherLayer); // may be thinned out at this zoom
+      map.panTo(m.getLatLng());
+      m.openPopup();
     },
 
     // Fits the points into the part of the map the sheet does not cover.
