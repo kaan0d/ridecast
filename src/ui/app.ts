@@ -14,6 +14,7 @@ import { fetchForecast } from "../services/openmeteo";
 import { cardHtml, collectWarnings, LEVEL_LABEL, pinHtml, renderStrip, renderWarnings, type WeatherPoint } from "./weather";
 import type { BreakRow } from "./breaks";
 import { renderClothing } from "./advice";
+import { createLive } from "./live";
 import { decodeState, encodeState, type TripState } from "../core/share/state";
 import { addRecent, parseRecent, type RecentRoute } from "../core/share/recent";
 import { SHARE } from "../config/share";
@@ -75,7 +76,9 @@ export function startApp() {
   let breakRows: BreakRow[] = [];
   let routeScores: (RouteScore | null)[] = []; // per route, filled when their forecasts arrive
   let lastTimelines: Timeline[] | null = null;
+  let plannedTimelines: Timeline[] | null = null; // before the live re-anchoring
   let pendingSelected = 0; // route index from a shared link, applied when the routes arrive
+  let freshWeather = false; // next forecast request skips the cache (live refresh)
   let weatherSeq = 0;
   let weatherTimer: number | undefined;
   let weatherPoints: WeatherPoint[] = [];
@@ -214,6 +217,7 @@ export function startApp() {
     const forecasts = await fetchForecast(
       samples.map((p) => p.pos),
       Math.max(lastEta, untilMs),
+      freshWeather,
     );
     return { samples, forecasts, points: assess(i, tl, vehicle, samples, forecasts) };
   }
@@ -294,6 +298,7 @@ export function startApp() {
         });
         renderWarnings(warningsEl, warnings, !error && points.length > 0, openPoint);
         renderClothing(clothingEl, error ? [] : points, vehicle);
+        if (!error) live.onWeather(points);
         renderStopsPanel();
       }
       renderStrip(weatherEl, { points, loading, error, onRetry: () => updateWeather(timelines, settings), onOpen: openPoint });
@@ -306,6 +311,7 @@ export function startApp() {
         const tripMs = tl.timeMs[tl.timeMs.length - 1] - tl.timeMs[0];
         const until = bestMode ? Date.now() + DEPARTURE.windowH * 3_600_000 + tripMs : 0;
         const main = await pointsFor(selected, tl, vehicle, until);
+        freshWeather = false;
         if (my !== weatherSeq) return;
         if (bestMode && settings) {
           const top = rankBest(settings, main.samples, main.forecasts);
@@ -487,8 +493,11 @@ export function startApp() {
       moveBreak,
     );
     const settings = readSettings();
-    const timelines =
+    const planned =
       typeof settings === "string" ? null : routes.map((r, i) => buildTimeline(r.steps, settings.departMs, settings.speed, breaksOn(i)));
+    plannedTimelines = planned;
+    // While riding, everything shown for the selected route counts from the rider's position and pace.
+    const timelines = planned && live.isActive() ? planned.map((t, i) => (i === selected ? live.adjust(t) : t)) : planned;
     const tl = timelines?.[selected];
     lastTimelines = timelines;
     breakRows = routes.length
@@ -727,6 +736,35 @@ export function startApp() {
     }
     el.replaceChildren(title, ol);
   }
+
+  const live = createLive({
+    route() {
+      const r = routes[selected];
+      const t = plannedTimelines?.[selected];
+      if (!r || !t) return null;
+      return { id: r, line: lines[selected], scale: scaleOf(selected), totalM: r.distanceM, timeline: t, points: weatherPoints };
+    },
+    replan: () => renderRoutes(),
+    refreshWeather() {
+      freshWeather = true;
+      renderRoutes();
+    },
+    // Off route: plan again from here to the stops and breaks still ahead.
+    reroute(from, aheadOfM) {
+      const scale = scaleOf(selected);
+      const ahead = (p: LatLon) => snapToLine(lines[selected], p).distM * scale > aheadOfM;
+      const end = stops[stops.length - 1];
+      const vias = stops.slice(1, -1).filter((s) => s.pos && ahead(s.pos));
+      stops.splice(0, stops.length, { label: "Konumum", pos: from }, ...vias, end);
+      breaks = breaks.filter((b) => ahead(b.pos));
+      stopsChanged();
+    },
+    showPosition: (p) => map.setLivePosition(p, $("live").hidden === true),
+  });
+  $("live-start").addEventListener("click", () => {
+    sheet.collapse();
+    live.start();
+  });
 
   $("copy-link").addEventListener("click", async () => {
     syncHash();

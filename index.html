@@ -32,6 +32,7 @@
 
         <section id="summary" aria-live="polite"></section>
         <div id="share" class="share-row" hidden>
+          <button type="button" id="live-start" class="button-primary">Yolculuğu başlat</button>
           <button type="button" id="copy-link" class="button-secondary">Linki kopyala</button>
           <span id="copy-status" role="status"></span>
         </div>
@@ -99,6 +100,30 @@
         </section>
       </div>
     </section>
+    <section id="live" class="live" hidden aria-label="Canlı mod">
+      <div class="live-top">
+        <button type="button" id="live-min" class="live-btn">Harita</button>
+        <button type="button" id="live-sound" class="live-btn" aria-pressed="false">Ses kapalı</button>
+        <button type="button" id="live-end" class="live-btn live-end">Bitir</button>
+      </div>
+      <div id="live-alert" class="live-alert" role="alert" hidden>
+        <span id="live-alert-text"></span>
+        <button type="button" id="live-alert-close" class="live-btn">Tamam</button>
+      </div>
+      <div id="live-next" class="live-next" aria-live="polite"></div>
+      <div class="live-main">
+        <strong id="live-left">–</strong>
+        <span id="live-meta"></span>
+      </div>
+      <div id="live-weather" class="live-weather"></div>
+      <div id="live-off" class="live-off" hidden>
+        <span>Rotanın dışındasın.</span>
+        <button type="button" id="live-reroute" class="button-primary">Rotayı yeniden hesapla</button>
+      </div>
+      <p id="live-notes" class="live-notes" aria-live="polite"></p>
+      <button type="button" id="live-refresh" class="live-btn live-refresh">Havayı şimdi yenile</button>
+    </section>
+    <button type="button" id="live-pill" class="live-pill" hidden></button>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
