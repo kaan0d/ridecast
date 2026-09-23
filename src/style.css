@@ -139,7 +139,8 @@ button {
   background: var(--grouped);
 }
 
-.leaflet-tile-pane {
+/* Per tile: a filter on the whole tile pane stops painting past ~1750 px on wide screens. */
+.leaflet-tile {
   filter: var(--map-filter);
 }
 
