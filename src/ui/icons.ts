@@ -24,6 +24,8 @@ export const icons = {
   snow: svg(`${smallCloud}<path d="M9 18.5h.01M13 18.5h.01M11 21h.01M15 21h.01M17 18.5h.01"/>`),
   storm: svg(`${smallCloud}<path d="m12.5 15.5-2 3.5h3l-2 3.5"/>`),
   wind: svg('<path d="M3 8h11a2.5 2.5 0 1 0-2.5-2.5M3 12h15a3 3 0 1 1-3 3M3 16h7"/>'),
+  fuel: svg('<path d="M5 20V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v14M4 20h12M5 11h10"/><path d="M15 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V9l-3-3"/>'),
+  rest: svg('<path d="M4 18h16M6 18v-5h12v5M8 13V9a4 4 0 0 1 8 0v4"/>'),
   arrowUp: svg('<path d="M12 19V5M6 11l6-6 6 6"/>'),
 };
 

@@ -14,6 +14,11 @@ import { fetchForecast } from "../services/openmeteo";
 import { cardHtml, collectWarnings, LEVEL_LABEL, pinHtml, renderStrip, renderWarnings, type WeatherPoint } from "./weather";
 import type { BreakRow } from "./breaks";
 import { renderClothing } from "./advice";
+import { pickStops, type Poi, type StopOnRoute } from "../core/advice/stops";
+import { STOPS } from "../config/stops";
+import { fetchStops } from "../services/overpass";
+import { renderStops as renderStopList, stopPin } from "./stops";
+import { haversineM, segmentBoxes } from "../core/route/line";
 import { reverseLabel } from "../services/nominatim";
 import { getRoutes, type Route } from "../services/osrm";
 import { bindBreaks } from "./breaks";
@@ -58,8 +63,13 @@ export function startApp() {
   const weatherEl = $("weather");
   const warningsEl = $("warnings");
   const clothingEl = $("clothing");
+  const stopsPanelEl = $("stops-panel");
+  // Stops found for one route (by route geometry), loaded on request.
+  let poiState: { route: Route; pois: Poi[] | null; loading: boolean; error?: string } | null = null;
+  let shownStops: StopOnRoute[] = [];
   let breakRows: BreakRow[] = [];
   let routeScores: (RouteScore | null)[] = []; // per route, filled when their forecasts arrive
+  let lastTimelines: Timeline[] | null = null;
   let weatherSeq = 0;
   let weatherTimer: number | undefined;
   let weatherPoints: WeatherPoint[] = [];
@@ -278,6 +288,7 @@ export function startApp() {
         });
         renderWarnings(warningsEl, warnings, !error && points.length > 0, openPoint);
         renderClothing(clothingEl, error ? [] : points, vehicle);
+        renderStopsPanel();
       }
       renderStrip(weatherEl, { points, loading, error, onRetry: () => updateWeather(timelines, settings), onOpen: openPoint });
     };
@@ -360,6 +371,87 @@ export function startApp() {
     });
   }
 
+  async function loadStops() {
+    const route = routes[selected];
+    if (!route) return;
+    poiState = { route, pois: null, loading: true };
+    renderStopsPanel();
+    try {
+      const pois = await fetchStops(segmentBoxes(lines[selected], STOPS.boxSegmentM, STOPS.boxPadDeg));
+      if (poiState?.route !== route) return;
+      poiState = { route, pois, loading: false };
+    } catch (e) {
+      if (poiState?.route !== route) return;
+      poiState = { route, pois: null, loading: false, error: (e as Error).message };
+    }
+    renderStopsPanel();
+  }
+
+  // Stops of the selected route with km, ETA and the shelter recommendation from the weather points.
+  function renderStopsPanel() {
+    const route = routes[selected];
+    const state = poiState && poiState.route === route ? poiState : null;
+    const tl = lastTimelines?.[selected];
+    const scale = route ? scaleOf(selected) : 1;
+    const badAt = (d: number) => {
+      if (!weatherPoints.length) return false;
+      const p = weatherPoints.reduce((a, b) => (Math.abs(b.distM - d) < Math.abs(a.distM - d) ? b : a));
+      const r = p.risk;
+      return !!r && (r.events.some((e) => e.kind === "rain" || e.kind === "snow" || e.kind === "storm") || r.feltC <= STOPS.badFeltC);
+    };
+    shownStops =
+      route && state?.pois
+        ? pickStops(
+            state.pois.flatMap((p) => {
+              const s = snapToLine(lines[selected], p.pos);
+              return haversineM(s.pos, p.pos) <= STOPS.corridorM ? [{ ...p, distM: s.distM * scale }] : [];
+            }),
+            badAt,
+            STOPS.minGapM,
+          )
+        : [];
+    const addStop = (s: StopOnRoute) => {
+      breaks.push({ pos: s.pos, durationMin: DEFAULT_BREAK_MIN, auto: false });
+      resnapBreaks();
+      map.closePopup();
+      renderRoutes();
+    };
+    map.setPois(
+      shownStops.map((s) => ({
+        pos: s.pos,
+        pin: stopPin(s),
+        popup: () => {
+          const div = document.createElement("div");
+          div.className = "poi-card";
+          const name = document.createElement("strong");
+          name.textContent = s.name;
+          const meta = document.createElement("span");
+          meta.textContent = `km ${Math.round(s.distM / 1000)}${s.recommended ? " · barınaklı, önerilir" : ""}`;
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "button-secondary";
+          b.textContent = "Mola ekle";
+          b.addEventListener("click", () => addStop(s));
+          div.append(name, meta, b);
+          return div;
+        },
+      })),
+    );
+    if (!route) return stopsPanelEl.replaceChildren();
+    renderStopList(stopsPanelEl, {
+      stops: state?.pois ? shownStops : null,
+      loading: !!state?.loading,
+      error: state?.error,
+      etaAt: (d) => (tl ? etaAtDistance(tl, d) : null),
+      onLoad: loadStops,
+      onAdd: addStop,
+      onOpen: (i) => {
+        sheet.collapse();
+        map.openPoi(i);
+      },
+    });
+  }
+
   function addAutoBreaks(rule: AutoBreakRule, durationMin: number) {
     if (!routes.length) return status("Önce bir rota oluşturun.", "error");
     const settings = readSettings();
@@ -391,6 +483,7 @@ export function startApp() {
     const timelines =
       typeof settings === "string" ? null : routes.map((r, i) => buildTimeline(r.steps, settings.departMs, settings.speed, breaksOn(i)));
     const tl = timelines?.[selected];
+    lastTimelines = timelines;
     breakRows = routes.length
       ? breaks.map((b, i) => {
           const at = tl?.breaks[i];
@@ -399,6 +492,7 @@ export function startApp() {
       : [];
     renderBreakList(breakRows);
     renderRouteList(timelines);
+    renderStopsPanel();
     updateWeather(timelines, typeof settings === "string" ? null : settings);
     if (typeof settings === "string") return renderSummary(null, [], settings);
     const t = timelines?.[selected];
