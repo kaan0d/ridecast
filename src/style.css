@@ -58,7 +58,8 @@ body {
 }
 
 h1 {
-  font-size: 1.2rem;
+  font-size: 1.5rem;
+  line-height: 1.2;
   margin: 0 0 12px;
 }
 
@@ -252,7 +253,7 @@ input:invalid {
 }
 
 h2 {
-  font-size: 1rem;
+  font-size: 1.125rem;
   margin: 20px 0 4px;
 }
 
