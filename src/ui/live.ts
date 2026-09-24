@@ -264,6 +264,26 @@ export function createLive(deps: Deps) {
     render();
   });
   $("live-refresh").addEventListener("click", () => deps.refreshWeather());
+  // Sunlight mode: black on white, darker risk colours, heavier type. Remembered per browser.
+  const sunKey = "ridecast.sunlight";
+  const setSun = (on: boolean, remember = true) => {
+    view.dataset.contrast = on ? "high" : "";
+    $("live-sun").setAttribute("aria-pressed", String(on));
+    if (!remember) return;
+    try {
+      localStorage.setItem(sunKey, on ? "1" : "0");
+    } catch {
+      // not remembered
+    }
+  };
+  const prefersMore = matchMedia("(prefers-contrast: more)").matches;
+  try {
+    const saved = localStorage.getItem(sunKey);
+    setSun(saved === null ? prefersMore : saved === "1", false);
+  } catch {
+    setSun(prefersMore, false);
+  }
+  $("live-sun").addEventListener("click", () => setSun(view.dataset.contrast !== "high"));
   $("live-alert-close").addEventListener("click", () => {
     alert = null;
     render();
