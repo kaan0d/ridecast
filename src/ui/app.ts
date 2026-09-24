@@ -517,10 +517,10 @@ export function startApp() {
     const totalM = routes[selected].distanceM;
     const cut = (r: { from: number; to: number }) => sliceLine(lines[selected], r.from / scale, r.to / scale);
     map.setRisk(
-      pointRuns(points, totalM, (p) => p.risk?.level ?? 0).map((r) => ({ coords: cut(r), level: r.v, frac: r.from / totalM })),
+      pointRuns(points, totalM, (p) => p.risk?.level ?? 0).map((r) => ({ coords: cut(r), level: r.v, from: r.from / totalM, to: r.to / totalM })),
       pointRuns(points, totalM, (p) => Number(p.risk?.dark ?? false))
         .filter((r) => r.v === 1)
-        .map((r) => ({ coords: cut(r), frac: r.from / totalM })),
+        .map((r) => ({ coords: cut(r), from: r.from / totalM, to: r.to / totalM })),
     );
   }
 

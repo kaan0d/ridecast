@@ -454,6 +454,8 @@ button {
 /* Stop pins: start is a station ring, via a small ring, end the terminus square. */
 .pin {
   display: block;
+  transform: scale(var(--pin-scale, 1));
+  transition: transform 0.25s var(--ease-out);
   border: 3px solid var(--route-casing);
   background: var(--route);
   box-shadow: var(--shadow-small);
@@ -473,7 +475,7 @@ button {
 /* Leaflet places .stop-marker absolutely, so the name positions against it. */
 .pin-name {
   position: absolute;
-  left: calc(100% + 6px);
+  left: calc(50% + 11px * var(--pin-scale, 1) + 6px);
   top: 50%;
   translate: 0 -50%;
   font-size: 13px;
@@ -1592,14 +1594,20 @@ button.stop-glyph {
   font-size: 0.8125rem;
 }
 
-/* The line strip: stations along one rail, like the map above a train door. Time on top, the
-   station mark on the rail (ring, dot, diamond by risk), then icon, temperature and km. The
-   rail after a station takes that station's risk colour; dark parts get sleepers. */
+/* The line strip: stations along one rail, like the map above a train door. Every station shows
+   in full (time, station mark on the rail by risk, icon, temperature, km; the stop names at the
+   ends) and the strip scrolls to the right, fading out at the edge while more is to come. The rail
+   after a station takes that station's risk colour; dark parts get sleepers. */
 .wx-strip {
   display: flex;
-  padding: 4px 22px 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 18px;
+  overscroll-behavior-x: contain;
+  padding: 4px 18px 10px;
   margin: 0 -18px;
   transition: opacity 0.25s var(--ease-out);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
 }
 
 .wx-strip.stale {
@@ -1607,36 +1615,36 @@ button.stop-glyph {
 }
 
 .wx-strip li {
-  flex: 1 1 0;
-  min-width: 0;
+  flex: none;
 }
 
 .wx-strip button {
   --rail: var(--ink);
   position: relative;
+  scroll-snap-align: start;
   display: grid;
   grid-template-rows: auto 22px auto auto auto;
   justify-items: unsafe center;
   gap: 3px;
-  width: 100%;
+  width: 64px;
   padding: 6px 0 8px;
   border-radius: 10px;
   white-space: nowrap;
   transition: background 0.2s var(--ease-out);
 }
 
-/* Marks-only stations between the labelled ones. */
-.wx-strip .minor > :not(.station) {
-  visibility: hidden;
-}
-
 .wx-strip li:first-child .wx-km,
 .wx-strip li:last-child .wx-km {
-  max-width: 78px;
+  max-width: 72px;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--ink);
   font-weight: 600;
+}
+
+/* The last station can scroll clear of the fade. */
+.wx-strip li:last-child {
+  margin-right: 28px;
 }
 
 .wx-strip button:hover {
