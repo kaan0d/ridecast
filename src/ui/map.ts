@@ -79,6 +79,8 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
   });
   map.on("movestart zoomstart", () => h.onMoveStart());
   map.on("dragstart", () => h.onDrag());
+  // The position dots get their own pane above the route lines, which are redrawn on every plan.
+  map.createPane("me").style.zIndex = "650";
 
   const routeLayer = L.layerGroup().addTo(map);
   const riskLayer = L.layerGroup().addTo(map);
@@ -241,7 +243,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     // "Konumumu göster": a blue dot at the device position, opening the place card on tap.
     showMe(p: LatLon, onTap: () => void) {
       meDot?.remove();
-      meDot = L.circleMarker(toLatLng(p), { radius: 8, className: "live-dot" }).on("click", onTap).addTo(map);
+      meDot = L.circleMarker(toLatLng(p), { radius: 8, className: "live-dot", pane: "me" }).on("click", onTap).addTo(map);
       map.flyTo(toLatLng(p), Math.max(map.getZoom(), 14));
     },
 
@@ -253,7 +255,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
         liveDot = null;
         return;
       }
-      if (!liveDot) liveDot = L.circleMarker(toLatLng(p), { radius: 9, className: "live-dot", interactive: false }).addTo(map);
+      if (!liveDot) liveDot = L.circleMarker(toLatLng(p), { radius: 9, className: "live-dot", interactive: false, pane: "me" }).addTo(map);
       else liveDot.setLatLng(toLatLng(p));
       if (!follow) return;
       const z = Math.min(zoom ?? map.getZoom(), map.getMaxZoom());
