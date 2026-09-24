@@ -39,8 +39,6 @@
         <header class="brand">
           <button type="button" id="sheet-back" class="icon-btn sheet-back" aria-label="Back to the map" title="Back to the map" data-t-aria="back" data-t-title="back"></button>
           <span class="wordmark">ridecast</span>
-          <span id="lang" class="lang-switch" role="group" aria-label="Language"></span>
-          <button type="button" id="theme" class="icon-btn theme-btn"></button>
           <button type="button" id="settings-open" class="icon-btn settings-btn" aria-label="Settings" title="Settings" aria-expanded="false" data-t-aria="settings" data-t-title="settings"></button>
         </header>
 
@@ -71,6 +69,23 @@
 
           <div id="settings-page" class="settings-page" hidden>
           <h2 class="settings-title" data-t="settings">Settings</h2>
+          <h2 class="group-title" data-t="theme">Theme</h2>
+          <div class="group">
+            <div id="theme" class="segmented" role="radiogroup" aria-label="Theme" data-t-aria="theme">
+              <label><input type="radio" name="theme" value="system" /><span data-t="themeSystem">System</span></label>
+              <label><input type="radio" name="theme" value="light" /><span data-t="themeLight">Light</span></label>
+              <label><input type="radio" name="theme" value="dark" /><span data-t="themeDark">Dark</span></label>
+            </div>
+          </div>
+
+          <h2 class="group-title" data-t="language">Language</h2>
+          <div class="group">
+            <div id="lang" class="segmented" role="radiogroup" aria-label="Language" data-t-aria="language">
+              <label><input type="radio" name="lang" value="en" /><span lang="en">English</span></label>
+              <label><input type="radio" name="lang" value="tr" /><span lang="tr">Türkçe</span></label>
+            </div>
+          </div>
+
           <h2 class="group-title" data-t="routeOptions">Route options</h2>
           <div class="group" id="avoid">
             <label class="row" data-avoid="highways"><span data-t="avoidHighways">Avoid motorways</span> <input type="checkbox" name="avoid" value="highways" /></label>

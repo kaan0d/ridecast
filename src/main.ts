@@ -1,23 +1,18 @@
 import "leaflet/dist/leaflet.css";
 import "./style.css";
-import { lang, setLang, t, translatePage, type Lang } from "./i18n";
+import { lang, setLang, translatePage, type Lang } from "./i18n";
 import { startApp } from "./ui/app";
 import { bindTheme } from "./ui/theme";
 
 translatePage();
 
-// EN / TR switch in the panel header; a choice reloads the page (the trip stays in the URL).
-const langSwitch = document.getElementById("lang")!;
-langSwitch.setAttribute("aria-label", t.lang.label);
-for (const l of ["en", "tr"] as Lang[]) {
-  const b = document.createElement("button");
-  b.type = "button";
-  b.textContent = t.lang[l];
-  b.lang = l;
-  b.setAttribute("aria-pressed", String(l === lang));
-  b.addEventListener("click", () => l !== lang && setLang(l));
-  langSwitch.append(b);
-}
+// Language radios on the settings page; a choice reloads the page (the trip stays in the URL).
+const langGroup = document.getElementById("lang")!;
+langGroup.querySelector<HTMLInputElement>(`input[value="${lang}"]`)!.checked = true;
+langGroup.addEventListener("input", (e) => {
+  e.stopPropagation(); // not a trip setting: the settings form would plan again
+  setLang((e.target as HTMLInputElement).value as Lang);
+});
 
 bindTheme(document.getElementById("theme")!);
 startApp();

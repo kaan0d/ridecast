@@ -1,15 +1,10 @@
-import { t } from "../i18n";
-import { icons } from "./icons";
-
 type Choice = "system" | "light" | "dark";
 
 const KEY = "ridecast.theme";
-const ORDER: Choice[] = ["system", "light", "dark"];
 const systemDark = matchMedia("(prefers-color-scheme: dark)");
 
 let choice: Choice = stored();
 let forcedLight = false; // sunlight mode while riding: light whatever the choice
-let button: HTMLElement | null = null;
 
 function stored(): Choice {
   try {
@@ -25,19 +20,16 @@ function apply() {
   root.dataset.theme = forcedLight ? "light" : choice === "system" ? (systemDark.matches ? "dark" : "light") : choice;
   const ground = getComputedStyle(root).getPropertyValue("--ground").trim();
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", ground);
-  if (!button) return;
-  button.innerHTML = choice === "system" ? icons.auto : choice === "light" ? icons.sun : icons.moon;
-  button.setAttribute("aria-label", t.theme[choice]);
-  button.title = t.theme[choice];
 }
 
-// Theme button in the panel header: system, light, dark in turn, remembered per browser.
+// System / light / dark radios on the settings page, remembered per browser.
 // index.html sets the first theme before paint; this keeps "system" following the device.
-export function bindTheme(el: HTMLElement) {
-  button = el;
+export function bindTheme(group: HTMLElement) {
+  group.querySelector<HTMLInputElement>(`input[value="${choice}"]`)!.checked = true;
   systemDark.addEventListener("change", apply);
-  el.addEventListener("click", () => {
-    choice = ORDER[(ORDER.indexOf(choice) + 1) % ORDER.length];
+  group.addEventListener("input", (e) => {
+    e.stopPropagation(); // not a trip setting: the settings form would plan again
+    choice = (e.target as HTMLInputElement).value as Choice;
     try {
       if (choice === "system") localStorage.removeItem(KEY);
       else localStorage.setItem(KEY, choice);
