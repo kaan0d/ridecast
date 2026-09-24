@@ -100,7 +100,7 @@ describe("assessPoint", () => {
     expect(crosswind(45, 270, 0).fromRight).toBe(false);
     expect(crosswind(45, 0, 0).kmh).toBeCloseTo(0);
     const side = at([hour(0, { gustKmh: 45, windFromDeg: 90 })], 0, moto, 90, 0).events;
-    expect(side).toEqual([{ kind: "crosswind", level: 2, text: "Yan rüzgar hamlesi 45 km/s, sağdan" }]);
+    expect(side).toEqual([{ kind: "crosswind", level: 2, text: "Sağ Yan Rüzgar · 45 km/sa" }]);
     // Same gusts from ahead: only the plain gust warning (low).
     expect(at([hour(0, { gustKmh: 45, windFromDeg: 0 })], 0, moto, 90, 0).events.map((e) => [e.kind, e.level])).toEqual([["gust", 1]]);
     // 70 km/h at 30° off the nose: 35 km/h across is low, the gust itself is high, so the gust row stays.

@@ -8,7 +8,7 @@ export const tr: Messages = {
   locale: "tr-TR",
   decimal: ",",
   duration: (h, m) => (h ? `${h} sa ${m} dk` : `${m} dk`),
-  kmh: "km/s",
+  kmh: "km/sa",
   km: (km) => `km ${km}`,
   level: ["Yok", "Düşük", "Orta", "Yüksek"],
 
@@ -95,7 +95,7 @@ export const tr: Messages = {
   settings: {
     vehicles: { motorcycle: "Motosiklet", car: "Araba", bicycle: "Bisiklet", walking: "Yürüyüş" },
     pickDeparture: "Çıkış tarihi ve saati seçin.",
-    speedError: (min, max) => `Hız ${min}-${max} km/s arasında olmalı.`,
+    speedError: (min, max) => `Hız ${min}-${max} km/sa arasında olmalı.`,
   },
 
   summary: {
@@ -200,8 +200,8 @@ export const tr: Messages = {
     rain: (level: Level, mm, prob) =>
       `${level === 3 ? "Şiddetli yağmur" : level === 1 ? "Hafif yağmur" : "Yağmur"} ${mm.toFixed(1)} mm/sa${prob === null ? "" : ` · olasılık %${prob}`}`,
     rainProb: (pct) => `Yağış olasılığı %${pct}`,
-    gust: (kmh) => `Rüzgar hamlesi ${r(kmh)} km/s`,
-    crosswind: (kmh, fromRight) => `Yan rüzgar hamlesi ${r(kmh)} km/s, ${fromRight ? "sağdan" : "soldan"}`,
+    gust: (kmh) => `Rüzgar hamlesi ${r(kmh)} km/sa`,
+    crosswind: (kmh, fromRight) => `${fromRight ? "Sağ" : "Sol"} Yan Rüzgar · ${r(kmh)} km/sa`,
     visibility: (km, fog) => (fog ? `Sis, görüş ${km.toFixed(1)} km` : `Görüş ${km.toFixed(1)} km`),
     ice: (c) => `Buzlanma riski: ${r(c)}° ve ıslak yol (tahmin)`,
     nearFreezing: (c) => `Donma sınırına yakın sıcaklık (${r(c)}°)`,
@@ -233,7 +233,7 @@ export const tr: Messages = {
       tempMax: (c) => `en yüksek ${r(c)}°`,
       precip: (mm) => `yağış ${mm.toFixed(1)} mm/sa`,
       wetRoad: "ıslak yol",
-      gust: (kmh) => `hamle ${r(kmh)} km/s`,
+      gust: (kmh) => `hamle ${r(kmh)} km/sa`,
       visibility: (km) => `görüş ${km.toFixed(1)} km`,
       dark: "karanlıkta sürüş",
       snow: "kar",
@@ -322,7 +322,7 @@ export const tr: Messages = {
     speedAverage: "Ortalama",
     speedRoad: "Yol tipine göre",
     averageSpeed: "Ortalama hız",
-    kmh: "km/s",
+    kmh: "km/sa",
     motorway: "Otoyol",
     primary: "Ana yol",
     urban: "Şehir içi",
