@@ -1,25 +1,74 @@
 import L from "leaflet";
 import { fromLatLng, toLatLng, type LatLon } from "../core/geo";
 
+import { icons } from "./icons";
 import type { StopKind } from "./trip";
 
-// OSM standard tiles, muted (and inverted at night) by CSS filters on the tile pane.
-// Keyless muted basemaps (CARTO) now watermark browser requests without an API key.
-const TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+// Base tiles come from ui/layers.ts (OSM muted by CSS, satellite, terrain).
 
 interface MapHandlers {
   onClick(p: LatLon): void;
   onContext(p: LatLon, x: number, y: number): void; // right click or long press, screen point
   onMoveStart(): void;
+  onLocate(): void;
+  onRouteDrag(i: number, grab: LatLon, drop: LatLon): void; // a route line dragged to a new point
+}
+
+// A map button in a Leaflet corner, styled like the zoom buttons.
+function mapButton(position: L.ControlPosition, html: string, label: string, onClick: (b: HTMLButtonElement) => void, id?: string) {
+  const Ctl = L.Control.extend({
+    onAdd() {
+      const b = L.DomUtil.create("button", "map-btn");
+      b.type = "button";
+      b.innerHTML = html;
+      b.setAttribute("aria-label", label);
+      b.title = label;
+      if (id) b.id = id;
+      L.DomEvent.disableClickPropagation(b);
+      b.addEventListener("click", () => onClick(b));
+      return b;
+    },
+  });
+  return new Ctl({ position });
 }
 
 export function createMap(el: HTMLElement, h: MapHandlers) {
   const map = L.map(el, { zoomControl: false }).setView([39, 35], 6);
-  L.control.zoom({ position: "topright" }).addTo(map);
   map.attributionControl.setPrefix(false);
+  // Bottom-right stack like Google Maps: scale, zoom, then "my location" on top.
+  L.control.scale({ position: "bottomright", imperial: false }).addTo(map);
+  L.control.zoom({ position: "bottomright", zoomInTitle: "Yakınlaştır", zoomOutTitle: "Uzaklaştır" }).addTo(map);
+  mapButton("bottomright", icons.locate, "Konumumu göster", () => h.onLocate(), "locate").addTo(map);
+  mapButton("topright", icons.layers, "Katmanlar", () => {}, "layers").addTo(map);
 
-  L.tileLayer(TILES, { maxZoom: 19, attribution: ATTRIBUTION }).addTo(map);
+  // Dragging a route line (mouse) drops a via point where it is released, like Google Maps.
+  // A press without movement stays a click (select the route or add a break).
+  let routeDragged = false;
+  function startRouteDrag(i: number, e: L.LeafletMouseEvent) {
+    if (e.originalEvent.button !== 0 || (e.originalEvent as PointerEvent).pointerType === "touch") return;
+    const grab = e.latlng;
+    const start = e.containerPoint;
+    let ghost: L.CircleMarker | null = null;
+    map.dragging.disable();
+    const move = (ev: L.LeafletMouseEvent) => {
+      if (!ghost && ev.containerPoint.distanceTo(start) < 6) return;
+      if (!ghost) ghost = L.circleMarker(ev.latlng, { radius: 7, className: "route-drag-ghost", interactive: false }).addTo(map);
+      ghost.setLatLng(ev.latlng);
+    };
+    const up = () => {
+      map.off("mousemove", move);
+      removeEventListener("mouseup", up);
+      map.dragging.enable();
+      if (!ghost) return;
+      const drop = ghost.getLatLng();
+      ghost.remove();
+      routeDragged = true;
+      setTimeout(() => (routeDragged = false), 0);
+      h.onRouteDrag(i, fromLatLng(grab), fromLatLng(drop));
+    };
+    map.on("mousemove", move);
+    addEventListener("mouseup", up);
+  }
 
   map.on("click", (e) => h.onClick(fromLatLng(e.latlng)));
   map.on("contextmenu", (e) => {
@@ -38,6 +87,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
   const breakLayer = L.layerGroup().addTo(map);
   let poiMarkers: L.Marker[] = [];
   let liveDot: L.CircleMarker | null = null;
+  let meDot: L.CircleMarker | null = null;
   let weatherMarkers: L.Marker[] = [];
 
   // Shows only capsules that do not overlap the previous shown one, so the route stays visible
@@ -112,10 +162,13 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
             ? [L.polyline(latlngs, { weight: 11, className: "route route-casing" }), L.polyline(latlngs, { weight: 6, className: "route route-selected" })]
             : [L.polyline(latlngs, { weight: 6, className: "route route-alt" })];
         for (const line of lines) {
-          line.addTo(routeLayer).on("click", (e) => {
-            L.DomEvent.stopPropagation(e);
-            onRouteClick(i, fromLatLng(e.latlng));
-          });
+          line
+            .addTo(routeLayer)
+            .on("click", (e) => {
+              L.DomEvent.stopPropagation(e);
+              if (!routeDragged) onRouteClick(i, fromLatLng(e.latlng));
+            })
+            .on("mousedown", (e) => startRouteDrag(i, e));
         }
       }
     },
@@ -181,6 +234,13 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     },
 
     closePopup: () => map.closePopup(),
+
+    // "Konumumu göster": a blue dot at the device position, opening the place card on tap.
+    showMe(p: LatLon, onTap: () => void) {
+      meDot?.remove();
+      meDot = L.circleMarker(toLatLng(p), { radius: 8, className: "live-dot" }).on("click", onTap).addTo(map);
+      map.flyTo(toLatLng(p), Math.max(map.getZoom(), 14));
+    },
 
     // The rider's position in live mode; follow pans the map to it.
     setLivePosition(p: LatLon | null, follow: boolean) {

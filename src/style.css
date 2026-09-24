@@ -146,8 +146,9 @@ button {
   background: var(--grouped);
 }
 
-/* Per tile: a filter on the whole tile pane stops painting past ~1750 px on wide screens. */
-.leaflet-tile {
+/* Per tile: a filter on the whole tile pane stops painting past ~1750 px on wide screens.
+   Only the OSM base is muted; satellite and terrain keep their colours. */
+.base-muted .leaflet-tile {
   filter: var(--map-filter);
 }
 
@@ -179,27 +180,179 @@ button {
   color: var(--ink-2);
 }
 
-.fab {
-  position: fixed;
-  z-index: 800;
-  top: 108px;
-  right: 10px;
-  width: 42px;
-  height: 42px;
+.map-btn {
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
-  border-radius: 50%;
+  border-radius: var(--radius-control);
   background: var(--material);
   backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow: var(--shadow-small);
   color: var(--ink);
 }
 
-.fab:active {
+.map-btn .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.map-btn:active {
   transform: scale(0.94);
 }
 
-/* Route: ink line on a casing, alternatives muted. CSS overrides Leaflet's stroke attributes. */
+.leaflet-control-scale-line {
+  background: var(--material);
+  color: var(--ink-2);
+  border-color: var(--ink-2);
+  font-size: 0.6875rem;
+}
+
+/* Layers panel under the layers button (top right). */
+.layers-panel {
+  position: fixed;
+  z-index: 1100;
+  top: 60px;
+  right: 10px;
+  width: 260px;
+  padding: 12px;
+  background: var(--material);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.layers-title {
+  margin: 0 0 8px;
+  font-size: 0.9375rem;
+}
+
+.layers-bases {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.layers-base {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.layers-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-control);
+  border: 2px solid transparent;
+  background: var(--fill) center / cover;
+}
+
+.layers-map .layers-thumb {
+  background-image: linear-gradient(135deg, var(--grouped) 45%, var(--separator) 45% 55%, var(--grouped) 55%);
+}
+
+.layers-satellite .layers-thumb {
+  background-image: linear-gradient(160deg, #3d5a3a, #6b7a4c 50%, #2f4a5c);
+}
+
+.layers-terrain .layers-thumb {
+  background-image: repeating-radial-gradient(circle at 30% 70%, #e8e0c8 0 6px, #cdd8b0 6px 9px);
+}
+
+.layers-base[aria-pressed="true"] {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.layers-base[aria-pressed="true"] .layers-thumb {
+  border-color: var(--focus);
+}
+
+.layers-toggle {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--separator);
+  font-size: 0.9375rem;
+}
+
+.layers-toggle small {
+  grid-column: 2;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+/* Distance measuring card and points. */
+.measure-card {
+  position: fixed;
+  z-index: 1200;
+  left: 50%;
+  bottom: calc(var(--sheet-inset) + 24px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 16px;
+  background: var(--material);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.measure-card[hidden] {
+  display: none;
+}
+
+.measure-card div {
+  display: grid;
+}
+
+.measure-total {
+  font-size: 1.0625rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.measure-count {
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+.measure-close {
+  font-size: 1.4rem;
+}
+
+.measure-line {
+  stroke: var(--focus);
+  stroke-dasharray: 2 8;
+  stroke-linecap: round;
+}
+
+.measure-point {
+  border-radius: 50%;
+  background: var(--card);
+  border: 3px solid var(--focus);
+  cursor: grab;
+}
+
+.measuring {
+  cursor: crosshair;
+}
+
+.route-drag-ghost {
+  fill: var(--card);
+  fill-opacity: 1;
+  stroke: var(--route);
+  stroke-width: 3;
+}
+
 .route {
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -1826,8 +1979,12 @@ input:invalid {
     display: none;
   }
 
-  .fab {
-    top: calc(12px + env(safe-area-inset-top));
+  .leaflet-top {
+    top: env(safe-area-inset-top);
+  }
+
+  .layers-panel {
+    top: calc(60px + env(safe-area-inset-top));
   }
 
   .leaflet-bottom {
