@@ -30,19 +30,15 @@ export function sampleDistances(totalM: number, durationS: number, intervalMin: 
   return Array.from({ length: gaps + 1 }, (_, i) => (totalM * i) / gaps);
 }
 
-// The forecast hour closest to `ms`, or null when the nearest one is more than `maxGapMin` away.
-export function nearestHour(series: WeatherSeries, ms: number, maxGapMin: number): WeatherHour | null {
-  const i = nearestHourIndex(series, ms, maxGapMin);
-  return i < 0 ? null : series[i];
-}
-
-// Index of the closest forecast hour, or -1 when none is within maxGapMin.
-export function nearestHourIndex(series: WeatherSeries, ms: number, maxGapMin: number): number {
-  let best = -1;
-  series.forEach((h, i) => {
-    if (best < 0 || Math.abs(h.timeMs - ms) < Math.abs(series[best].timeMs - ms)) best = i;
-  });
-  return best >= 0 && Math.abs(series[best].timeMs - ms) <= maxGapMin * 60_000 ? best : -1;
+// Indexes of the forecast hours on either side of `ms` (one when `ms` is on the hour), nearest
+// first, each within `maxGapMin`; empty when there is none. An ETA between two hours can fall in
+// either one, so the caller takes the worse: a few minutes of ETA drift must not flip a warning.
+// The series is in time order.
+export function bracketHours(series: WeatherSeries, ms: number, maxGapMin: number): number[] {
+  const after = series.findIndex((h) => h.timeMs >= ms);
+  const near = after < 0 ? [series.length - 1] : series[after].timeMs === ms ? [after] : [after - 1, after];
+  const gap = (i: number) => Math.abs(series[i].timeMs - ms);
+  return near.filter((i) => i >= 0 && gap(i) <= maxGapMin * 60_000).sort((a, b) => gap(a) - gap(b));
 }
 
 export type Condition = "clear" | "partly" | "cloudy" | "fog" | "drizzle" | "rain" | "snow" | "storm";

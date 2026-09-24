@@ -9,7 +9,7 @@ import type { LatLon } from "../core/geo";
 import { assessPoint } from "../core/risk/risk";
 import { routeScore } from "../core/risk/route";
 import { bearingAt, pointAtDistance, type Line } from "../core/route/line";
-import { nearestHourIndex, sampleDistances, type Forecast } from "../core/weather/weather";
+import { bracketHours, sampleDistances, type Forecast } from "../core/weather/weather";
 import { fetchForecast } from "../services/openmeteo";
 import type { Route } from "../services/osrm";
 import type { WeatherPoint } from "./weather";
@@ -33,22 +33,21 @@ export function createForecast(deps: { view(i: number): RouteView; breaks(i: num
     }));
   }
 
-  // Risk at each sample point for one timeline (one departure time).
+  // Risk at each sample point for one timeline (one departure time), from the worse of the two
+  // forecast hours around the ETA (the nearer one on a tie).
   function assess(i: number, tl: Timeline, vehicle: VehicleType, samples: Sample[], forecasts: Forecast[]): WeatherPoint[] {
     const { line, scale } = deps.view(i);
     return samples.map((s, k): WeatherPoint => {
       const etaMs = etaAtDistance(tl, s.distM);
       const f = forecasts[k] ?? { hours: [], sun: [] };
-      const idx = nearestHourIndex(f.hours, etaMs, WEATHER_REQUEST.maxHourGapMin);
-      if (idx < 0) return { ...s, etaMs, hour: null, risk: null };
-      const risk = assessPoint(
-        { hours: f.hours, i: idx, etaMs, rideKmh: speedAtDistance(tl, s.distM), headingDeg: bearingAt(line, s.distM / scale), sun: f.sun, pos: s.pos },
-        RISK[vehicle],
-        WET_ROAD,
-        GLARE,
-        t.risk,
-      );
-      return { ...s, etaMs, hour: f.hours[idx], risk };
+      const around = bracketHours(f.hours, etaMs, WEATHER_REQUEST.maxHourGapMin);
+      if (!around.length) return { ...s, etaMs, hour: null, risk: null };
+      const rideKmh = speedAtDistance(tl, s.distM);
+      const headingDeg = bearingAt(line, s.distM / scale);
+      const worst = around
+        .map((i) => ({ i, risk: assessPoint({ hours: f.hours, i, etaMs, rideKmh, headingDeg, sun: f.sun, pos: s.pos }, RISK[vehicle], WET_ROAD, GLARE, t.risk) }))
+        .reduce((a, b) => (b.risk.level > a.risk.level ? b : a));
+      return { ...s, etaMs, hour: f.hours[worst.i], risk: worst.risk };
     });
   }
 
