@@ -135,7 +135,7 @@ export function bindSettings(onChange: () => void) {
     routing,
     apply,
     best: () => best,
-    setBest(ms: number) {
+    setBest(ms: number | null) {
       best = ms;
     },
   };

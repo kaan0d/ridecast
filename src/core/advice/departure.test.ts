@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { departureCandidates, rankDepartures, type ScoredDeparture } from "./departure";
+import { bestPerDay, departureCandidates, rankDepartures, type ScoredDeparture } from "./departure";
 
 const H = 3_600_000;
 const T0 = Date.UTC(2026, 8, 24, 5); // on the hour
@@ -27,4 +27,12 @@ test("ranking keeps the picks apart: neighbours of a pick are skipped", () => {
   // A dry morning 06-09 and a dry evening at 18; without a gap the list would be 06, 07, 08.
   const all = [d(6, 0), d(7, 0), d(8, 0), d(9, 0.1), d(12, 2), d(18, 0.2)];
   expect(rankDepartures(all, 3, 0.25, 2).map((r) => (r.departMs - T0) / H)).toEqual([6, 8, 18]);
+});
+
+test("best per day: one departure a day, lowest score then earliest, days in order", () => {
+  const d = (h: number, score: number, missingShare = 0): ScoredDeparture => ({ departMs: T0 + h * H, arrivalMs: T0 + (h + 3) * H, score: { score, worst: 1, missingShare } });
+  const dayOf = (ms: number) => new Date(ms).toISOString().slice(0, 10); // UTC days for the test
+  // T0 is 05:00 UTC: hours 0-18 are day 1, 19-42 day 2, 43+ day 3.
+  const all = [d(1, 0.5), d(4, 0.2), d(6, 0.2), d(20, 1), d(30, 0.9), d(44, 0.1, 0.9), d(47, 3)];
+  expect(bestPerDay(all, dayOf, 0.25).map((x) => (x.departMs - T0) / H)).toEqual([4, 30, 47]);
 });

@@ -4,7 +4,7 @@ import { DEPARTURE } from "../config/departure";
 import { SHARE } from "../config/share";
 import { autoBreakDistances, buildTimeline, etaAtDistance, resumeAtClock, totalS, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
 import type { LatLon } from "../core/geo";
-import type { ScoredDeparture } from "../core/advice/departure";
+import { bestPerDay, rankDepartures, type ScoredDeparture } from "../core/advice/departure";
 import { fuelGaps } from "../core/advice/stops";
 import { pointRuns, type RouteScore } from "../core/risk/route";
 import { labelPoint, lineLength, makeLine, pointAtDistance, sliceLine, snapToLine, type Line } from "../core/route/line";
@@ -14,7 +14,7 @@ import { reverseLabel } from "../services/nominatim";
 import type { Route } from "../services/osrm";
 import { routeTrip, routingKey } from "../services/routing";
 import { renderClothing } from "./advice";
-import { renderBest as renderBestList } from "./best";
+import { renderBest as renderBestList, type BestWindow } from "./best";
 import { adviseBreaks, bindBreaks, type BreakRow } from "./breaks";
 import { bindChanges } from "./changes";
 import { createForecast } from "./forecast";
@@ -70,6 +70,7 @@ export function startApp() {
   let weatherSeq = 0;
   let weatherTimer: number | undefined;
   let weatherPoints: WeatherPoint[] = [];
+  let bestWindow: BestWindow = "day"; // "Best time" over the next 24 hours or the next 7 days
 
   const stopsEl = $("stops");
   const statusEl = $("status");
@@ -385,10 +386,30 @@ export function startApp() {
   // ---------- weather ----------
 
   const renderBest = (state: { top: ScoredDeparture[]; loading: boolean; error?: string }) =>
-    renderBestList(bestEl, state, settingsCtl.best(), (ms) => {
-      settingsCtl.setBest(ms);
-      renderRoutes();
-    });
+    renderBestList(
+      bestEl,
+      { ...state, window: bestWindow },
+      settingsCtl.best(),
+      (ms) => {
+        settingsCtl.setBest(ms);
+        renderRoutes();
+      },
+      (w) => {
+        bestWindow = w;
+        settingsCtl.setBest(null); // pick the best of the new window
+        renderBest({ top: [], loading: true });
+        renderRoutes();
+      },
+    );
+
+  const bestHours = () => (bestWindow === "week" ? DEPARTURE.weekDays * 24 : DEPARTURE.windowH);
+
+  // Next 24 hours: the top departures, apart from each other. Next 7 days: the best of each day.
+  const pickBest = (all: ScoredDeparture[]) =>
+    bestWindow === "week"
+      ? // The window ends early on its 8th day; that stub of night hours is not a real choice.
+        bestPerDay(all, (ms) => new Date(ms).toDateString(), DEPARTURE.maxMissing).slice(0, DEPARTURE.weekDays)
+      : rankDepartures(all, DEPARTURE.count, DEPARTURE.maxMissing, DEPARTURE.minGapH);
 
   function updateWeather(timelines: Timeline[] | null, settings: TripSettings | null) {
     const vehicle = settings?.vehicle ?? "motorcycle";
@@ -441,15 +462,15 @@ export function startApp() {
       try {
         // In best mode the forecast must also reach the arrival of the last candidate.
         const tripMs = tl.timeMs[tl.timeMs.length - 1] - tl.timeMs[0];
-        const until = bestMode ? Date.now() + DEPARTURE.windowH * 3_600_000 + tripMs : 0;
+        const until = bestMode ? Date.now() + bestHours() * 3_600_000 + tripMs : 0;
         const main = await forecast.pointsFor(selected, tl, vehicle, until);
         freshWeather = false;
         if (my !== weatherSeq) return;
         if (bestMode && settings) {
-          const top = forecast.rankBest(selected, vehicle, settings.speed, main.samples, main.forecasts);
-          // First time in best mode: take the top candidate and redo everything for it.
+          const top = pickBest(forecast.scoreDepartures(selected, vehicle, settings.speed, main.samples, main.forecasts, bestHours()));
+          // First time in best mode: take the lowest-risk candidate and redo everything for it.
           if (settingsCtl.best() === null && top.length) {
-            settingsCtl.setBest(top[0].departMs);
+            settingsCtl.setBest(top.reduce((a, b) => (b.score.score < a.score.score ? b : a)).departMs);
             return renderRoutes();
           }
           renderBest({ top, loading: false });
