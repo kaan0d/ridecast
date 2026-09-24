@@ -96,16 +96,19 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
   let meDot: L.CircleMarker | null = null;
   let weatherMarkers: L.Marker[] = [];
 
-  // Shows only capsules that do not overlap the previous shown one, so the route stays visible
-  // when zoomed out. The arrival point always shows.
+  // Shows only tags that do not overlap the previous shown one or a route's duration label, so
+  // the route stays visible when zoomed out. The arrival point always shows.
   const MIN_GAP_PX = 92;
+  const LABEL_GAP_PX = 64;
+  let labelSpots: L.LatLngExpression[] = [];
   function thinWeather() {
     weatherLayer.clearLayers();
     let last: L.Point | null = null;
+    const labels = labelSpots.map((l) => map.latLngToContainerPoint(l));
     weatherMarkers.forEach((m, i) => {
       const p = map.latLngToContainerPoint(m.getLatLng());
       const isLast = i === weatherMarkers.length - 1;
-      if (last && p.distanceTo(last) < MIN_GAP_PX && !isLast) return;
+      if (!isLast && ((last && p.distanceTo(last) < MIN_GAP_PX) || labels.some((l) => p.distanceTo(l) < LABEL_GAP_PX))) return;
       m.addTo(weatherLayer);
       last = p;
     });
@@ -208,6 +211,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
       // Labels pop in just before the hand arrives, for as long as a draw is running.
       const labelAt = Math.max(0, drawEnd() - performance.now() - 250);
       const arriving = performance.now() < drawEnd();
+      labelSpots = labels.map((l) => toLatLng(l.pos));
       labels.forEach((l, i) => {
         L.marker(toLatLng(l.pos), {
           icon: L.divIcon({
