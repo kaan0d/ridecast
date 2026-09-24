@@ -1435,6 +1435,47 @@ button.stop-glyph {
   display: none;
 }
 
+/* Sunlight: pure black on white, risk colours dark enough for text contrast, thicker rings.
+   On by the "Güneş" button; starts on when the system asks for more contrast (ui/live.ts). */
+.live[data-contrast="high"] {
+  --ground: #ffffff;
+  --card: #ffffff;
+  --ink: #000000;
+  --ink-2: #000000;
+  --on-ink: #ffffff;
+  --separator: #000000;
+  --fill: #e5e5ea;
+  --risk-1: #735600;
+  --risk-2: #a34700;
+  --risk-3: #c00012;
+}
+
+.live[data-contrast="high"] #live-meta,
+.live[data-contrast="high"] .live-next span,
+.live[data-contrast="high"] .live-weather span {
+  font-weight: 700;
+}
+
+.live[data-contrast="high"] .live-next {
+  box-shadow: inset 0 0 0 2px #000;
+}
+
+.live[data-contrast="high"] .live-next[data-level="1"] {
+  box-shadow: inset 0 0 0 5px var(--risk-1);
+}
+
+.live[data-contrast="high"] .live-next[data-level="2"] {
+  box-shadow: inset 0 0 0 5px var(--risk-2);
+}
+
+.live[data-contrast="high"] .live-next[data-level="3"] {
+  box-shadow: inset 0 0 0 5px var(--risk-3);
+}
+
+.live[data-contrast="high"] .live-alert {
+  color: #fff;
+}
+
 .live-top {
   display: flex;
   gap: 8px;
