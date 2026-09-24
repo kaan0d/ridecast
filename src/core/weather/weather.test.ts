@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { compass, conditionOf, nearestHour, sampleDistances, type WeatherHour } from "./weather";
+import { compassIndex, conditionOf, nearestHour, sampleDistances, type WeatherHour } from "./weather";
 
 describe("sampleDistances", () => {
   test("one point per interval of driving time, start and end included", () => {
@@ -49,19 +49,19 @@ describe("nearestHour", () => {
 });
 
 test("WMO codes map to kinds and Turkish labels", () => {
-  expect(conditionOf(0)).toEqual({ kind: "clear", label: "Açık" });
+  expect(conditionOf(0)).toEqual({ kind: "clear", name: "clear" });
   expect(conditionOf(45).kind).toBe("fog");
-  expect(conditionOf(61)).toEqual({ kind: "rain", label: "Hafif yağmur" });
-  expect(conditionOf(82).label).toBe("Şiddetli yağmur");
+  expect(conditionOf(61)).toEqual({ kind: "rain", name: "lightRain" });
+  expect(conditionOf(82).name).toBe("heavyRain");
   expect(conditionOf(75).kind).toBe("snow");
   expect(conditionOf(96).kind).toBe("storm");
   expect(conditionOf(53).kind).toBe("drizzle");
 });
 
-test("compass names", () => {
-  expect(compass(0)).toBe("K");
-  expect(compass(44)).toBe("KD");
-  expect(compass(180)).toBe("G");
-  expect(compass(-90)).toBe("B");
-  expect(compass(350)).toBe("K");
+test("compass sectors", () => {
+  expect(compassIndex(0)).toBe(0);
+  expect(compassIndex(44)).toBe(1);
+  expect(compassIndex(180)).toBe(4);
+  expect(compassIndex(-90)).toBe(6);
+  expect(compassIndex(350)).toBe(0);
 });

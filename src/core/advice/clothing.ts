@@ -46,42 +46,55 @@ export interface ClothingRule<V extends string = string> {
 }
 
 export interface ClothingItem {
-  item: string;
+  item: string; // the rule's item id; the UI names it
   why: string;
 }
 
+// Reason texts in the UI language (src/i18n).
+export interface ClothingTexts {
+  feltMin(c: number): string;
+  tempMax(c: number): string;
+  precip(mm: number): string;
+  wetRoad: string;
+  gust(kmh: number): string;
+  visibility(km: number): string;
+  dark: string;
+  snow: string;
+  ice: string;
+}
+
 // Rules are checked in table order; a rule with rain matches rain or a wet road.
-export function clothingFor<V extends string>(c: RouteConditions, vehicle: V, rules: readonly ClothingRule<V>[]): ClothingItem[] {
+export function clothingFor<V extends string>(c: RouteConditions, vehicle: V, rules: readonly ClothingRule<V>[], tx: ClothingTexts): ClothingItem[] {
   const out: ClothingItem[] = [];
   for (const r of rules) {
     if (!r.vehicles.includes(vehicle)) continue;
     const why: string[] = [];
     if (r.feltAtMostC !== undefined) {
       if (c.minFeltC > r.feltAtMostC) continue;
-      why.push(`hissedilen en düşük ${Math.round(c.minFeltC)}°`);
+      why.push(tx.feltMin(c.minFeltC));
     }
     if (r.tempAtLeastC !== undefined) {
       if (c.maxTempC < r.tempAtLeastC) continue;
-      why.push(`en yüksek ${Math.round(c.maxTempC)}°`);
+      why.push(tx.tempMax(c.maxTempC));
     }
     if (r.precipAtLeastMm !== undefined) {
       if (c.maxPrecipMm < r.precipAtLeastMm && !c.wetRoad) continue;
-      why.push(c.maxPrecipMm >= r.precipAtLeastMm ? `yağış ${c.maxPrecipMm.toFixed(1)} mm/sa` : "ıslak yol");
+      why.push(c.maxPrecipMm >= r.precipAtLeastMm ? tx.precip(c.maxPrecipMm) : tx.wetRoad);
     }
     if (r.wetRoad && !c.wetRoad) continue;
-    if (r.wetRoad) why.push("ıslak yol");
+    if (r.wetRoad) why.push(tx.wetRoad);
     if (r.gustAtLeastKmh !== undefined) {
       if (c.maxGustKmh < r.gustAtLeastKmh) continue;
-      why.push(`hamle ${Math.round(c.maxGustKmh)} km/s`);
+      why.push(tx.gust(c.maxGustKmh));
     }
     if (r.visibilityAtMostM !== undefined) {
       if (c.minVisibilityM > r.visibilityAtMostM) continue;
-      why.push(`görüş ${(c.minVisibilityM / 1000).toFixed(1)} km`);
+      why.push(tx.visibility(c.minVisibilityM / 1000));
     }
     if (r.dark && !c.dark) continue;
-    if (r.dark) why.push("karanlıkta sürüş");
+    if (r.dark) why.push(tx.dark);
     if (r.snowOrIce && !(c.snow || c.ice)) continue;
-    if (r.snowOrIce) why.push(c.snow ? "kar" : "buzlanma riski");
+    if (r.snowOrIce) why.push(c.snow ? tx.snow : tx.ice);
     // The same item from two rules shows once, with both reasons.
     const seen = out.find((o) => o.item === r.item);
     if (seen) seen.why = [seen.why, ...why].filter(Boolean).join(", ");

@@ -1,135 +1,137 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
-    <title>ridecast · Rota hava durumu</title>
+    <title>ridecast · Route weather</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icon-192.png" />
   </head>
   <body>
-    <main id="map" aria-label="Harita"></main>
-    <div id="layers-panel" class="layers-panel" role="dialog" aria-label="Katmanlar" hidden></div>
+    <main id="map" aria-label="Map" data-t-aria="map"></main>
+    <div id="layers-panel" class="layers-panel" role="dialog" aria-label="Layers" data-t-aria="layers" hidden></div>
     <div id="measure" class="measure-card" role="status" hidden>
       <div><strong class="measure-total"></strong><span class="measure-count"></span></div>
-      <button type="button" class="measure-clear button-secondary">Temizle</button>
-      <button type="button" class="measure-close icon-btn" aria-label="Ölçümü kapat">×</button>
+      <button type="button" class="measure-clear button-secondary" data-t="measureClear">Clear</button>
+      <button type="button" class="measure-close icon-btn" aria-label="Close the ruler" data-t-aria="measureClose">×</button>
     </div>
 
-    <section id="sheet" class="sheet" aria-label="Rota paneli">
+    <section id="sheet" class="sheet" aria-label="Route panel" data-t-aria="sheet">
       <button type="button" id="sheet-toggle" class="sheet-grabber" aria-controls="sheet-body" aria-expanded="false">
-        <span class="sr-only">Paneli büyüt</span>
+        <span class="sr-only">Expand the panel</span>
       </button>
       <div id="sheet-body" class="sheet-body">
         <header class="brand">
           <span class="wordmark">ridecast</span>
-          <span class="tagline">Rota hava durumu</span>
+          <span class="tagline" data-t="tagline">Route weather</span>
+          <span id="lang" class="lang-switch" role="group" aria-label="Language"></span>
         </header>
 
         <div class="trip">
           <ol id="stops" class="trip-stops"></ol>
-          <button type="button" id="swap" class="icon-btn trip-swap" aria-label="Başlangıç ile bitişi değiştir" title="Başlangıç ile bitişi değiştir" hidden></button>
-          <button type="button" id="add-via" class="trip-add">Durak ekle</button>
-          <button type="button" id="gpx-import" class="trip-add">GPX dosyası aç</button>
+          <button type="button" id="swap" class="icon-btn trip-swap" aria-label="Swap start and destination" title="Swap start and destination" data-t-aria="swap" data-t-title="swap" hidden></button>
+          <button type="button" id="add-via" class="trip-add"><span data-t="addStop">Add stop</span></button>
+          <button type="button" id="gpx-import" class="trip-add" data-t="gpxOpen">Open a GPX file</button>
           <input type="file" id="gpx-file" accept=".gpx,application/gpx+xml" hidden />
         </div>
-        <p class="hint">Adres ara ya da haritaya dokun. Sağ tık veya uzun basış: yol tarifi menüsü. Sırayı değiştirmek için durak işaretini sürükle.</p>
+        <p class="hint" data-t="hint">Search an address or tap the map. Right click or long press: directions menu. Drag a stop's marker to reorder.</p>
         <p id="status" role="status" aria-live="polite"></p>
-        <section id="recent" aria-label="Son rotalar"></section>
+        <section id="recent" aria-label="Recent routes" data-t-aria="recent"></section>
 
         <section id="summary" aria-live="polite"></section>
         <div id="share" class="share-row" hidden>
-          <button type="button" id="live-start" class="button-primary">Yolculuğu başlat</button>
-          <button type="button" id="copy-link" class="button-secondary">Linki kopyala</button>
-          <button type="button" id="gpx-export" class="button-secondary">GPX indir</button>
+          <button type="button" id="live-start" class="button-primary" data-t="liveStart">Start ride</button>
+          <button type="button" id="copy-link" class="button-secondary" data-t="copyLink">Copy link</button>
+          <button type="button" id="gpx-export" class="button-secondary" data-t="gpxSave">Save GPX</button>
           <span id="copy-status" role="status"></span>
         </div>
-        <section id="changes" aria-label="Son bakıştan beri değişenler" aria-live="polite"></section>
-        <section id="weather" aria-label="Yol boyunca hava"></section>
-        <section id="warnings" aria-label="Uyarılar"></section>
-        <section id="clothing" aria-label="Giyim önerisi"></section>
-        <ul id="routes" class="route-options" aria-label="Rotalar"></ul>
+        <section id="changes" aria-label="Changes since your last look" data-t-aria="changes" aria-live="polite"></section>
+        <section id="weather" aria-label="Weather along the route" data-t-aria="weather"></section>
+        <section id="warnings" aria-label="Warnings" data-t-aria="warnings"></section>
+        <section id="clothing" aria-label="What to wear" data-t-aria="clothing"></section>
+        <ul id="routes" class="route-options" aria-label="Routes" data-t-aria="routes"></ul>
 
         <form id="settings">
-          <h2 class="group-title">Araç</h2>
-          <div id="vehicle" class="segmented" role="radiogroup" aria-label="Araç"></div>
+          <h2 class="group-title" data-t="vehicle">Vehicle</h2>
+          <div id="vehicle" class="segmented" role="radiogroup" aria-label="Vehicle" data-t-aria="vehicle"></div>
 
-          <h2 class="group-title">Rota seçenekleri</h2>
+          <h2 class="group-title" data-t="routeOptions">Route options</h2>
           <div class="group" id="avoid">
-            <label class="row" data-avoid="highways">Otoyollardan kaçın <input type="checkbox" name="avoid" value="highways" /></label>
-            <label class="row" data-avoid="tolls">Ücretli yollardan kaçın <input type="checkbox" name="avoid" value="tolls" /></label>
-            <label class="row" data-avoid="ferries">Feribotlardan kaçın <input type="checkbox" name="avoid" value="ferries" /></label>
+            <label class="row" data-avoid="highways"><span data-t="avoidHighways">Avoid motorways</span> <input type="checkbox" name="avoid" value="highways" /></label>
+            <label class="row" data-avoid="tolls"><span data-t="avoidTolls">Avoid tolls</span> <input type="checkbox" name="avoid" value="tolls" /></label>
+            <label class="row" data-avoid="ferries"><span data-t="avoidFerries">Avoid ferries</span> <input type="checkbox" name="avoid" value="ferries" /></label>
           </div>
 
-          <h2 class="group-title">Hız</h2>
+          <h2 class="group-title" data-t="speed">Speed</h2>
           <div class="group">
-            <div class="segmented" role="radiogroup" aria-label="Hız modu">
-              <label><input type="radio" name="speed-mode" value="average" checked /><span>Ortalama</span></label>
-              <label><input type="radio" name="speed-mode" value="road" /><span>Yol tipine göre</span></label>
+            <div class="segmented" role="radiogroup" aria-label="Speed mode" data-t-aria="speedMode">
+              <label><input type="radio" name="speed-mode" value="average" checked /><span data-t="speedAverage">Average</span></label>
+              <label><input type="radio" name="speed-mode" value="road" /><span data-t="speedRoad">By road type</span></label>
             </div>
             <div id="speed-average">
-              <label class="row">Ortalama hız <span class="row-value"><input type="number" id="kmh-average" step="1" /> km/s</span></label>
+              <label class="row"><span data-t="averageSpeed">Average speed</span> <span class="row-value"><input type="number" id="kmh-average" step="1" /> <span data-t="kmh">km/h</span></span></label>
             </div>
             <div id="speed-road" hidden>
-              <label class="row">Otoyol <span class="row-value"><input type="number" id="kmh-motorway" step="1" /> km/s</span></label>
-              <label class="row">Ana yol <span class="row-value"><input type="number" id="kmh-primary" step="1" /> km/s</span></label>
-              <label class="row">Şehir içi <span class="row-value"><input type="number" id="kmh-urban" step="1" /> km/s</span></label>
-              <p class="footnote">Yol tipi OSRM verisinden tahmin edilir.</p>
+              <label class="row"><span data-t="motorway">Motorway</span> <span class="row-value"><input type="number" id="kmh-motorway" step="1" /> <span data-t="kmh">km/h</span></span></label>
+              <label class="row"><span data-t="primary">Main road</span> <span class="row-value"><input type="number" id="kmh-primary" step="1" /> <span data-t="kmh">km/h</span></span></label>
+              <label class="row"><span data-t="urban">Town</span> <span class="row-value"><input type="number" id="kmh-urban" step="1" /> <span data-t="kmh">km/h</span></span></label>
+              <p class="footnote" data-t="roadTypeNote">The road type is guessed from the routing data.</p>
             </div>
           </div>
 
-          <h2 class="group-title">Çıkış</h2>
+          <h2 class="group-title" data-t="departure">Departure</h2>
           <div class="group">
-            <div class="segmented" role="radiogroup" aria-label="Çıkış zamanı">
-              <label><input type="radio" name="depart" value="now" checked /><span>Şimdi</span></label>
-              <label><input type="radio" name="depart" value="at" /><span>Tarih ve saat</span></label>
-              <label><input type="radio" name="depart" value="best" /><span>En iyi saat</span></label>
+            <div class="segmented" role="radiogroup" aria-label="Departure time" data-t-aria="departureTime">
+              <label><input type="radio" name="depart" value="now" checked /><span data-t="now">Now</span></label>
+              <label><input type="radio" name="depart" value="at" /><span data-t="dateTime">Date and time</span></label>
+              <label><input type="radio" name="depart" value="best" /><span data-t="bestTime">Best time</span></label>
             </div>
-            <input type="datetime-local" id="depart-at" aria-label="Çıkış tarihi ve saati" hidden />
+            <input type="datetime-local" id="depart-at" aria-label="Departure date and time" data-t-aria="departureDateTime" hidden />
             <div id="depart-best" hidden></div>
           </div>
         </form>
 
         <section id="breaks-panel">
-          <h2 class="group-title">Molalar</h2>
+          <h2 class="group-title" data-t="breaks">Breaks</h2>
           <div class="group">
             <ol id="breaks" class="break-list"></ol>
-            <p class="footnote">Seçili rotaya dokunarak mola ekle, işaretini sürükleyerek taşı.</p>
+            <p class="footnote" data-t="breaksHint">Tap the selected route to add a break, drag its marker to move it.</p>
             <form id="auto-breaks" class="auto-breaks">
-              <span>Her</span>
-              <input type="number" id="auto-every" min="1" step="1" required aria-label="Otomatik mola aralığı" />
-              <select id="auto-unit" aria-label="Aralık birimi">
-                <option value="km">km'de</option>
-                <option value="min">dk sürüşte</option>
+              <span data-t="every">Every</span>
+              <input type="number" id="auto-every" min="1" step="1" required aria-label="Automatic break interval" data-t-aria="autoEvery" />
+              <select id="auto-unit" aria-label="Interval unit" data-t-aria="autoUnit">
+                <option value="km" data-t="autoKm">km</option>
+                <option value="min" data-t="autoMin">min of riding</option>
               </select>
               <span class="nowrap"
-                ><input type="number" id="auto-duration" list="break-presets" required aria-label="Otomatik mola süresi (dk)" /> dk mola</span
+                ><input type="number" id="auto-duration" list="break-presets" required aria-label="Automatic break length (min)" data-t-aria="autoDuration" />
+                <span data-t="minBreak">min break</span></span
               >
-              <button type="submit" class="button-secondary">Otomatik mola ekle</button>
+              <button type="submit" class="button-secondary" data-t="autoAdd">Add automatic breaks</button>
             </form>
           </div>
           <datalist id="break-presets"></datalist>
           <div id="stops-section" hidden>
-            <h2 class="group-title">Yakıt ve mola noktaları</h2>
+            <h2 class="group-title" data-t="fuelStops">Fuel and rest stops</h2>
             <div class="group" id="stops-panel"></div>
           </div>
         </section>
       </div>
     </section>
-    <section id="live" class="live" hidden aria-label="Canlı mod">
+    <section id="live" class="live" hidden aria-label="Live mode" data-t-aria="live">
       <div class="live-top">
-        <button type="button" id="live-min" class="live-btn">Harita</button>
-        <button type="button" id="live-sound" class="live-btn" aria-pressed="false">Ses kapalı</button>
-        <button type="button" id="live-sun" class="live-btn" aria-pressed="false" title="Güneş altında okunur yüksek kontrast">Güneş</button>
-        <button type="button" id="live-end" class="live-btn live-end">Bitir</button>
+        <button type="button" id="live-min" class="live-btn" data-t="liveMap">Map</button>
+        <button type="button" id="live-sound" class="live-btn" aria-pressed="false"></button>
+        <button type="button" id="live-sun" class="live-btn" aria-pressed="false" title="High contrast for sunlight" data-t="liveSun" data-t-title="liveSunTitle">Sun</button>
+        <button type="button" id="live-end" class="live-btn live-end" data-t="liveEnd">End</button>
       </div>
       <div id="live-alert" class="live-alert" role="alert" hidden>
         <span id="live-alert-text"></span>
-        <button type="button" id="live-alert-close" class="live-btn">Tamam</button>
+        <button type="button" id="live-alert-close" class="live-btn" data-t="ok">OK</button>
       </div>
       <div id="live-next" class="live-next" aria-live="polite"></div>
       <div class="live-main">
@@ -138,11 +140,11 @@
       </div>
       <div id="live-weather" class="live-weather"></div>
       <div id="live-off" class="live-off" hidden>
-        <span>Rotanın dışındasın.</span>
-        <button type="button" id="live-reroute" class="button-primary">Rotayı yeniden hesapla</button>
+        <span data-t="offRoute">You are off the route.</span>
+        <button type="button" id="live-reroute" class="button-primary" data-t="reroute">Plan again from here</button>
       </div>
       <p id="live-notes" class="live-notes" aria-live="polite"></p>
-      <button type="button" id="live-refresh" class="live-btn live-refresh">Havayı şimdi yenile</button>
+      <button type="button" id="live-refresh" class="live-btn live-refresh" data-t="liveRefresh">Refresh weather now</button>
     </section>
     <button type="button" id="live-pill" class="live-pill" hidden></button>
     <script type="module" src="/src/main.ts"></script>

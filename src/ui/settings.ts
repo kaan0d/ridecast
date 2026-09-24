@@ -3,6 +3,7 @@ import type { SpeedSetting } from "../core/eta/eta";
 import type { RoadType } from "../core/route/roadType";
 import type { TripState } from "../core/share/state";
 import { avoidFor, type Avoid } from "../services/routing";
+import { t } from "../i18n";
 
 export type DepartMode = "now" | "at" | "best";
 
@@ -29,7 +30,7 @@ export function bindSettings(onChange: () => void) {
   const departAt = $<HTMLInputElement>("depart-at");
 
   vehicleGroup.replaceChildren(
-    ...Object.entries(VEHICLES).map(([k, v]) => {
+    ...Object.keys(VEHICLES).map((k) => {
       const label = document.createElement("label");
       const input = document.createElement("input");
       input.type = "radio";
@@ -37,7 +38,7 @@ export function bindSettings(onChange: () => void) {
       input.value = k;
       input.checked = k === DEFAULT_VEHICLE;
       const text = document.createElement("span");
-      text.textContent = v.label;
+      text.textContent = t.settings.vehicles[k as VehicleType];
       label.append(input, text);
       return label;
     }),
@@ -100,7 +101,7 @@ export function bindSettings(onChange: () => void) {
     const mode = radio("depart") as DepartMode;
     const departMs =
       mode === "now" ? Date.now() : mode === "best" ? (best ?? Math.ceil(Date.now() / 3_600_000) * 3_600_000) : new Date(departAt.value).getTime();
-    if (Number.isNaN(departMs)) return "Çıkış tarihi ve saati seçin.";
+    if (Number.isNaN(departMs)) return t.settings.pickDeparture;
     return { vehicle: radio("vehicle") as VehicleType, speed, departMs, departMode: mode, avoid: routing().avoid };
   };
 
@@ -133,7 +134,7 @@ export function bindSettings(onChange: () => void) {
   };
 }
 
-const speedError = () => `Hız ${SPEED_LIMITS_KMH.min}-${SPEED_LIMITS_KMH.max} km/s arasında olmalı.`;
+const speedError = () => t.settings.speedError(SPEED_LIMITS_KMH.min, SPEED_LIMITS_KMH.max);
 
 function nextHour(): Date {
   const d = new Date();

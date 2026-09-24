@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { DEPARTURE } from "../config/departure";
 import { GLARE, RISK, RISK_WEIGHTS, WET_ROAD } from "../config/risk";
 import type { VehicleType } from "../config/vehicles";
@@ -45,6 +46,7 @@ export function createForecast(deps: { view(i: number): RouteView; breaks(i: num
         RISK[vehicle],
         WET_ROAD,
         GLARE,
+        t.risk,
       );
       return { ...s, etaMs, hour: f.hours[idx], risk };
     });

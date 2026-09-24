@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { AUTO_BREAK_DEFAULT, BREAK_LIMITS_MIN, BREAK_PRESETS_MIN, OVERNIGHT } from "../config/breaks";
 import { BREAK_ADVICE } from "../config/risk";
 import type { AutoBreakRule, Timeline } from "../core/eta/eta";
@@ -56,15 +57,15 @@ export function bindBreaks(h: Handlers) {
         const title = document.createElement("span");
         title.className = "break-title";
         const overnight = b.resumeMin !== undefined;
-        title.textContent = overnight ? `Konaklama ${i + 1}` : `Mola ${i + 1}${b.auto ? " (oto)" : ""}`;
+        title.textContent = overnight ? t.breaks.overnightTitle(i + 1) : t.breaks.title(i + 1, b.auto);
         const info = document.createElement("span");
         info.className = "break-info";
         info.textContent =
           b.distM === undefined || b.startMs === undefined || b.endMs === undefined
             ? "–"
             : overnight
-              ? `km ${Math.round(b.distM / 1000)} · varış ${formatTime(b.startMs)}, yola çıkış ${formatTime(b.endMs)}`
-              : `km ${Math.round(b.distM / 1000)} · ${formatClock(b.startMs)}–${formatClock(b.endMs)}`;
+              ? t.breaks.overnightInfo(Math.round(b.distM / 1000), formatTime(b.startMs), formatTime(b.endMs))
+              : t.breaks.info(Math.round(b.distM / 1000), formatClock(b.startMs), formatClock(b.endMs));
 
         const dur = document.createElement("input");
         dur.type = "number";
@@ -73,18 +74,18 @@ export function bindBreaks(h: Handlers) {
         dur.max = String(BREAK_LIMITS_MIN.max);
         dur.required = true;
         dur.value = String(b.durationMin);
-        dur.setAttribute("aria-label", `Mola ${i + 1} süresi (dk)`);
+        dur.setAttribute("aria-label", t.breaks.durationAria(i + 1));
         dur.addEventListener("change", () => {
           if (validBreakMin(dur.valueAsNumber)) h.onDuration(i, dur.valueAsNumber);
         });
         const durLabel = document.createElement("label");
         durLabel.className = "break-duration";
-        durLabel.append(dur, " dk");
+        durLabel.append(dur, " " + t.breaks.min);
         // Overnight: the duration becomes a "ride on at" time.
         const resume = document.createElement("input");
         resume.type = "time";
         resume.value = overnight ? `${String(Math.floor(b.resumeMin! / 60)).padStart(2, "0")}:${String(b.resumeMin! % 60).padStart(2, "0")}` : "";
-        resume.setAttribute("aria-label", `Konaklama ${i + 1}: yola çıkış saati`);
+        resume.setAttribute("aria-label", t.breaks.resumeAria(i + 1));
         resume.addEventListener("change", () => {
           const [hh, mm] = resume.value.split(":").map(Number);
           if (Number.isFinite(hh) && Number.isFinite(mm)) h.onOvernight(i, hh * 60 + mm);
@@ -98,13 +99,13 @@ export function bindBreaks(h: Handlers) {
         nightBox.type = "checkbox";
         nightBox.checked = overnight;
         nightBox.addEventListener("change", () => h.onOvernight(i, nightBox.checked ? OVERNIGHT.defaultResumeMin : null));
-        night.append(nightBox, " Gece konakla");
+        night.append(nightBox, " " + t.breaks.overnight);
 
         const rm = document.createElement("button");
         rm.type = "button";
         rm.className = "icon-btn";
         rm.innerHTML = icons.close;
-        rm.setAttribute("aria-label", `Mola ${i + 1} sil`);
+        rm.setAttribute("aria-label", t.breaks.removeAria(i + 1));
         rm.addEventListener("click", () => h.onRemove(i));
 
         li.append(title, overnight ? resumeLabel : durLabel, rm, info, night);
@@ -120,7 +121,7 @@ export function bindBreaks(h: Handlers) {
     if (!rows.length) {
       const li = document.createElement("li");
       li.className = "empty";
-      li.textContent = "Mola yok.";
+      li.textContent = t.breaks.none;
       list.append(li);
     }
   };
@@ -136,10 +137,8 @@ export function adviseBreaks(tl: Timeline, samples: { distM: number }[], forecas
     const a = breakAdvice(forecasts[k]?.hours ?? [], b.startMs, b.endMs, BREAK_ADVICE.rainMm, BREAK_ADVICE.maxExtendMin);
     const minutes = Math.round((b.endMs - b.startMs) / 60_000);
     if (a?.kind === "rainStarts")
-      return a.atMin === 0
-        ? "Mola başlarken yağmur başlıyor."
-        : `Yağmur molanın ${a.atMin}. dakikasında başlıyor. Molayı ${a.atMin} dk'ya kısaltırsan yağmurdan önce yola çıkarsın.`;
-    if (a?.kind === "rainStops") return `Molanın sonunda yağmur var, ${a.extendMin} dk sonra diniyor. Molayı ${minutes + a.extendMin} dk'ya uzatmayı düşün.`;
+      return a.atMin === 0 ? t.breaks.rainAtStart : t.breaks.rainStarts(a.atMin);
+    if (a?.kind === "rainStops") return t.breaks.rainStops(a.extendMin, minutes + a.extendMin);
     return undefined;
   });
 }

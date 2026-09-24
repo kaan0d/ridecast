@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import L from "leaflet";
 import { fromLatLng, toLatLng, type LatLon } from "../core/geo";
 import { lineLength, makeLine } from "../core/route/line";
@@ -17,7 +18,7 @@ export function createMeasure(map: L.Map, card: HTMLElement) {
       const m = L.marker(toLatLng(p), {
         icon: L.divIcon({ className: "measure-point", iconSize: [14, 14] }),
         draggable: true,
-        title: "Sürükle: taşı · tıkla: kaldır",
+        title: t.measure.pointTitle,
         zIndexOffset: 1200,
       }).addTo(layer);
       m.on("drag", () => {
@@ -37,8 +38,8 @@ export function createMeasure(map: L.Map, card: HTMLElement) {
 
   function text() {
     const total = points.length > 1 ? lineLength(makeLine(points)) : 0;
-    card.querySelector(".measure-total")!.textContent = points.length > 1 ? formatKm(total) : "Haritaya tıklayarak nokta ekle";
-    card.querySelector(".measure-count")!.textContent = `${points.length} nokta`;
+    card.querySelector(".measure-total")!.textContent = points.length > 1 ? formatKm(total) : t.measure.hint;
+    card.querySelector(".measure-count")!.textContent = t.measure.count(points.length);
   }
 
   function start(p: LatLon) {

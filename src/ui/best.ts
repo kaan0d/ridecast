@@ -1,8 +1,9 @@
+import { dec1, t } from "../i18n";
 import { DEPARTURE } from "../config/departure";
 import type { ScoredDeparture } from "../core/advice/departure";
 import { formatClock, formatTime } from "./format";
 
-// "En iyi saat": the top departures with arrival and risk; tapping one re-plans for it.
+// "Best time": the top departures with arrival and risk; tapping one re-plans for it.
 export function renderBest(
   el: HTMLElement,
   state: { top: ScoredDeparture[]; loading: boolean; error?: string },
@@ -12,7 +13,7 @@ export function renderBest(
   if (state.error || state.loading || !state.top.length) {
     const p = document.createElement("p");
     p.className = "footnote";
-    p.textContent = state.error ?? (state.loading ? "Önümüzdeki 24 saat karşılaştırılıyor…" : "Karşılaştırma için önce bir rota oluşturun.");
+    p.textContent = state.error ?? (state.loading ? t.best.comparing : t.best.needRoute);
     return el.replaceChildren(p);
   }
   const list = document.createElement("ol");
@@ -23,14 +24,14 @@ export function renderBest(
     b.type = "button";
     b.className = "best-item";
     b.setAttribute("aria-pressed", String(chosenMs === d.departMs));
-    const score = d.score.score.toFixed(1).replace(".", ",");
-    b.innerHTML = `<span class="best-time">${formatTime(d.departMs)}</span><span class="best-meta"><span class="risk-dot risk-${d.score.worst}" aria-hidden="true"></span>varış ${formatClock(d.arrivalMs)} · risk ${score}</span>`;
+    const score = dec1(d.score.score);
+    b.innerHTML = `<span class="best-time">${formatTime(d.departMs)}</span><span class="best-meta"><span class="risk-dot risk-${d.score.worst}" aria-hidden="true"></span>${t.best.meta(formatClock(d.arrivalMs), score)}</span>`;
     b.addEventListener("click", () => onPick(d.departMs));
     li.append(b);
     list.append(li);
   }
   const note = document.createElement("p");
   note.className = "footnote";
-  note.textContent = `Önümüzdeki ${DEPARTURE.windowH} saat, saat başı adaylar arasından en düşük riskli ${state.top.length} çıkış.`;
+  note.textContent = t.best.note(DEPARTURE.windowH, state.top.length);
   el.replaceChildren(list, note);
 }

@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { GPX_TRACK_KMH } from "../config/vehicles";
 import type { LatLon } from "../core/geo";
 import { parseGpx, toGpx } from "../core/route/gpx";
@@ -15,7 +16,7 @@ interface Deps {
   exportData(): { route: Route; waypoints: { pos: LatLon; name: string }[]; first: string; last: string } | null;
 }
 
-// "GPX dosyası aç" and "GPX indir".
+// "Open a GPX file" and "Save GPX".
 export function bindGpx(deps: Deps) {
   $<HTMLInputElement>("gpx-file").addEventListener("change", async (e) => {
     const input = e.target as HTMLInputElement;
@@ -23,13 +24,13 @@ export function bindGpx(deps: Deps) {
     input.value = "";
     if (!file) return;
     const gpx = parseGpx(await file.text());
-    if (!gpx) return deps.status("GPX dosyasında en az iki iz veya rota noktası bulunamadı.", "error");
+    if (!gpx) return deps.status(t.gpx.noPoints, "error");
     // No road data in a track: the assumed speed only feeds the road type guess.
     const distanceM = lineLength(makeLine(gpx.points));
     const durationS = distanceM / (GPX_TRACK_KMH / 3.6);
     const route: Route = { coords: gpx.points, distanceM, durationS, steps: [{ distanceM, durationS, ref: "", ferry: false, leg: 0 }] };
     await deps.onImport(route, [gpx.points[0], gpx.points[gpx.points.length - 1]]);
-    deps.status(`GPX rotası${gpx.name ? ` "${gpx.name}"` : ""}: ${formatKm(distanceM)}, ${gpx.points.length} nokta. Paylaşım linki sadece başlangıç ve bitişi taşır.`);
+    deps.status(t.gpx.loaded(gpx.name, formatKm(distanceM), gpx.points.length));
   });
   $("gpx-import").addEventListener("click", () => $("gpx-file").click());
 

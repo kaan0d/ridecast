@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import type { LatLon } from "../core/geo";
 import { reverseLabel } from "../services/nominatim";
 import { formatCoord } from "./format";
@@ -13,10 +14,10 @@ export function placeCard(pos: LatLon, actions: PlaceAction[]): HTMLElement {
   const card = document.createElement("div");
   card.className = "place-card";
   const title = document.createElement("strong");
-  title.textContent = "Seçilen nokta";
+  title.textContent = t.place.title;
   const addr = document.createElement("span");
   addr.className = "place-addr";
-  addr.textContent = "Adres aranıyor…";
+  addr.textContent = t.place.looking;
   const coord = document.createElement("span");
   coord.className = "place-coord";
   coord.textContent = formatCoord(pos);
@@ -32,7 +33,7 @@ export function placeCard(pos: LatLon, actions: PlaceAction[]): HTMLElement {
   }
   card.append(title, addr, coord, row);
   void reverseLabel(pos).then((label) => {
-    if (!label) return (addr.textContent = "Bu nokta için adres yok.");
+    if (!label) return (addr.textContent = t.place.noAddress);
     const [first, ...rest] = label.split(", ");
     title.textContent = first;
     addr.textContent = rest.slice(0, 3).join(", ");

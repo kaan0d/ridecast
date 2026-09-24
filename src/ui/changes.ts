@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { CHANGES } from "../config/share";
 import { diffWarnings, type WarningChange, type WarningSnap } from "../core/advice/changes";
 import { formatDuration, formatTime } from "./format";
@@ -8,20 +9,21 @@ interface Snapshot {
   runs: WarningSnap[]; // startMs relative to the departure, so "now" trips compare too
 }
 
-const km = (m: number) => `km ${Math.round(m / 1000)}`;
+const km = (m: number) => t.km(Math.round(m / 1000));
 
 function describe(c: WarningChange): string {
   switch (c.type) {
     case "new":
-      return `Yeni: ${c.now.text} (${km(c.now.fromM)})`;
+      return t.changes.new(c.now.text, km(c.now.fromM));
     case "gone":
-      return `Artık yok: ${c.before.text} (${km(c.before.fromM)})`;
+      return t.changes.gone(c.before.text, km(c.before.fromM));
     case "level":
-      return `${c.now.text}: ${LEVEL_LABEL[c.before.level].toLowerCase()} → ${LEVEL_LABEL[c.now.level].toLowerCase()} (${km(c.now.fromM)})`;
+      return t.changes.level(c.now.text, LEVEL_LABEL[c.before.level].toLowerCase(), LEVEL_LABEL[c.now.level].toLowerCase(), km(c.now.fromM));
     case "moved": {
-      const when = Math.abs(c.shiftMs) >= CHANGES.minShiftMs ? ` ${formatDuration(Math.abs(c.shiftMs) / 1000)} ${c.shiftMs < 0 ? "daha erken" : "daha geç"}` : "";
-      const where = Math.abs(c.shiftM) >= CHANGES.minShiftM ? `: artık ${km(c.now.fromM)}, önce ${km(c.before.fromM)}` : ` (${km(c.now.fromM)})`;
-      return `${c.now.text}${when} başlıyor${where}`;
+      const d = formatDuration(Math.abs(c.shiftMs) / 1000);
+      const when = Math.abs(c.shiftMs) >= CHANGES.minShiftMs ? (c.shiftMs < 0 ? t.changes.earlier(d) : t.changes.later(d)) : "";
+      const where = Math.abs(c.shiftM) >= CHANGES.minShiftM ? t.changes.where(km(c.now.fromM), km(c.before.fromM)) : t.changes.at(km(c.now.fromM));
+      return t.changes.moved(c.now.text, when, where);
     }
   }
 }
@@ -55,7 +57,7 @@ export function bindChanges(el: HTMLElement) {
   function render(changes: WarningChange[], sinceMs: number) {
     const title = document.createElement("h2");
     title.className = "group-title";
-    title.textContent = "Son bakıştan beri";
+    title.textContent = t.changes.title;
     const list = document.createElement("ul");
     list.className = "group change-list";
     for (const c of changes) {
@@ -66,11 +68,11 @@ export function bindChanges(el: HTMLElement) {
     }
     const note = document.createElement("p");
     note.className = "footnote";
-    note.textContent = `${formatTime(sinceMs)} tarihli tahmine göre. `;
+    note.textContent = t.changes.since(formatTime(sinceMs));
     const close = document.createElement("button");
     close.type = "button";
     close.className = "link-button";
-    close.textContent = "Kapat";
+    close.textContent = t.changes.close;
     close.addEventListener("click", () => el.replaceChildren());
     note.append(close);
     el.replaceChildren(title, list, note);

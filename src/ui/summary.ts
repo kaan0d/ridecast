@@ -1,3 +1,4 @@
+import { dec1, t } from "../i18n";
 import { SAFEST_MIN_DROP } from "../config/risk";
 import { ROAD_TYPE_RULES } from "../config/vehicles";
 import { totalS, tripDays, type Timeline } from "../core/eta/eta";
@@ -27,7 +28,7 @@ export function renderSummary(
   time.className = "eta-time";
   time.textContent = formatClock(eta.arrivalMs);
   const small = document.createElement("small");
-  small.textContent = "varış";
+  small.textContent = t.summary.arrival;
   time.append(small);
   const meta = document.createElement("span");
   meta.className = "eta-meta";
@@ -73,7 +74,7 @@ export function renderRouteList(
       b.setAttribute("aria-pressed", String(i === selected));
       const text = document.createElement("span");
       const name = document.createElement("strong");
-      name.textContent = i === 0 ? "Önerilen rota" : `Alternatif ${i}`;
+      name.textContent = i === 0 ? t.summary.suggested : t.summary.alternative(i);
       const sub = document.createElement("span");
       sub.className = "sub";
       const score = scores[i];
@@ -82,7 +83,7 @@ export function renderRouteList(
         const risk = document.createElement("span");
         risk.className = "route-risk";
         risk.innerHTML = `<span class="risk-dot risk-${score.worst}" aria-hidden="true"></span>`;
-        risk.append(`risk ${score.score.toFixed(1).replace(".", ",")} · en yüksek: ${LEVEL_LABEL[score.worst].toLowerCase()}`);
+        risk.append(t.summary.risk(dec1(score.score), LEVEL_LABEL[score.worst].toLowerCase()));
         sub.append(" · ", risk);
       }
       text.append(name, sub);
@@ -95,9 +96,9 @@ export function renderRouteList(
         badge.className = "safest";
         const diff =
           choice.safest === choice.base
-            ? "En hızlısı da bu"
-            : `${choice.extraMin >= 0 ? "+" : "−"}${Math.abs(choice.extraMin)} dk, risk %${Math.round(choice.riskDrop * 100)} daha düşük`;
-        badge.innerHTML = `<b>En güvenli rota</b><span>${diff}</span>`;
+            ? t.summary.fastestToo
+            : t.summary.saferBy(`${choice.extraMin >= 0 ? "+" : "−"}${Math.abs(choice.extraMin)}`, Math.round(choice.riskDrop * 100));
+        badge.innerHTML = `<b>${t.summary.safest}</b><span>${diff}</span>`;
         b.append(badge);
       }
       b.addEventListener("click", () => onSelect(i));
@@ -109,28 +110,28 @@ export function renderRouteList(
 
 // Detail rows under the arrival time: breaks, departure, one row per day of a multi-day trip,
 // the arrival at each stop, and in road-speed mode the km per guessed road type.
-export function summaryRows(t: Timeline, overnight: boolean[], stopTitles: string[], roadSteps: Step[] | null): [string, string][] {
-  const shortBreaks = t.breaks.filter((_, i) => !overnight[i]);
-  const days = tripDays(t, overnight);
+export function summaryRows(tl: Timeline, overnight: boolean[], stopTitles: string[], roadSteps: Step[] | null): [string, string][] {
+  const shortBreaks = tl.breaks.filter((_, i) => !overnight[i]);
+  const days = tripDays(tl, overnight);
   const rows: [string, string][] = [
     ...(shortBreaks.length
-      ? [["Molalar", `${shortBreaks.length} mola · ${formatDuration(shortBreaks.reduce((s, b) => s + b.endMs - b.startMs, 0) / 1000)}`] as [string, string]]
+      ? [[t.summary.breaks, t.summary.breaksValue(shortBreaks.length, formatDuration(shortBreaks.reduce((s, b) => s + b.endMs - b.startMs, 0) / 1000))] as [string, string]]
       : []),
-    ["Çıkış", formatTime(t.timeMs[0])],
+    [t.summary.departure, formatTime(tl.timeMs[0])],
     ...(days.length > 1
-      ? days.map((d, k): [string, string] => [`${k + 1}. gün`, `${formatTime(d.startMs)}–${formatClock(d.endMs)} · ${formatKm(d.toM - d.fromM)}`])
+      ? days.map((d, k): [string, string] => [t.summary.day(k + 1), `${formatTime(d.startMs)}–${formatClock(d.endMs)} · ${formatKm(d.toM - d.fromM)}`])
       : []),
-    ...t.legArrivalMs.map((ms, i): [string, string] => [`${stopTitles[i + 1]} varış`, formatTime(ms)]),
+    ...tl.legArrivalMs.map((ms, i): [string, string] => [t.summary.arrivalAt(stopTitles[i + 1]), formatTime(ms)]),
   ];
   if (roadSteps) {
     const b = roadBreakdown(roadSteps, ROAD_TYPE_RULES);
     const parts: [string, number][] = [
-      ["Otoyol", b.motorway],
-      ["Ana yol", b.primary],
-      ["Şehir içi", b.urban],
-      ["Feribot", b.ferry],
+      [t.summary.road.motorway, b.motorway],
+      [t.summary.road.primary, b.primary],
+      [t.summary.road.urban, b.urban],
+      [t.summary.road.ferry, b.ferry],
     ];
-    rows.push(["Yol tipi (tahmin)", parts.filter(([, m]) => m > 0).map(([n, m]) => `${n} ${formatKm(m)}`).join(" · ")]);
+    rows.push([t.summary.roadType, parts.filter(([, m]) => m > 0).map(([n, m]) => `${n} ${formatKm(m)}`).join(" · ")]);
   }
   return rows;
 }

@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { STOPS } from "../config/stops";
 import { pickStops, type Poi, type StopOnRoute } from "../core/advice/stops";
 import { etaAtDistance, type Timeline } from "../core/eta/eta";
@@ -10,7 +11,8 @@ import { icons } from "./icons";
 import type { createMap } from "./map";
 import type { WeatherPoint } from "./weather";
 
-const KIND = { fuel: "Akaryakıt", services: "Dinlenme tesisi", rest: "Mola yeri" };
+const KIND = t.stops.kind;
+const nameOf = (s: StopOnRoute) => (s.named ? s.name : KIND[s.kind]);
 
 export const stopIcon = (s: StopOnRoute) => (s.kind === "fuel" ? icons.fuel : icons.rest);
 
@@ -28,7 +30,7 @@ export function renderStops(
     const b = document.createElement("button");
     b.type = "button";
     b.className = "button-secondary stops-load";
-    b.textContent = state.loading ? "Aranıyor…" : "Yakıt ve mola noktalarını göster";
+    b.textContent = state.loading ? t.stops.searching : t.stops.show;
     b.disabled = state.loading;
     b.addEventListener("click", state.onLoad);
     parts.push(b);
@@ -45,7 +47,7 @@ export function renderStops(
     if (!state.stops.length) {
       const li = document.createElement("li");
       li.className = "empty";
-      li.textContent = "Rota boyunca 1 km içinde yakıt veya mola noktası bulunamadı.";
+      li.textContent = t.stops.none;
       list.append(li);
     }
     state.stops.forEach((s, i) => {
@@ -55,16 +57,16 @@ export function renderStops(
       open.className = "stop-open";
       const eta = state.etaAt(s.distM);
       open.innerHTML = `${stopIcon(s)}<span class="stop-name"></span><span class="stop-meta"></span>`;
-      open.querySelector(".stop-name")!.textContent = s.name;
+      open.querySelector(".stop-name")!.textContent = nameOf(s);
       open.querySelector(".stop-meta")!.textContent =
-        `${s.named ? KIND[s.kind] + " · " : ""}km ${Math.round(s.distM / 1000)}${eta ? " · " + formatClock(eta) : ""}${s.recommended ? " · barınaklı, yağış/soğukta önerilir" : ""}`;
+        `${s.named ? KIND[s.kind] + " · " : ""}${t.km(Math.round(s.distM / 1000))}${eta ? " · " + formatClock(eta) : ""}${s.recommended ? t.stops.sheltered : ""}`;
       open.addEventListener("click", () => state.onOpen(i));
       const add = document.createElement("button");
       add.type = "button";
       add.className = "icon-btn";
       add.innerHTML = icons.plus;
-      add.setAttribute("aria-label", `${s.name}: mola ekle`);
-      add.title = "Mola ekle";
+      add.setAttribute("aria-label", t.stops.addAria(nameOf(s)));
+      add.title = t.stops.addBreak;
       add.addEventListener("click", () => state.onAdd(s));
       li.classList.toggle("recommended", s.recommended);
       li.append(open, add);
@@ -73,7 +75,7 @@ export function renderStops(
     parts.push(list);
     const note = document.createElement("p");
     note.className = "footnote";
-    note.textContent = "OpenStreetMap verisi, rotanın 1 km yakını. Aynı türden noktalar 10 km'de bire seyreltildi; yağış ve soğukta sadece barınaklı olanlar.";
+    note.textContent = t.stops.note;
     parts.push(note);
   }
   el.replaceChildren(...parts);
@@ -87,7 +89,7 @@ interface PanelDeps {
   onOpen(): void; // before a stop is shown on the map (collapse the sheet)
 }
 
-// "Yakıt ve mola noktaları": Overpass stops of the selected route, loaded on request.
+// "Fuel and rest stops": Overpass stops of the selected route, loaded on request.
 export function createStopsPanel(deps: PanelDeps) {
   const panel = document.getElementById("stops-panel")!;
   // Stops found for one route (by route object), loaded on request.
@@ -145,13 +147,13 @@ export function createStopsPanel(deps: PanelDeps) {
           const div = document.createElement("div");
           div.className = "poi-card";
           const name = document.createElement("strong");
-          name.textContent = s.name;
+          name.textContent = nameOf(s);
           const meta = document.createElement("span");
-          meta.textContent = `km ${Math.round(s.distM / 1000)}${s.recommended ? " · barınaklı, önerilir" : ""}`;
+          meta.textContent = `${t.km(Math.round(s.distM / 1000))}${s.recommended ? t.stops.shelteredShort : ""}`;
           const b = document.createElement("button");
           b.type = "button";
           b.className = "button-secondary";
-          b.textContent = "Mola ekle";
+          b.textContent = t.stops.addBreak;
           b.addEventListener("click", () => add(s));
           div.append(name, meta, b);
           return div;

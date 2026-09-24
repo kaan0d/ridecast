@@ -17,10 +17,9 @@ export function classifyPoi(id: string, pos: LatLon, tags: Record<string, string
   const kind: PoiKind | null =
     tags.amenity === "fuel" ? "fuel" : tags.highway === "services" ? "services" : tags.highway === "rest_area" ? "rest" : null;
   if (!kind) return null;
-  const fallback = { fuel: "Akaryakıt istasyonu", services: "Dinlenme tesisi", rest: "Mola yeri" }[kind];
   const sheltered = kind !== "rest" || tags.shelter === "yes" || !!tags.shop || !!tags.building;
   const name = tags.name ?? tags.brand;
-  return { id, kind, name: name ?? fallback, pos, sheltered, named: !!name };
+  return { id, kind, name: name ?? "", pos, sheltered, named: !!name }; // unnamed: the UI shows the kind
 }
 
 export interface StopOnRoute extends Poi {

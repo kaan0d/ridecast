@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { classifyPoi, type Poi } from "../core/advice/stops";
 import type { Box } from "../core/route/line";
 import { HttpError, postFormJson } from "./http";
@@ -28,10 +29,10 @@ export async function fetchStops(boxes: Box[]): Promise<Poi[]> {
   try {
     data = await postFormJson(URL, `data=${encodeURIComponent(query)}`, 30000);
   } catch (e) {
-    if (e instanceof HttpError && (e.status === 429 || e.status === 504)) throw new Error("Yakıt/mola sunucusu şu an yoğun, biraz sonra tekrar deneyin.");
-    throw new Error("Yakıt ve mola noktaları alınamadı.");
+    if (e instanceof HttpError && (e.status === 429 || e.status === 504)) throw new Error(t.errors.stopsBusy);
+    throw new Error(t.errors.stopsDown);
   }
-  if (data.remark) throw new Error("Yakıt/mola sunucusu sorguyu bitiremedi, biraz sonra tekrar deneyin.");
+  if (data.remark) throw new Error(t.errors.stopsPartial);
   return data.elements.flatMap((e) => {
     const lat = e.lat ?? e.center?.lat;
     const lon = e.lon ?? e.center?.lon;

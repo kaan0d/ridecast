@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import type { LatLon } from "../core/geo";
 import type { Place } from "../services/photon";
 import { icons } from "./icons";
@@ -11,8 +12,11 @@ export interface TripStop {
 export type StopKind = "start" | "via" | "end";
 
 export const kindOf = (i: number, n: number): StopKind => (i === 0 ? "start" : i === n - 1 ? "end" : "via");
-export const titleOf = (i: number, n: number) => ({ start: "Başlangıç", end: "Bitiş", via: `Ara durak ${i}` })[kindOf(i, n)];
-const placeholderOf = (i: number, n: number) => ({ start: "Nereden?", end: "Nereye?", via: "Durak" })[kindOf(i, n)];
+export const titleOf = (i: number, n: number) => {
+  const k = kindOf(i, n);
+  return k === "via" ? t.trip.title.via(i) : t.trip.title[k];
+};
+const placeholderOf = (i: number, n: number) => t.trip.placeholder[kindOf(i, n)];
 
 interface Handlers {
   onPick(i: number, p: Place): void;
@@ -34,7 +38,7 @@ export function renderTrip(el: HTMLElement, swap: HTMLButtonElement, stops: Trip
       const glyph = document.createElement("button");
       glyph.type = "button";
       glyph.className = "stop-glyph";
-      glyph.setAttribute("aria-label", `${titleOf(i, n)}: sırayı değiştirmek için sürükle veya ok tuşlarını kullan`);
+      glyph.setAttribute("aria-label", t.trip.glyphAria(titleOf(i, n)));
       glyph.addEventListener("keydown", (e) => {
         const to = e.key === "ArrowUp" ? i - 1 : e.key === "ArrowDown" ? i + 1 : -1;
         if (to < 0 || to >= n) return;
@@ -43,14 +47,14 @@ export function renderTrip(el: HTMLElement, swap: HTMLButtonElement, stops: Trip
         el.querySelectorAll<HTMLElement>(".stop-glyph")[to]?.focus();
       });
       glyph.addEventListener("pointerdown", (e) => dragRow(el, i, e, h.onMove));
-      row.append(glyph, placeInput(s.label, placeholderOf(i, n), `${titleOf(i, n)} adresi`, (p) => h.onPick(i, p), h.near));
+      row.append(glyph, placeInput(s.label, placeholderOf(i, n), t.trip.addressAria(titleOf(i, n)), (p) => h.onPick(i, p), h.near));
       if (n > 2) {
         const rm = document.createElement("button");
         rm.type = "button";
         rm.className = "icon-btn";
         rm.innerHTML = icons.close;
-        rm.setAttribute("aria-label", `${titleOf(i, n)} sil`);
-        rm.title = "Durağı kaldır";
+        rm.setAttribute("aria-label", t.trip.removeAria(titleOf(i, n)));
+        rm.title = t.trip.remove;
         rm.addEventListener("click", () => h.onRemove(i));
         row.append(rm);
       }

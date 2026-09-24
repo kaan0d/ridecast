@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { fromLonLat, toLonLatString, type LatLon } from "../core/geo";
 import type { Step } from "../core/route/roadType";
 import { getJson, HttpError } from "./http";
@@ -28,11 +29,11 @@ export async function getRoutes(stops: LatLon[], base: string): Promise<Route[]>
     data = await getJson<OsrmResponse>(url);
   } catch (e) {
     // OSRM answers 400 for points it cannot snap to a road.
-    if (e instanceof HttpError && e.status === 400) throw new Error("Rota bulunamadı.");
-    if (e instanceof HttpError && e.status === 429) throw new Error("Rota sunucusu yoğun, biraz sonra tekrar deneyin.");
-    throw new Error("Rota sunucusuna ulaşılamadı.");
+    if (e instanceof HttpError && e.status === 400) throw new Error(t.errors.noRoute);
+    if (e instanceof HttpError && e.status === 429) throw new Error(t.errors.routeBusy);
+    throw new Error(t.errors.routeDown);
   }
-  if (data.code !== "Ok" || !data.routes?.length) throw new Error("Rota bulunamadı.");
+  if (data.code !== "Ok" || !data.routes?.length) throw new Error(t.errors.noRoute);
   return data.routes.map((r) => ({
     coords: r.geometry.coordinates.map(fromLonLat),
     distanceM: r.distance,

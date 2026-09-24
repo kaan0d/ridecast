@@ -1,7 +1,8 @@
 import { WEATHER_REQUEST } from "../config/weather";
 import type { WarningSnap } from "../core/advice/changes";
 import type { Assessment, Level, RoadState } from "../core/risk/risk";
-import { compass, conditionOf, type Condition, type WeatherHour } from "../core/weather/weather";
+import { compassIndex, conditionOf, type Condition, type WeatherHour } from "../core/weather/weather";
+import { t } from "../i18n";
 import type { LatLon } from "../core/geo";
 import { formatClock } from "./format";
 import { icons, type WeatherIcon } from "./icons";
@@ -14,8 +15,8 @@ export interface WeatherPoint {
   risk: Assessment | null;
 }
 
-export const LEVEL_LABEL = ["Yok", "Düşük", "Orta", "Yüksek"];
-const ROAD_LABEL: Record<RoadState, string> = { dry: "Kuru", damp: "Nemli", wet: "Islak", ice: "Buzlanma riski" };
+export const LEVEL_LABEL = t.level;
+const ROAD_LABEL: Record<RoadState, string> = t.weather.road;
 const dot = (level: Level) => `<span class="risk-dot risk-${level}" aria-hidden="true"></span>`;
 
 const ICON: Record<Condition, WeatherIcon> = {
@@ -30,7 +31,7 @@ const ICON: Record<Condition, WeatherIcon> = {
 };
 
 const deg = (v: number) => `${Math.round(v)}°`;
-const km = (m: number) => `km ${Math.round(m / 1000)}`;
+const km = (m: number) => t.km(Math.round(m / 1000));
 
 export function weatherIcon(h: WeatherHour | null): string {
   if (!h) return "";
@@ -49,29 +50,29 @@ export function pinHtml(p: WeatherPoint): string {
 
 // Card shown when a capsule is opened.
 export function cardHtml(p: WeatherPoint): string {
-  const head = `<div class="wx-head"><span>${formatClock(p.etaMs)} varış</span><span>${km(p.distM)}</span></div>`;
+  const head = `<div class="wx-head"><span>${t.weather.arrival(formatClock(p.etaMs))}</span><span>${km(p.distM)}</span></div>`;
   const h = p.hour;
-  if (!h) return `<div class="wx-card">${head}<p class="wx-empty">Bu saat için tahmin yok.</p></div>`;
+  if (!h) return `<div class="wx-card">${head}<p class="wx-empty">${t.weather.noForecast}</p></div>`;
   const c = conditionOf(h.code);
-  const precip = `${h.precipMm.toFixed(1)} mm${h.precipProb === null ? "" : ` · %${h.precipProb}`}${h.snowCm > 0 ? ` · kar ${h.snowCm.toFixed(1)} cm` : ""}`;
+  const precip = `${h.precipMm.toFixed(1)} mm${h.precipProb === null ? "" : ` · ${h.precipProb}%`}${h.snowCm > 0 ? ` · ${t.weather.snow(h.snowCm.toFixed(1))}` : ""}`;
   // The arrow points where the wind blows to.
   const arrow = `<span class="wx-arrow" style="transform:rotate(${h.windFromDeg + 180}deg)">${icons.arrowUp}</span>`;
-  const gust = `hamle ${Math.round(h.gustKmh)}`;
-  const wind = h.windKmh < 1 ? `Sakin · ${gust}` : `${arrow}${Math.round(h.windKmh)} km/s ${compass(h.windFromDeg)} · ${gust}`;
+  const gust = t.weather.gusts(Math.round(h.gustKmh));
+  const wind = h.windKmh < 1 ? `${t.weather.calm} · ${gust}` : `${arrow}${Math.round(h.windKmh)} ${t.kmh} ${t.compass[compassIndex(h.windFromDeg)]} · ${gust}`;
   const vis = h.visibilityM >= 10_000 ? `${Math.round(h.visibilityM / 1000)} km` : `${(h.visibilityM / 1000).toFixed(1)} km`;
   return `<div class="wx-card">${head}
-    <div class="wx-main"><span class="wx-big">${weatherIcon(h)}</span><span class="wx-temp">${deg(h.tempC)}</span><span class="wx-cond">${c.label}</span></div>
+    <div class="wx-main"><span class="wx-big">${weatherIcon(h)}</span><span class="wx-temp">${deg(h.tempC)}</span><span class="wx-cond">${t.conditions[c.name]}</span></div>
     <dl class="wx-rows">
-      <div><dt>Hissedilen</dt><dd>${deg(h.feelsC)}</dd></div>
-      ${p.risk ? `<div><dt>Sürüşte hissedilen</dt><dd>${deg(p.risk.feltC)}</dd></div>` : ""}
-      <div><dt>Yağış</dt><dd>${precip}</dd></div>
-      <div><dt>Rüzgar</dt><dd>${wind}</dd></div>
-      <div><dt>Görüş</dt><dd>${vis}</dd></div>
-      ${p.risk ? `<div><dt>Yol (tahmin)</dt><dd>${ROAD_LABEL[p.risk.road]}</dd></div>` : ""}
+      <div><dt>${t.weather.feelsLike}</dt><dd>${deg(h.feelsC)}</dd></div>
+      ${p.risk ? `<div><dt>${t.weather.ridingFeel}</dt><dd>${deg(p.risk.feltC)}</dd></div>` : ""}
+      <div><dt>${t.weather.precip}</dt><dd>${precip}</dd></div>
+      <div><dt>${t.weather.wind}</dt><dd>${wind}</dd></div>
+      <div><dt>${t.weather.visibility}</dt><dd>${vis}</dd></div>
+      ${p.risk ? `<div><dt>${t.weather.roadEstimate}</dt><dd>${ROAD_LABEL[p.risk.road]}</dd></div>` : ""}
     </dl>
     ${p.risk?.events.length ? `<ul class="wx-warn">${p.risk.events.map((e) => `<li>${dot(e.level)}${e.text}</li>`).join("")}</ul>` : ""}
-    ${p.etaMs - Date.now() > WEATHER_REQUEST.farDays * 86_400_000 ? `<p class="wx-far">${WEATHER_REQUEST.farDays} günden uzak tahmin: saat ve miktar belirsiz, yaklaşınca tekrar bak.</p>` : ""}
-    <p class="wx-source">Tahmin saati ${formatClock(h.timeMs)} · Open-Meteo</p>
+    ${p.etaMs - Date.now() > WEATHER_REQUEST.farDays * 86_400_000 ? `<p class="wx-far">${t.weather.far(WEATHER_REQUEST.farDays)}</p>` : ""}
+    <p class="wx-source">${t.weather.source(formatClock(h.timeMs))}</p>
   </div>`;
 }
 
@@ -83,7 +84,7 @@ export function renderStrip(
   if (!state.points.length && !state.loading && !state.error) return el.replaceChildren();
   const title = document.createElement("h2");
   title.className = "group-title";
-  title.textContent = "Yol boyunca hava";
+  title.textContent = t.weather.stripTitle;
   const parts: HTMLElement[] = [title];
 
   if (state.error) {
@@ -93,14 +94,14 @@ export function renderStrip(
     const retry = document.createElement("button");
     retry.type = "button";
     retry.className = "link-button";
-    retry.textContent = "Tekrar dene";
+    retry.textContent = t.weather.retry;
     retry.addEventListener("click", state.onRetry);
     p.append(retry);
     parts.push(p);
   } else if (state.loading && !state.points.length) {
     const p = document.createElement("p");
     p.className = "wx-status loading";
-    p.textContent = "Hava durumu alınıyor…";
+    p.textContent = t.weather.loading;
     parts.push(p);
   }
 
@@ -112,7 +113,7 @@ export function renderStrip(
       const li = document.createElement("li");
       const b = document.createElement("button");
       b.type = "button";
-      const c = pt.hour ? conditionOf(pt.hour.code).label : "tahmin yok";
+      const c = pt.hour ? t.conditions[conditionOf(pt.hour.code).name] : t.weather.noData;
       b.setAttribute("aria-label", `${formatClock(pt.etaMs)}, ${km(pt.distM)}: ${pt.hour ? deg(pt.hour.tempC) + ", " : ""}${c}`);
       b.innerHTML = `<span class="wx-t">${formatClock(pt.etaMs)}</span>${weatherIcon(pt.hour) || '<span class="wx-dash">–</span>'}<span class="wx-deg">${pt.hour ? deg(pt.hour.tempC) : ""}</span><span class="wx-km">${km(pt.distM)}</span>`;
       b.addEventListener("click", () => state.onOpen(i));
@@ -175,13 +176,13 @@ export function renderWarnings(el: HTMLElement, warnings: Warning[], ready: bool
   if (!ready) return el.replaceChildren();
   const title = document.createElement("h2");
   title.className = "group-title";
-  title.textContent = "Uyarılar";
+  title.textContent = t.weather.warnings;
   const list = document.createElement("ol");
   list.className = "group warn-list";
   if (!warnings.length) {
     const li = document.createElement("li");
     li.className = "empty";
-    li.textContent = "Bu yolculukta uyarı yok.";
+    li.textContent = t.weather.noWarnings;
     list.append(li);
   }
   for (const w of warnings) {
@@ -189,7 +190,7 @@ export function renderWarnings(el: HTMLElement, warnings: Warning[], ready: bool
     const b = document.createElement("button");
     b.type = "button";
     b.className = "warn";
-    b.setAttribute("aria-label", `${LEVEL_LABEL[w.level]} risk: ${w.text}${w.when ? ", " + w.when : ""}, ${w.where}`);
+    b.setAttribute("aria-label", t.weather.warnAria(LEVEL_LABEL[w.level], w.text, w.when, w.where));
     b.innerHTML = `${dot(w.level)}<span class="warn-text">${w.text}</span><span class="warn-meta">${w.when ? w.when + " · " : ""}${w.where}</span>`;
     if (w.open !== undefined) b.addEventListener("click", () => onOpen(w.open!));
     else b.disabled = true;

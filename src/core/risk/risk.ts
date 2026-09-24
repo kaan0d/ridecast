@@ -38,6 +38,24 @@ export interface WetRoadRules {
   dampRecentMm: number;
 }
 
+// Warning texts in the UI language (src/i18n); core only decides levels and numbers.
+export interface RiskTexts {
+  storm: string;
+  snow: string;
+  rain(level: Level, mm: number, prob: number | null): string;
+  rainProb(pct: number): string;
+  gust(kmh: number): string;
+  visibility(km: number, fog: boolean): string;
+  ice(tempC: number): string;
+  nearFreezing(tempC: number): string;
+  wetRoad: string;
+  dampRoad: string;
+  cold(feltC: number): string;
+  heat(feltC: number, strong: boolean): string;
+  dark: string;
+  glare(elevationDeg: number): string;
+}
+
 export type RiskKind = "storm" | "snow" | "rain" | "gust" | "visibility" | "ice" | "cold" | "road" | "dark" | "glare" | "heat";
 export interface RiskEvent {
   kind: RiskKind;
@@ -98,48 +116,47 @@ export interface PointInput {
   pos: LatLon;
 }
 
-export function assessPoint(p: PointInput, t: RiskThresholds, wet: WetRoadRules, glare: GlareRules): Assessment {
+export function assessPoint(p: PointInput, t: RiskThresholds, wet: WetRoadRules, glare: GlareRules, tx: RiskTexts): Assessment {
   const h = p.hours[p.i];
   const events: RiskEvent[] = [];
   const add = (kind: RiskKind, level: Level, text: string) => level > 0 && events.push({ kind, level, text });
 
-  if (h.code >= 95) add("storm", t.storm, "Gök gürültülü fırtına");
-  if (h.snowCm > 0 || (h.code >= 71 && h.code <= 77) || h.code === 85 || h.code === 86) add("snow", t.snow, "Kar yağışı");
+  if (h.code >= 95) add("storm", t.storm, tx.storm);
+  if (h.snowCm > 0 || (h.code >= 71 && h.code <= 77) || h.code === 85 || h.code === 86) add("snow", t.snow, tx.snow);
   else {
     // The probability (ensemble based) says how sure the rain amount is; a high one alone is a low warning.
     const rain = above(h.precipMm, t.rainMm);
-    const prob = h.precipProb === null ? "" : ` · olasılık %${h.precipProb}`;
-    if (rain > 0) add("rain", rain, `${rain === 3 ? "Şiddetli yağmur" : rain === 1 ? "Hafif yağmur" : "Yağmur"} ${h.precipMm.toFixed(1)} mm/sa${prob}`);
-    else if (t.rainProbPct !== null && h.precipProb !== null && h.precipProb >= t.rainProbPct) add("rain", 1, `Yağış olasılığı %${h.precipProb}`);
+    if (rain > 0) add("rain", rain, tx.rain(rain, h.precipMm, h.precipProb));
+    else if (t.rainProbPct !== null && h.precipProb !== null && h.precipProb >= t.rainProbPct) add("rain", 1, tx.rainProb(h.precipProb));
   }
-  add("gust", above(h.gustKmh, t.gustKmh), `Rüzgar hamlesi ${Math.round(h.gustKmh)} km/s`);
+  add("gust", above(h.gustKmh, t.gustKmh), tx.gust(h.gustKmh));
   const fog = h.code === 45 || h.code === 48;
   // The fog code alone is a low warning; the forecast visibility decides anything higher.
   const vis = Math.max(below(h.visibilityM, t.visibilityM), fog ? 1 : 0) as Level;
-  add("visibility", vis, fog ? `Sis, görüş ${(h.visibilityM / 1000).toFixed(1)} km` : `Görüş ${(h.visibilityM / 1000).toFixed(1)} km`);
+  add("visibility", vis, tx.visibility(h.visibilityM / 1000, fog));
 
   const road = roadState(p.hours, p.i, wet, t.iceTempC);
-  if (road === "ice") add("ice", 3, `Buzlanma riski: ${Math.round(h.tempC)}° ve ıslak yol (tahmin)`);
+  if (road === "ice") add("ice", 3, tx.ice(h.tempC));
   else {
-    if (h.tempC <= t.nearFreezingC) add("ice", 2, `Donma sınırına yakın sıcaklık (${Math.round(h.tempC)}°)`);
-    if (road === "wet") add("road", t.road.wet, "Islak yol (tahmin)");
-    if (road === "damp") add("road", t.road.damp, "Nemli yol (tahmin)");
+    if (h.tempC <= t.nearFreezingC) add("ice", 2, tx.nearFreezing(h.tempC));
+    if (road === "wet") add("road", t.road.wet, tx.wetRoad);
+    if (road === "damp") add("road", t.road.damp, tx.dampRoad);
   }
 
   const feltC = t.windChill ? windChillC(h.tempC, relativeWindKmh(p.rideKmh, h.windKmh, h.windFromDeg, p.headingDeg)) : h.feelsC;
-  if (t.coldC) add("cold", below(feltC, t.coldC), `Sürüşte hissedilen ${Math.round(feltC)}°`);
+  if (t.coldC) add("cold", below(feltC, t.coldC), tx.cold(feltC));
 
   if (t.heatC) {
     const heat = above(h.feelsC, t.heatC);
-    add("heat", heat, `Sıcak stresi: hissedilen ${Math.round(h.feelsC)}°${heat >= 2 ? ", gölgede mola ve su" : ""}`);
+    add("heat", heat, tx.heat(h.feelsC, heat >= 2));
   }
 
   const dark = isDark(p.sun, p.etaMs);
-  if (dark) add("dark", t.dark, "Karanlıkta sürüş");
+  if (dark) add("dark", t.dark, tx.dark);
   else if (h.code <= glare.maxCode) {
     const s = sunPosition(p.etaMs, p.pos.lat, p.pos.lon);
     if (s.elevationDeg > 0 && s.elevationDeg <= glare.maxElevationDeg && angleBetween(s.azimuthDeg, p.headingDeg) <= glare.maxAngleDeg)
-      add("glare", t.glare, `Güneş karşıdan ve alçakta (${Math.round(s.elevationDeg)}°), göz kamaşabilir`);
+      add("glare", t.glare, tx.glare(s.elevationDeg));
   }
 
   events.sort((a, b) => b.level - a.level);

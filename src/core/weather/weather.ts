@@ -47,26 +47,42 @@ export function nearestHourIndex(series: WeatherSeries, ms: number, maxGapMin: n
 
 export type Condition = "clear" | "partly" | "cloudy" | "fog" | "drizzle" | "rain" | "snow" | "storm";
 
+// Name keys for the UI's condition labels (i18n).
+export type ConditionName =
+  | "clear"
+  | "mostlyClear"
+  | "partly"
+  | "overcast"
+  | "fog"
+  | "drizzle"
+  | "freezingDrizzle"
+  | "freezingRain"
+  | "lightRain"
+  | "rain"
+  | "heavyRain"
+  | "snow"
+  | "storm"
+  | "hail"
+  | "unknown";
+
 // WMO weather interpretation codes (Open-Meteo docs).
-export function conditionOf(code: number): { kind: Condition; label: string } {
-  if (code === 0) return { kind: "clear", label: "Açık" };
-  if (code === 1) return { kind: "partly", label: "Az bulutlu" };
-  if (code === 2) return { kind: "partly", label: "Parçalı bulutlu" };
-  if (code === 3) return { kind: "cloudy", label: "Kapalı" };
-  if (code === 45 || code === 48) return { kind: "fog", label: "Sis" };
-  if (code >= 51 && code <= 57) return { kind: "drizzle", label: code >= 56 ? "Donan çisenti" : "Çisenti" };
-  if (code === 66 || code === 67) return { kind: "rain", label: "Donan yağmur" };
+export function conditionOf(code: number): { kind: Condition; name: ConditionName } {
+  if (code === 0) return { kind: "clear", name: "clear" };
+  if (code === 1) return { kind: "partly", name: "mostlyClear" };
+  if (code === 2) return { kind: "partly", name: "partly" };
+  if (code === 3) return { kind: "cloudy", name: "overcast" };
+  if (code === 45 || code === 48) return { kind: "fog", name: "fog" };
+  if (code >= 51 && code <= 57) return { kind: "drizzle", name: code >= 56 ? "freezingDrizzle" : "drizzle" };
+  if (code === 66 || code === 67) return { kind: "rain", name: "freezingRain" };
   if ((code >= 61 && code <= 65) || (code >= 80 && code <= 82)) {
     const heavy = code === 65 || code === 82;
     const light = code === 61 || code === 80;
-    return { kind: "rain", label: heavy ? "Şiddetli yağmur" : light ? "Hafif yağmur" : "Yağmur" };
+    return { kind: "rain", name: heavy ? "heavyRain" : light ? "lightRain" : "rain" };
   }
-  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return { kind: "snow", label: "Kar" };
-  if (code >= 95) return { kind: "storm", label: code === 95 ? "Gök gürültülü fırtına" : "Dolulu fırtına" };
-  return { kind: "cloudy", label: "Bilinmiyor" };
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return { kind: "snow", name: "snow" };
+  if (code >= 95) return { kind: "storm", name: code === 95 ? "storm" : "hail" };
+  return { kind: "cloudy", name: "unknown" };
 }
 
-const COMPASS = ["K", "KD", "D", "GD", "G", "GB", "B", "KB"];
-
-// Eight-point Turkish compass name for a direction in degrees.
-export const compass = (deg: number) => COMPASS[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+// Eight-point compass sector (0 = north, clockwise) for a direction in degrees; the UI names it.
+export const compassIndex = (deg: number) => Math.round((((deg % 360) + 360) % 360) / 45) % 8;

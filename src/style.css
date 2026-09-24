@@ -489,6 +489,29 @@ button {
   letter-spacing: -0.03em;
 }
 
+.lang-switch {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--fill);
+}
+
+.lang-switch button {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.lang-switch button[aria-pressed="true"] {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--shadow-small);
+}
+
 .tagline {
   color: var(--ink-2);
   font-size: 0.9375rem;
@@ -2074,7 +2097,13 @@ input:invalid {
     padding: 2px 14px calc(28px + env(safe-area-inset-bottom));
   }
 
+  /* Phone: no wordmark (the sheet is short), only the language switch. */
   .brand {
+    margin: 0 4px 8px;
+  }
+
+  .brand .wordmark,
+  .brand .tagline {
     display: none;
   }
 
