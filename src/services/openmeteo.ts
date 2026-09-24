@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { WEATHER_REQUEST } from "../config/weather";
 import type { LatLon } from "../core/geo";
 import type { Forecast } from "../core/weather/weather";
@@ -33,7 +34,7 @@ const round = (v: number) => (Math.round(v / WEATHER_REQUEST.coordRoundDeg) * WE
 // fresh: skip the cache (live mode refresh).
 export async function fetchForecast(points: LatLon[], untilMs: number, fresh = false): Promise<Forecast[]> {
   const days = Math.ceil((untilMs - Date.now()) / DAY_MS) + 1;
-  if (days > WEATHER_REQUEST.maxForecastDays) throw new Error(`Hava tahmini en fazla ${WEATHER_REQUEST.maxForecastDays - 1} gün ilerisi için var.`);
+  if (days > WEATHER_REQUEST.maxForecastDays) throw new Error(t.errors.weatherTooFar(WEATHER_REQUEST.maxForecastDays - 1));
   const url =
     `${BASE}?latitude=${points.map((p) => round(p.lat)).join(",")}&longitude=${points.map((p) => round(p.lon)).join(",")}` +
     `&hourly=${HOURLY}&daily=sunrise,sunset&timeformat=unixtime&timezone=auto&past_hours=${WEATHER_REQUEST.pastHours}&forecast_days=${Math.max(WEATHER_REQUEST.minForecastDays, days)}`;
@@ -41,8 +42,8 @@ export async function fetchForecast(points: LatLon[], untilMs: number, fresh = f
   try {
     data = await getJson<OmLocation | OmLocation[]>(url, 15000, fresh);
   } catch (e) {
-    if (e instanceof HttpError && e.status === 429) throw new Error("Hava servisi şu an yoğun, biraz sonra tekrar deneyin.");
-    throw new Error("Hava durumu alınamadı.");
+    if (e instanceof HttpError && e.status === 429) throw new Error(t.errors.weatherBusy);
+    throw new Error(t.errors.weatherDown);
   }
   // One location comes back as an object, several as an array.
   return (Array.isArray(data) ? data : [data]).map(({ hourly: h, daily: d }) => ({

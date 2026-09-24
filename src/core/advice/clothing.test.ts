@@ -2,6 +2,9 @@ import { describe, expect, test } from "vitest";
 import type { Assessment } from "../risk/risk";
 import type { WeatherHour } from "../weather/weather";
 import { clothingFor, summarize, type ClothingRule, type RouteConditions } from "./clothing";
+import { tr } from "../../i18n/tr";
+
+const TX = tr.clothing.why; // Turkish reason texts
 
 const rules: ClothingRule<"moto" | "car">[] = [
   { item: "wind layer", vehicles: ["moto"], feltAtMostC: 15 },
@@ -25,18 +28,18 @@ const calm: RouteConditions = {
 
 describe("clothingFor", () => {
   test("a warm dry day needs nothing", () => {
-    expect(clothingFor(calm, "moto", rules)).toEqual([]);
+    expect(clothingFor(calm, "moto", rules, TX)).toEqual([]);
   });
 
   test("the list grows with the worst conditions and says why", () => {
-    const list = clothingFor({ ...calm, minFeltC: 4.4, maxPrecipMm: 1.2, dark: true }, "moto", rules);
+    const list = clothingFor({ ...calm, minFeltC: 4.4, maxPrecipMm: 1.2, dark: true }, "moto", rules, TX);
     expect(list.map((i) => i.item)).toEqual(["wind layer", "thermal", "rain suit", "clear visor"]);
     expect(list[1].why).toBe("hissedilen en düşük 4°");
     expect(list[2].why).toBe("yağış 1.2 mm/sa");
   });
 
   test("a wet road left by earlier rain also asks for rain gear", () => {
-    expect(clothingFor({ ...calm, wetRoad: true }, "moto", rules)).toEqual([{ item: "rain suit", why: "ıslak yol" }]);
+    expect(clothingFor({ ...calm, wetRoad: true }, "moto", rules, TX)).toEqual([{ item: "rain suit", why: "ıslak yol" }]);
   });
 
   test("an item from two rules shows once with both reasons", () => {
@@ -44,12 +47,12 @@ describe("clothingFor", () => {
       { item: "visor", vehicles: ["moto"], precipAtLeastMm: 0.1 },
       { item: "visor", vehicles: ["moto"], feltAtMostC: 5 },
     ];
-    expect(clothingFor({ ...calm, maxPrecipMm: 1, minFeltC: 2 }, "moto", twice)).toEqual([{ item: "visor", why: "yağış 1.0 mm/sa, hissedilen en düşük 2°" }]);
+    expect(clothingFor({ ...calm, maxPrecipMm: 1, minFeltC: 2 }, "moto", twice, TX)).toEqual([{ item: "visor", why: "yağış 1.0 mm/sa, hissedilen en düşük 2°" }]);
   });
 
   test("rules only apply to their vehicles", () => {
     const cold = { ...calm, minFeltC: 0, snow: true };
-    expect(clothingFor(cold, "car", rules).map((i) => i.item)).toEqual(["chains"]);
+    expect(clothingFor(cold, "car", rules, TX).map((i) => i.item)).toEqual(["chains"]);
   });
 });
 

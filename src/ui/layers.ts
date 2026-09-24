@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import L from "leaflet";
 import { getJson } from "../services/http";
 import { formatClock } from "./format";
@@ -8,20 +9,20 @@ export type BaseId = "map" | "satellite" | "terrain";
 // topography keep their colours.
 const BASES: Record<BaseId, { label: string; url: string; maxZoom: number; className?: string; attribution: string }> = {
   map: {
-    label: "Harita",
+    label: t.layers.map,
     url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
     maxZoom: 19,
     className: "base-muted",
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   },
   satellite: {
-    label: "Uydu",
+    label: t.layers.satellite,
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     maxZoom: 19,
-    attribution: "Görüntü &copy; Esri, Maxar, Earthstar Geographics",
+    attribution: t.layers.satelliteCredit,
   },
   terrain: {
-    label: "Arazi",
+    label: t.layers.terrain,
     url: "https://tile.opentopomap.org/{z}/{x}/{y}.png",
     maxZoom: 17,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, SRTM · <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)',
@@ -75,7 +76,7 @@ export function bindLayers(map: L.Map, button: HTMLElement, panel: HTMLElement) 
       }).addTo(map);
       render(formatClock(last.time * 1000));
     } catch {
-      render(undefined, "Radar alınamadı.");
+      render(undefined, t.layers.radarFailed);
     }
   }
 
@@ -83,7 +84,7 @@ export function bindLayers(map: L.Map, button: HTMLElement, panel: HTMLElement) 
     panel.replaceChildren();
     const title = document.createElement("h2");
     title.className = "layers-title";
-    title.textContent = "Harita türü";
+    title.textContent = t.layers.title;
     const row = document.createElement("div");
     row.className = "layers-bases";
     for (const [id, b] of Object.entries(BASES) as [BaseId, (typeof BASES)[BaseId]][]) {
@@ -103,9 +104,9 @@ export function bindLayers(map: L.Map, button: HTMLElement, panel: HTMLElement) 
     box.checked = saved.radar;
     box.addEventListener("change", () => void setRadar(box.checked));
     const text = document.createElement("span");
-    text.textContent = "Yağış radarı";
+    text.textContent = t.layers.radar;
     const note = document.createElement("small");
-    note.textContent = radarError ?? (saved.radar ? (radarTime ? `son görüntü ${radarTime}` : "yükleniyor…") : "şu anki yağış");
+    note.textContent = radarError ?? (saved.radar ? (radarTime ? t.layers.radarAt(radarTime) : t.layers.radarLoading) : t.layers.radarIdle);
     toggle.append(box, text, note);
     panel.append(title, row, toggle);
   }

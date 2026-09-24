@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import type { LatLon } from "../core/geo";
 import { decodePolyline } from "../core/route/polyline";
 import { getJson, HttpError } from "./http";
@@ -29,9 +30,9 @@ export async function getValhallaRoutes(stops: LatLon[], costing: string, option
   try {
     data = await getJson(`${BASE}?json=${encodeURIComponent(JSON.stringify(body))}`, 30000);
   } catch (e) {
-    if (e instanceof HttpError && e.status === 400) throw new Error("Bu seçeneklerle rota bulunamadı.");
-    if (e instanceof HttpError && e.status === 429) throw new Error("Rota sunucusu yoğun, biraz sonra tekrar deneyin.");
-    throw new Error("Rota sunucusuna ulaşılamadı.");
+    if (e instanceof HttpError && e.status === 400) throw new Error(t.errors.avoidNoRoute);
+    if (e instanceof HttpError && e.status === 429) throw new Error(t.errors.routeBusy);
+    throw new Error(t.errors.routeDown);
   }
   return [data.trip, ...(data.alternates ?? []).map((a) => a.trip)].map(toRoute);
 }

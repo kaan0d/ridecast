@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import type { LatLon } from "../core/geo";
 import { searchPlaces, type Place } from "../services/photon";
 
@@ -39,11 +40,11 @@ export function placeInput(value: string, placeholder: string, label: string, on
     if (q.length < MIN_QUERY) return close();
     timer = window.setTimeout(async () => {
       const my = ++seq;
-      note("Aranıyor…");
+      note(t.trip.searching);
       try {
         const places = await searchPlaces(q, near?.());
         if (my !== seq) return;
-        if (!places.length) return note("Sonuç yok.");
+        if (!places.length) return note(t.trip.noResults);
         list.replaceChildren(
           ...places.map((p) => {
             const li = document.createElement("li");

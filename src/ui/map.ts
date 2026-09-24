@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import L from "leaflet";
 import { fromLatLng, toLatLng, type LatLon } from "../core/geo";
 
@@ -37,9 +38,9 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
   map.attributionControl.setPrefix(false);
   // Bottom-right stack like Google Maps: scale, zoom, then "my location" on top.
   L.control.scale({ position: "bottomright", imperial: false }).addTo(map);
-  L.control.zoom({ position: "bottomright", zoomInTitle: "Yakınlaştır", zoomOutTitle: "Uzaklaştır" }).addTo(map);
-  mapButton("bottomright", icons.locate, "Konumumu göster", () => h.onLocate(), "locate").addTo(map);
-  mapButton("topright", icons.layers, "Katmanlar", () => {}, "layers").addTo(map);
+  L.control.zoom({ position: "bottomright", zoomInTitle: t.map.zoomIn, zoomOutTitle: t.map.zoomOut }).addTo(map);
+  mapButton("bottomright", icons.locate, t.map.locate, () => h.onLocate(), "locate").addTo(map);
+  mapButton("topright", icons.layers, t.map.layers, () => {}, "layers").addTo(map);
 
   // Dragging a route line (mouse) drops a via point where it is released, like Google Maps.
   // A press without movement stays a click (select the route or add a break).
@@ -120,7 +121,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     setStops(stops: { pos: LatLon; kind: StopKind; index: number; title: string }[], onDrag: (index: number, p: LatLon) => void) {
       stopLayer.clearLayers();
       for (const s of stops) {
-        const m = L.marker(toLatLng(s.pos), { icon: pin(s.kind), draggable: true, keyboard: false, title: `${s.title} (sürükleyerek taşı)`, autoPan: true, zIndexOffset: 1000 }).addTo(stopLayer);
+        const m = L.marker(toLatLng(s.pos), { icon: pin(s.kind), draggable: true, keyboard: false, title: t.map.dragStop(s.title), autoPan: true, zIndexOffset: 1000 }).addTo(stopLayer);
         m.on("dragend", () => onDrag(s.index, fromLatLng(m.getLatLng())));
       }
     },
@@ -179,7 +180,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
       points.forEach((p, i) => {
         const m = L.marker(toLatLng(p), {
           draggable: true,
-          title: `Mola ${i + 1}`,
+          title: t.map.break(i + 1),
           icon: L.divIcon({ className: "break-marker", html: `${i + 1}`, iconSize: [24, 24] }),
         }).addTo(breakLayer);
         m.on("drag", () => m.setLatLng(toLatLng(snap(fromLatLng(m.getLatLng())))));

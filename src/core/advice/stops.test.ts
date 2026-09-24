@@ -5,7 +5,7 @@ const at = { lat: 40, lon: 29 };
 
 test("classifyPoi reads kind, name and shelter from OSM tags", () => {
   expect(classifyPoi("n1", at, { amenity: "fuel", brand: "Shell" })).toMatchObject({ kind: "fuel", name: "Shell", sheltered: true });
-  expect(classifyPoi("n2", at, { amenity: "fuel" })).toMatchObject({ name: "Akaryakıt istasyonu", named: false });
+  expect(classifyPoi("n2", at, { amenity: "fuel" })).toMatchObject({ name: "", named: false });
   expect(classifyPoi("w3", at, { highway: "services", name: "Bolu Dağı Tesisleri" })).toMatchObject({ kind: "services", sheltered: true });
   expect(classifyPoi("n4", at, { highway: "rest_area" })).toMatchObject({ kind: "rest", sheltered: false });
   expect(classifyPoi("n5", at, { highway: "rest_area", shelter: "yes" })?.sheltered).toBe(true);

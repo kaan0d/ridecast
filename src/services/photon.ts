@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { fromLonLat, type LatLon } from "../core/geo";
 import { getJson } from "./http";
 
@@ -28,6 +29,6 @@ export async function searchPlaces(query: string, near?: LatLon): Promise<Place[
     const r = await getJson<PhotonResponse>(url);
     return r.features.map((f) => ({ label: placeLabel(f.properties), pos: fromLonLat(f.geometry.coordinates) }));
   } catch {
-    throw new Error("Adres araması başarısız oldu.");
+    throw new Error(t.errors.searchFailed);
   }
 }

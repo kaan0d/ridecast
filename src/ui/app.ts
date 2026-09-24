@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { DEFAULT_BREAK_MIN, OVERNIGHT } from "../config/breaks";
 import { DEPARTURE } from "../config/departure";
 import { SHARE } from "../config/share";
@@ -209,7 +210,7 @@ export function startApp() {
     labelLater(target);
   }
 
-  // "Durak ekle": the first empty stop, else a new via stop before the end.
+  // "Add stop": the first empty stop, else a new via stop before the end.
   function addStopAt(pos: LatLon) {
     let i = stops.findIndex((s) => !s.pos);
     if (i < 0) {
@@ -282,7 +283,7 @@ export function startApp() {
   }
 
   function addAutoBreaks(rule: AutoBreakRule, durationMin: number) {
-    if (!routes.length) return status("Önce bir rota oluşturun.", "error");
+    if (!routes.length) return status(t.app.needRoute, "error");
     const settings = readSettings();
     if (typeof settings === "string") return status(settings, "error");
     // Positions come from riding time only, so existing breaks do not shift them.
@@ -294,7 +295,7 @@ export function startApp() {
       .concat(dists.map((d) => ({ pos: pointAtDistance(lines[selected], d / scale), durationMin, auto: true })));
     resnapBreaks();
     renderRoutes();
-    status(dists.length ? "" : "Bu aralıkla rota üzerinde mola noktası çıkmadı.");
+    status(dists.length ? "" : t.app.noAutoBreaks);
   }
 
   async function updateRoute() {
@@ -304,10 +305,10 @@ export function startApp() {
     if (filled.length < 2) {
       routes = [];
       renderRoutes();
-      status(filled.length ? "Rota için başlangıç ve bitiş seçin." : "");
+      status(filled.length ? t.app.pickEnds : "");
       return;
     }
-    status("Rota hesaplanıyor…", "loading");
+    status(t.app.routing, "loading");
     const how = settingsCtl.routing();
     routedKey = routingKey(how.vehicle, how.avoid);
     try {
@@ -419,7 +420,7 @@ export function startApp() {
         const warnings = collectWarnings(points);
         advices.forEach((a, i) => {
           const b = tl.breaks[i];
-          if (a) warnings.push({ level: 2, text: `Mola ${i + 1}: ${a}`, when: `${formatClock(b.startMs)}–${formatClock(b.endMs)}`, where: `km ${Math.round(b.distM / 1000)}` });
+          if (a) warnings.push({ level: 2, text: t.app.breakWarning(i + 1, a), when: `${formatClock(b.startMs)}–${formatClock(b.endMs)}`, where: t.km(Math.round(b.distM / 1000)) });
         });
         renderWarnings($("warnings"), warnings, !error && points.length > 0, openPoint);
         // Change tracking compares planned trips; live mode has its own alerts.
@@ -540,7 +541,7 @@ export function startApp() {
       const ahead = (p: LatLon) => snapToLine(lines[selected], p).distM * scale > aheadOfM;
       const end = stops[stops.length - 1];
       const vias = stops.slice(1, -1).filter((s) => s.pos && ahead(s.pos));
-      stops.splice(0, stops.length, { label: "Konumum", pos: from }, ...vias, end);
+      stops.splice(0, stops.length, { label: t.app.myLocation, pos: from }, ...vias, end);
       breaks = breaks.filter((b) => ahead(b.pos));
       stopsChanged();
     },
@@ -552,7 +553,7 @@ export function startApp() {
   });
 
   // Offline: say so; the service worker serves the last routes and forecasts it saw.
-  const offlineText = "Çevrimdışısın; son alınan rota ve hava verisi gösteriliyor.";
+  const offlineText = t.app.offline;
   const netChanged = () => {
     if (!navigator.onLine) status(offlineText);
     else if (statusEl.textContent === offlineText) status("");
@@ -587,13 +588,13 @@ export function startApp() {
       const named = stops.flatMap((s, i) => (s.pos ? [{ pos: s.pos, name: `${titleOf(i)}: ${s.label.split(",")[0]}` }] : []));
       const breakPts = breaks.map((b, i) => {
         const at = tl?.breaks[i];
-        return { pos: snapToLine(lines[selected], b.pos).pos, name: `Mola ${i + 1} · ${b.durationMin} dk${at ? " · " + formatClock(at.startMs) : ""}` };
+        return { pos: snapToLine(lines[selected], b.pos).pos, name: t.breaks.gpxName(i + 1, b.durationMin, at ? formatClock(at.startMs) : null) };
       });
       return {
         route,
         waypoints: [...named, ...breakPts],
-        first: stops.find((s) => s.pos)?.label.split(",")[0] ?? "Başlangıç",
-        last: [...stops].reverse().find((s) => s.pos)?.label.split(",")[0] ?? "Bitiş",
+        first: stops.find((s) => s.pos)?.label.split(",")[0] ?? t.app.start,
+        last: [...stops].reverse().find((s) => s.pos)?.label.split(",")[0] ?? t.app.end,
       };
     },
   });

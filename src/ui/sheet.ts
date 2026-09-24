@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 // Phone: bottom sheet with two snap points (peek, full), dragged by its grabber.
 // Desktop: a floating card; nothing to do here except report the covered map area.
 
@@ -16,7 +17,7 @@ export function bindSheet() {
   function snap(exp: boolean) {
     expanded = exp;
     grab.setAttribute("aria-expanded", String(exp));
-    grab.querySelector(".sr-only")!.textContent = exp ? "Paneli küçült" : "Paneli büyüt";
+    grab.querySelector(".sr-only")!.textContent = exp ? t.sheet.collapse : t.sheet.expand;
     setOffset(exp ? 0 : maxOffset());
     document.documentElement.style.setProperty("--sheet-inset", phone.matches ? `${peekPx()}px` : "0px");
   }

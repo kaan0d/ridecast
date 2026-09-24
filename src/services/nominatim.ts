@@ -1,3 +1,4 @@
+import { lang } from "../i18n";
 import { type LatLon } from "../core/geo";
 import { getJson, isCached } from "./http";
 
@@ -16,7 +17,7 @@ function throttled<T>(url: string): Promise<T> {
 
 // Returns null when there is no address for the point or the request fails.
 export async function reverseLabel(pos: LatLon): Promise<string | null> {
-  const url = `${BASE}/reverse?format=jsonv2&accept-language=tr&zoom=16&lat=${pos.lat.toFixed(5)}&lon=${pos.lon.toFixed(5)}`;
+  const url = `${BASE}/reverse?format=jsonv2&accept-language=${lang}&zoom=16&lat=${pos.lat.toFixed(5)}&lon=${pos.lon.toFixed(5)}`;
   try {
     const r = await throttled<{ display_name?: string }>(url);
     return r.display_name ?? null;

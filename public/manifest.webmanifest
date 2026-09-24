@@ -1,8 +1,8 @@
 {
-  "name": "ridecast · Rota hava durumu",
+  "name": "ridecast · Route weather",
   "short_name": "ridecast",
-  "description": "Rota boyunca, her noktaya varış saatine göre hava durumu ve riskler.",
-  "lang": "tr",
+  "description": "Weather and risks along a route, for the time you reach each point.",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

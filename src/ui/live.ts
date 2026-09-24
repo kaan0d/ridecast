@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { LIVE } from "../config/live";
 import type { Timeline } from "../core/eta/eta";
 import { etaAtDistance } from "../core/eta/eta";
@@ -58,12 +59,12 @@ export function createLive(deps: Deps) {
   }
 
   async function lockScreen() {
-    if (!("wakeLock" in navigator)) return setNote("wake", "Bu tarayıcı ekranı açık tutamıyor; cihaz ekranı kapanabilir.");
+    if (!("wakeLock" in navigator)) return setNote("wake", t.live.noWake);
     try {
       wakeLock = await navigator.wakeLock.request("screen");
       setNote("wake", null);
     } catch {
-      setNote("wake", "Ekran açık tutulamadı (pil tasarrufu veya izin); cihaz ekranı kapanabilir.");
+      setNote("wake", t.live.wakeFailed);
     }
     render();
   }
@@ -87,7 +88,7 @@ export function createLive(deps: Deps) {
     const fix: Fix = { t: pos.timestamp, distM: s.distM * r.scale, offM: haversineM(p, s.pos) };
     fixes = [...fixes.filter((f) => fix.t - f.t <= LIVE.pace.windowMs), fix];
     offCount = offRouteCount(offCount, fix.offM, pos.coords.accuracy, LIVE.offRouteM);
-    setNote("gps", pos.coords.accuracy > LIVE.poorAccuracyM ? `GPS hassasiyeti düşük (±${Math.round(pos.coords.accuracy)} m).` : null);
+    setNote("gps", pos.coords.accuracy > LIVE.poorAccuracyM ? t.live.gpsPoor(Math.round(pos.coords.accuracy)) : null);
     lastPosition = p;
     deps.showPosition(p);
     // Re-plan (ETAs, weather ETAs) when the pace moved enough, or once a minute.
@@ -104,11 +105,11 @@ export function createLive(deps: Deps) {
     if (err.code === err.PERMISSION_DENIED) {
       stop();
       setNote("gps", null);
-      $("status").textContent = "Konum izni verilmedi; canlı mod için tarayıcı ayarlarından konuma izin verin.";
+      $("status").textContent = t.live.noPermission;
       $("status").dataset.kind = "error";
       return;
     }
-    setNote("gps", err.code === err.TIMEOUT ? "Konum alınamıyor, bekleniyor…" : "Konum şu an kullanılamıyor.");
+    setNote("gps", err.code === err.TIMEOUT ? t.live.gpsWaiting : t.live.gpsUnavailable);
     render();
   }
 
@@ -135,7 +136,7 @@ export function createLive(deps: Deps) {
       const worst = changes.reduce((a, b) => (b.level > a.level ? b : a));
       // An open alert is only replaced by one at least as serious.
       if (!alert || worst.level >= alert.level)
-        alert = { text: `${worst.text} · ${formatKm(points[worst.index].distM - cur)} ileride`, level: worst.level };
+        alert = { text: t.live.ahead(worst.text, formatKm(points[worst.index].distM - cur)), level: worst.level };
       navigator.vibrate?.([200, 100, 200]);
       if (sound) beep();
     }
@@ -179,26 +180,26 @@ export function createLive(deps: Deps) {
     const nextText = document.createElement("strong");
     const nextMeta = document.createElement("span");
     if (!f) {
-      nextText.textContent = "Konum bekleniyor…";
+      nextText.textContent = t.live.waiting;
       nextMeta.textContent = "";
     } else if (warn) {
       nextText.textContent = warn.event.text;
       const at = tl ? etaAtDistance(tl, r!.points[warn.index].distM) : null;
-      nextMeta.textContent = `${formatKm(warn.aheadM)} sonra${at ? " · " + formatClock(at) : ""}`;
+      nextMeta.textContent = `${t.live.inDist(formatKm(warn.aheadM))}${at ? " · " + formatClock(at) : ""}`;
       $("live-next").dataset.level = String(warn.event.level);
     } else {
-      nextText.textContent = "Önünde uyarı yok";
-      nextMeta.textContent = "Varışa kadar";
+      nextText.textContent = t.live.noWarning;
+      nextMeta.textContent = t.live.toArrival;
       $("live-next").dataset.level = "0";
     }
     $("live-next").append(nextText, nextMeta);
 
     $("live-left").textContent = leftS !== null ? formatDuration(leftS) : "–";
-    $("live-meta").textContent = remainingM !== null && arrival ? `${formatKm(remainingM)} · varış ${formatClock(arrival)}` : "";
+    $("live-meta").textContent = remainingM !== null && arrival ? t.live.meta(formatKm(remainingM), formatClock(arrival)) : "";
 
     const h = here?.hour;
     $("live-weather").innerHTML = h ? `${weatherIcon(h)}<b>${Math.round(h.tempC)}°</b><span></span>` : "";
-    if (h) $("live-weather").querySelector("span")!.textContent = conditionOf(h.code).label + (here?.risk ? ` · hissedilen ${Math.round(here.risk.feltC)}°` : "");
+    if (h) $("live-weather").querySelector("span")!.textContent = t.conditions[conditionOf(h.code).name] + (here?.risk ? t.live.feels(Math.round(here.risk.feltC)) : "");
 
     const off = offCount >= LIVE.offRouteFixes;
     $("live-off").hidden = !off;
@@ -207,17 +208,17 @@ export function createLive(deps: Deps) {
       $("live-alert-text").textContent = alert.text;
       $("live-alert").dataset.level = String(alert.level);
     }
-    setNote("net", navigator.onLine ? null : "Çevrimdışı: son alınan hava verisi gösteriliyor, bağlantı gelince yenilenir.");
+    setNote("net", navigator.onLine ? null : t.live.offline);
     $("live-notes").textContent = notes.map((n) => n.slice(n.indexOf(":") + 1)).join(" ");
     $("live-sound").setAttribute("aria-pressed", String(sound));
-    $("live-sound").textContent = sound ? "Ses açık" : "Ses kapalı";
-    pill.textContent = `Canlı · ${leftS !== null ? formatDuration(leftS) : "–"}${warn ? " · " + warn.event.text + " " + formatKm(warn.aheadM) + " sonra" : ""}`;
+    $("live-sound").textContent = sound ? t.live.soundOn : t.live.soundOff;
+    pill.textContent = t.live.pill(leftS !== null ? formatDuration(leftS) : "–", warn ? t.live.pillWarn(warn.event.text, formatKm(warn.aheadM)) : "");
   }
 
   function start() {
     if (active) return;
     if (!("geolocation" in navigator)) {
-      $("status").textContent = "Bu tarayıcı konum desteklemiyor; canlı mod açılamadı.";
+      $("status").textContent = t.live.noGeo;
       $("status").dataset.kind = "error";
       return;
     }

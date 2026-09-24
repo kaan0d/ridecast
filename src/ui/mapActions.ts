@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import type { LatLon } from "../core/geo";
 import { formatCoord } from "./format";
 import type { createMap } from "./map";
@@ -24,9 +25,9 @@ export function bindMapActions(deps: Deps) {
   const { map, measure } = deps;
 
   const tripActions = (pos: LatLon) => [
-    { label: "Buradan", run: () => (map.closePopup(), deps.setStart(pos)) },
-    { label: "Buraya", primary: true, run: () => (map.closePopup(), deps.setEnd(pos)) },
-    { label: "Durak ekle", run: () => (map.closePopup(), deps.addStop(pos)) },
+    { label: t.place.from, run: () => (map.closePopup(), deps.setStart(pos)) },
+    { label: t.place.to, primary: true, run: () => (map.closePopup(), deps.setEnd(pos)) },
+    { label: t.place.addStop, run: () => (map.closePopup(), deps.addStop(pos)) },
   ];
 
   function openPlace(pos: LatLon) {
@@ -38,29 +39,29 @@ export function bindMapActions(deps: Deps) {
     map.closePopup();
     const coord = formatCoord(pos);
     const items: MenuItem[] = [
-      { label: coord, hint: "Kopyala", action: () => void navigator.clipboard?.writeText(coord).then(() => deps.status("Koordinat kopyalandı."), () => deps.status(coord)) },
-      { label: "Buradan yol tarifi", action: () => deps.setStart(pos) },
-      { label: "Buraya yol tarifi", action: () => deps.setEnd(pos) },
-      { label: "Durak ekle", action: () => deps.addStop(pos) },
+      { label: coord, hint: t.menu.copy, action: () => void navigator.clipboard?.writeText(coord).then(() => deps.status(t.menu.copied), () => deps.status(coord)) },
+      { label: t.menu.from, action: () => deps.setStart(pos) },
+      { label: t.menu.to, action: () => deps.setEnd(pos) },
+      { label: t.menu.addStop, action: () => deps.addStop(pos) },
     ];
-    if (deps.canAddBreak()) items.push({ label: "Buraya mola ekle", hint: "rotada", action: () => deps.addBreak(pos) });
-    items.push({ label: "Burada ne var?", action: () => openPlace(pos) }, { label: "Mesafe ölç", action: () => measure.start(pos) });
-    openMenu(x, y, items, "Harita menüsü");
+    if (deps.canAddBreak()) items.push({ label: t.menu.addBreak, hint: t.menu.onRoute, action: () => deps.addBreak(pos) });
+    items.push({ label: t.menu.whatsHere, action: () => openPlace(pos) }, { label: t.menu.measure, action: () => measure.start(pos) });
+    openMenu(x, y, items, t.menu.label);
   }
 
-  // "Konumumu göster": centre on the device and show a dot (tap it for the place card).
+  // "Show my location": centre on the device and show a dot (tap it for the place card).
   // With no start yet, the position also becomes the start.
   function locate() {
-    if (!navigator.geolocation) return deps.status("Tarayıcınız konum özelliğini desteklemiyor.", "error");
-    deps.status("Konum alınıyor…", "loading");
+    if (!navigator.geolocation) return deps.status(t.menu.noGeo, "error");
+    deps.status(t.menu.locating, "loading");
     navigator.geolocation.getCurrentPosition(
       (p) => {
         const pos = { lat: p.coords.latitude, lon: p.coords.longitude };
         deps.status("");
         map.showMe(pos, () => openPlace(pos));
-        if (!deps.hasStart()) deps.setStart(pos, "Konumum");
+        if (!deps.hasStart()) deps.setStart(pos, t.app.myLocation);
       },
-      (err) => deps.status(err.code === err.PERMISSION_DENIED ? "Konum izni reddedildi." : "Konum alınamadı.", "error"),
+      (err) => deps.status(err.code === err.PERMISSION_DENIED ? t.menu.denied : t.menu.failed, "error"),
       { enableHighAccuracy: true, timeout: 15000 },
     );
   }

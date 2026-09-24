@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { BREAK_LIMITS_MIN } from "../config/breaks";
 import { SHARE } from "../config/share";
 import { SPEED_LIMITS_KMH } from "../config/vehicles";
@@ -14,7 +15,7 @@ interface Deps {
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
-// Share link in the URL hash, "Linki kopyala", and the recent routes list.
+// Share link in the URL hash, "Copy link", and the recent routes list.
 export function bindShare(deps: Deps) {
   // Keeps the address bar in step with the trip, so a reload or a copied URL restores it.
   function sync() {
@@ -33,7 +34,7 @@ export function bindShare(deps: Deps) {
       maxBreak: BREAK_LIMITS_MIN.max,
     });
     if (!s) {
-      deps.error("Bu link okunamadı; rota yüklenmedi.");
+      deps.error(t.share.badLink);
       sync(); // put the current trip back in the address bar
       return false;
     }
@@ -53,8 +54,8 @@ export function bindShare(deps: Deps) {
   function saveRecent() {
     const s = deps.current();
     if (!s) return;
-    const first = s.stops[0].label.split(",")[0] || "Başlangıç";
-    const last = s.stops[s.stops.length - 1].label.split(",")[0] || "Bitiş";
+    const first = s.stops[0].label.split(",")[0] || t.app.start;
+    const last = s.stops[s.stops.length - 1].label.split(",")[0] || t.app.end;
     const entry: RecentRoute = {
       key: s.stops.map((x) => `${x.lat.toFixed(4)},${x.lon.toFixed(4)}`).join(";"),
       title: `${first} → ${last}`,
@@ -75,7 +76,7 @@ export function bindShare(deps: Deps) {
     if (!list.length) return el.replaceChildren();
     const title = document.createElement("h2");
     title.className = "group-title";
-    title.textContent = "Son rotalar";
+    title.textContent = t.share.recent;
     const ol = document.createElement("ol");
     ol.className = "group recent-list";
     for (const r of list) {
@@ -108,14 +109,14 @@ export function bindShare(deps: Deps) {
         navigator.clipboard.writeText(location.href),
         new Promise((_, reject) => setTimeout(() => reject(new Error("clipboard timeout")), SHARE.clipboardTimeoutMs)),
       ]);
-      note.textContent = "Kopyalandı";
+      note.textContent = t.share.copied;
     } catch {
       // Clipboard can be blocked; show the link selected so it can be copied by hand.
       const field = document.createElement("input");
       field.readOnly = true;
       field.className = "copy-field";
       field.value = location.href;
-      field.setAttribute("aria-label", "Paylaşım linki");
+      field.setAttribute("aria-label", t.share.linkAria);
       note.replaceChildren(field);
       field.select();
       return;
