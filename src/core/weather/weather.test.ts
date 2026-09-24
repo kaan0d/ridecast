@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { compassIndex, conditionOf, nearestHour, sampleDistances, type WeatherHour } from "./weather";
+import { bracketHours, compassIndex, conditionOf, sampleDistances, type WeatherHour } from "./weather";
 
 describe("sampleDistances", () => {
   test("one point per interval of driving time, start and end included", () => {
@@ -18,7 +18,7 @@ describe("sampleDistances", () => {
   });
 });
 
-describe("nearestHour", () => {
+describe("bracketHours", () => {
   const T0 = Date.UTC(2026, 8, 25, 5);
   const hour = (h: number): WeatherHour => ({
     timeMs: T0 + h * 3_600_000,
@@ -36,15 +36,20 @@ describe("nearestHour", () => {
   });
   const series = [0, 1, 2, 3].map(hour);
 
-  test("picks the closest hour", () => {
-    expect(nearestHour(series, T0 + 1.4 * 3_600_000, 90)?.tempC).toBe(1);
-    expect(nearestHour(series, T0 + 1.6 * 3_600_000, 90)?.tempC).toBe(2);
+  test("the hours on both sides, nearest first", () => {
+    expect(bracketHours(series, T0 + 1.4 * 3_600_000, 90)).toEqual([1, 2]);
+    expect(bracketHours(series, T0 + 1.6 * 3_600_000, 90)).toEqual([2, 1]);
   });
 
-  test("returns null outside the forecast range", () => {
-    expect(nearestHour(series, T0 + 3 * 3_600_000 + 80 * 60_000, 90)?.tempC).toBe(3);
-    expect(nearestHour(series, T0 + 5 * 3_600_000, 90)).toBeNull();
-    expect(nearestHour([], T0, 90)).toBeNull();
+  test("one hour when the time is on the hour or past either end", () => {
+    expect(bracketHours(series, T0 + 2 * 3_600_000, 90)).toEqual([2]);
+    expect(bracketHours(series, T0 - 30 * 60_000, 90)).toEqual([0]);
+    expect(bracketHours(series, T0 + 3 * 3_600_000 + 80 * 60_000, 90)).toEqual([3]);
+  });
+
+  test("none outside the forecast range", () => {
+    expect(bracketHours(series, T0 + 5 * 3_600_000, 90)).toEqual([]);
+    expect(bracketHours([], T0, 90)).toEqual([]);
   });
 });
 
