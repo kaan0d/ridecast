@@ -168,6 +168,7 @@ export const tr: Messages = {
     copied: "Kopyalandı",
     linkAria: "Paylaşım linki",
     recent: "Son rotalar",
+    recentCleared: "Son rotalar temizlendi.",
   },
 
   stops: {
@@ -338,6 +339,9 @@ export const tr: Messages = {
     measureClose: "Ölçümü kapat",
     sheet: "Rota paneli",
     back: "Haritaya dön",
+    settings: "Ayarlar",
+    history: "Geçmiş",
+    clearRecent: "Son rotaları temizle",
     tagline: "Rota hava durumu",
     swap: "Başlangıç ile bitişi değiştir",
     addStop: "Durak ekle",

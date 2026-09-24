@@ -172,6 +172,7 @@ export const en = {
     copied: "Copied",
     linkAria: "Share link",
     recent: "Recent routes",
+    recentCleared: "Recent routes cleared.",
   },
 
   stops: {

@@ -712,6 +712,7 @@ export function startApp() {
   });
   $("swap").innerHTML = icons.swap;
   $("sheet-back").innerHTML = icons.back;
+  $("settings-open").innerHTML = icons.settings;
   $("swap").addEventListener("click", () => {
     stops.reverse();
     stopsChanged();

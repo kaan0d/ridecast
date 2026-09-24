@@ -30,6 +30,7 @@
           <span class="wordmark">ridecast</span>
           <span class="tagline" data-t="tagline">Route weather</span>
           <span id="lang" class="lang-switch" role="group" aria-label="Language"></span>
+          <button type="button" id="settings-open" class="icon-btn settings-open" aria-label="Settings" title="Settings" aria-expanded="false" data-t-aria="settings" data-t-title="settings"></button>
         </header>
 
         <div class="trip">
@@ -61,6 +62,8 @@
           <h2 class="group-title" data-t="vehicle">Vehicle</h2>
           <div id="vehicle" class="segmented" role="radiogroup" aria-label="Vehicle" data-t-aria="vehicle"></div>
 
+          <div id="settings-page" class="settings-page" hidden>
+          <h2 class="settings-title" data-t="settings">Settings</h2>
           <h2 class="group-title" data-t="routeOptions">Route options</h2>
           <div class="group" id="avoid">
             <label class="row" data-avoid="highways"><span data-t="avoidHighways">Avoid motorways</span> <input type="checkbox" name="avoid" value="highways" /></label>
@@ -88,6 +91,13 @@
               <label class="row"><span data-t="urban">Town</span> <span class="row-value"><input type="number" id="kmh-urban" step="1" /> <span data-t="kmh">km/h</span></span></label>
               <p class="footnote" data-t="roadTypeNote">The road type is guessed from the routing data.</p>
             </div>
+          </div>
+
+          <h2 class="group-title" data-t="history">History</h2>
+          <div class="group">
+            <button type="button" id="clear-recent" class="row row-action" data-t="clearRecent">Clear recent routes</button>
+          </div>
+          <p class="footnote" id="clear-recent-note" role="status"></p>
           </div>
 
           <h2 class="group-title" data-t="departure">Departure</h2>

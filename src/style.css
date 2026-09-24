@@ -522,6 +522,74 @@ button {
   margin: -6px -2px -6px -8px;
 }
 
+.settings-open {
+  align-self: center;
+  margin: -6px -8px -6px 0;
+}
+
+.settings-open[aria-expanded="true"] {
+  background: var(--fill);
+  color: var(--ink);
+}
+
+/* Settings page (sheet.ts): replaces the trip content until back or the gear is tapped. */
+.sheet.settings-open .sheet-body > :not(.brand, #settings),
+.sheet.settings-open #settings > :not(.settings-page) {
+  display: none;
+}
+
+.settings-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 4px 4px 0;
+}
+
+.settings-title + .group-title {
+  margin-top: 16px;
+}
+
+.row-action {
+  width: 100%;
+  text-align: left;
+  color: var(--error);
+}
+
+.row-action:disabled {
+  color: var(--ink-3);
+  cursor: default;
+}
+
+/* Opening the panel or a page of it: the rows rise in; on desktop the card also unrolls from
+   the search bar (phones slide the whole sheet instead). */
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes sheet-unroll {
+  from {
+    clip-path: inset(0 0 calc(100% - 72px) 0 round var(--radius-sheet));
+  }
+  to {
+    clip-path: inset(0 round var(--radius-sheet));
+  }
+}
+
+.sheet-body > *,
+.trip > :not(.trip-stops),
+#settings > * {
+  animation: sheet-in 0.3s var(--ease-out);
+}
+
+@media (min-width: 721px) {
+  .sheet:not(.compact) {
+    animation: sheet-unroll 0.35s var(--ease-out);
+  }
+}
+
 /* Trip card: pickup dot and destination square joined by a rail. */
 .trip {
   background: var(--card);
@@ -682,21 +750,25 @@ button {
   color: var(--error);
 }
 
+/* Text lines up with the address fields; the plus sits in the glyph column. */
 .trip-add {
+  position: relative;
   display: flex;
   align-items: center;
   min-height: 44px;
   color: var(--ink-2);
-  font-size: 0.9375rem;
+  font-size: 1.0625rem;
   border-top: 1px solid var(--separator);
-  margin-left: 44px;
-  width: calc(100% - 44px);
+  margin-left: 48px;
+  padding-left: 4px;
+  width: calc(100% - 48px);
 }
 
 .trip-add .icon {
+  position: absolute;
+  left: -35px;
   width: 18px;
   height: 18px;
-  margin: 0 8px 0 -34px;
   color: var(--ink);
 }
 
@@ -2204,6 +2276,13 @@ input:invalid {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .sheet:not(.compact),
+  .sheet-body > *,
+  .trip > :not(.trip-stops),
+  #settings > * {
+    animation: none;
+  }
+
   .sheet,
   .segmented span,
   .route-item {

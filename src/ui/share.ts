@@ -72,7 +72,9 @@ export function bindShare(deps: Deps) {
 
   function renderRecent() {
     const el = $("recent");
-    const list = deps.hasRoute() ? [] : loadRecent();
+    const all = loadRecent();
+    $<HTMLButtonElement>("clear-recent").disabled = !all.length;
+    const list = deps.hasRoute() ? [] : all;
     if (!list.length) return el.replaceChildren();
     const title = document.createElement("h2");
     title.className = "group-title";
@@ -121,6 +123,19 @@ export function bindShare(deps: Deps) {
       field.select();
       return;
     }
+    setTimeout(() => (note.textContent = ""), 2500);
+  });
+
+  // Settings > History: forget the recent routes list.
+  $("clear-recent").addEventListener("click", () => {
+    try {
+      localStorage.removeItem(SHARE.storageKey);
+    } catch {
+      // nothing stored to clear
+    }
+    renderRecent();
+    const note = $("clear-recent-note");
+    note.textContent = t.share.recentCleared;
     setTimeout(() => (note.textContent = ""), 2500);
   });
 
