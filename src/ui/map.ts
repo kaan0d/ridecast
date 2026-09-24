@@ -123,7 +123,14 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
 
   // Stop pins shrink as the map zooms out: 0.6 at zoom 6 and below, full size from 12 (style.css
   // reads --pin-scale).
-  const scalePins = () => el.style.setProperty("--pin-scale", String(Math.min(1, Math.max(0.6, 0.6 + (map.getZoom() - 6) * 0.067))));
+  // The start dot shows once the scale bar (at most 100 px, rounded down) reads 300 m or less, that is
+  // under 5 m per pixel; its name stays at every zoom.
+  const START_DOT_M_PER_PX = 5;
+  const scalePins = () => {
+    el.style.setProperty("--pin-scale", String(Math.min(1, Math.max(0.6, 0.6 + (map.getZoom() - 6) * 0.067))));
+    const mPerPx = (40_075_017 * Math.cos((map.getCenter().lat * Math.PI) / 180)) / (256 * 2 ** map.getZoom());
+    el.classList.toggle("start-far", mPerPx > START_DOT_M_PER_PX);
+  };
   map.on("zoom", scalePins);
   scalePins();
 
