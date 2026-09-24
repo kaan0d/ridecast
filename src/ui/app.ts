@@ -7,7 +7,7 @@ import { BREAK_ADVICE, RISK, RISK_WEIGHTS, WET_ROAD } from "../config/risk";
 import { routeScore, type RouteScore } from "../core/risk/route";
 import type { VehicleType } from "../config/vehicles";
 import { type LatLon } from "../core/geo";
-import { bearingAt, lineLength, makeLine, pointAtDistance, sliceLine, snapToLine, type Line } from "../core/route/line";
+import { bearingAt, labelPoint, lineLength, makeLine, pointAtDistance, sliceLine, snapToLine, type Line } from "../core/route/line";
 import { roadBreakdown } from "../core/route/roadType";
 import { nearestHourIndex, sampleDistances, type Forecast } from "../core/weather/weather";
 import { fetchForecast } from "../services/openmeteo";
@@ -23,8 +23,10 @@ import { getRoutes, type Route } from "../services/osrm";
 import { bindBreaks } from "./breaks";
 import { formatClock, formatCoord, formatDuration, formatKm, formatTime } from "./format";
 import { icons } from "./icons";
-import { createMap, type StopKind } from "./map";
-import { placeInput } from "./search";
+import { createMap } from "./map";
+import { closeMenu, openMenu, type MenuItem } from "./menu";
+import { placeCard } from "./place";
+import { kindOf as kindOfStop, renderTrip, titleOf as titleOfStop, type TripStop } from "./trip";
 import { bindSettings, type TripSettings } from "./settings";
 import { departureCandidates, rankDepartures, type ScoredDeparture } from "../core/advice/departure";
 import { DEPARTURE } from "../config/departure";
@@ -32,11 +34,6 @@ import { bindSheet } from "./sheet";
 import { renderBest as renderBestList } from "./best";
 import { bindShare } from "./share";
 import { renderRouteList as renderRouteOptions, renderSummary as renderSummaryInto } from "./summary";
-
-interface Stop {
-  label: string;
-  pos: LatLon | null;
-}
 
 interface BreakPoint {
   pos: LatLon; // where the user put it; shown snapped to the selected route
@@ -47,7 +44,7 @@ interface BreakPoint {
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 export function startApp() {
-  const stops: Stop[] = [
+  const stops: TripStop[] = [
     { label: "", pos: null },
     { label: "", pos: null },
   ];
@@ -75,7 +72,8 @@ export function startApp() {
   let weatherTimer: number | undefined;
   let weatherPoints: WeatherPoint[] = [];
   const sheet = bindSheet();
-  const map = createMap($("map"), onMapClick);
+  let routeLabels: LatLon[] = []; // duration bubble position per route
+  const map = createMap($("map"), { onClick: openPlace, onContext: openContext, onMoveStart: closeMenu });
   const settingsCtl = bindSettings(renderRoutes);
   const readSettings = settingsCtl.read;
   const bestEl = $("depart-best");
@@ -91,9 +89,8 @@ export function startApp() {
     onAuto: addAutoBreaks,
   });
 
-  const kindOf = (i: number): StopKind => (i === 0 ? "start" : i === stops.length - 1 ? "end" : "via");
-  const titleOf = (i: number) => ({ start: "Başlangıç", end: "Bitiş", via: `Ara durak ${i}` })[kindOf(i)];
-  const placeholderOf = (i: number) => ({ start: "Nereden?", end: "Nereye?", via: "Ara durak" })[kindOf(i)];
+  const kindOf = (i: number) => kindOfStop(i, stops.length);
+  const titleOf = (i: number) => titleOfStop(i, stops.length);
 
   function status(text: string, kind: "info" | "error" | "loading" = "info") {
     statusEl.textContent = text;
@@ -101,29 +98,71 @@ export function startApp() {
   }
 
   function renderStops() {
-    stopsEl.replaceChildren(
-      ...stops.map((s, i) => {
-        const row = document.createElement("li");
-        row.className = `stop-row stop-${kindOf(i)}`;
-        const glyph = document.createElement("span");
-        glyph.className = "stop-glyph";
-        row.append(glyph, placeInput(s.label, placeholderOf(i), `${titleOf(i)} adresi`, (p) => setStop(i, p.label, p.pos)));
-        if (kindOf(i) === "via") {
-          const rm = document.createElement("button");
-          rm.type = "button";
-          rm.className = "icon-btn";
-          rm.innerHTML = icons.close;
-          rm.setAttribute("aria-label", `${titleOf(i)} sil`);
-          rm.addEventListener("click", () => {
-            stops.splice(i, 1);
-            stopsChanged();
-          });
-          row.append(rm);
-        }
-        return row;
-      }),
+    renderTrip(stopsEl, $<HTMLButtonElement>("swap"), stops, {
+      onPick: (i, p) => setStop(i, p.label, p.pos),
+      onRemove(i) {
+        stops.splice(i, 1);
+        stopsChanged();
+      },
+      onMove(from, to) {
+        stops.splice(to, 0, ...stops.splice(from, 1));
+        stopsChanged();
+      },
+      onSwap() {
+        stops.reverse();
+        stopsChanged();
+      },
+      near: map.center,
+    });
+    map.setStops(
+      stops.flatMap((s, i) => (s.pos ? [{ pos: s.pos, kind: kindOf(i), index: i, title: titleOf(i) }] : [])),
+      (i, pos) => placeStop(i, pos),
     );
-    map.setStops(stops.flatMap((s, i) => (s.pos ? [{ pos: s.pos, kind: kindOf(i) }] : [])));
+  }
+
+  // ---------- map click, place card and context menu ----------
+
+  // Puts a stop at a map point with its coordinates as label until the address arrives.
+  function placeStop(i: number, pos: LatLon) {
+    const target = { label: formatCoord(pos), pos };
+    stops[i] = target;
+    stopsChanged();
+    labelLater(target);
+  }
+
+  // "Durak ekle": the first empty stop, else a new via stop before the end.
+  function addStopAt(pos: LatLon) {
+    let i = stops.findIndex((s) => !s.pos);
+    if (i < 0) {
+      i = stops.length - 1;
+      stops.splice(i, 0, { label: "", pos: null });
+    }
+    placeStop(i, pos);
+  }
+
+  const tripActions = (pos: LatLon, done: () => void) => [
+    { label: "Buradan", run: () => (done(), placeStop(0, pos)) },
+    { label: "Buraya", primary: true, run: () => (done(), placeStop(stops.length - 1, pos)) },
+    { label: "Durak ekle", run: () => (done(), addStopAt(pos)) },
+  ];
+
+  function openPlace(pos: LatLon) {
+    closeMenu();
+    map.openPlace(pos, placeCard(pos, tripActions(pos, map.closePopup)));
+  }
+
+  function openContext(pos: LatLon, x: number, y: number) {
+    map.closePopup();
+    const coord = formatCoord(pos);
+    const items: MenuItem[] = [
+      { label: coord, hint: "Kopyala", action: () => void navigator.clipboard?.writeText(coord).then(() => status("Koordinat kopyalandı."), () => status(coord)) },
+      { label: "Buradan yol tarifi", action: () => placeStop(0, pos) },
+      { label: "Buraya yol tarifi", action: () => placeStop(stops.length - 1, pos) },
+      { label: "Durak ekle", action: () => addStopAt(pos) },
+    ];
+    if (routes.length) items.push({ label: "Buraya mola ekle", hint: "rotada", action: () => addBreakAt(snapToLine(lines[selected], pos).pos) });
+    items.push({ label: "Burada ne var?", action: () => openPlace(pos) });
+    openMenu(x, y, items, "Harita menüsü");
   }
 
   function selectRoute(i: number) {
@@ -380,11 +419,6 @@ export function startApp() {
   }
 
   function renderRoutes() {
-    map.setRoutes(
-      routes.map((r) => r.coords),
-      selected,
-      onRouteClick,
-    );
     map.setBreaks(
       routes.length ? breaks.map((b) => snapToLine(lines[selected], b.pos).pos) : [],
       (p) => snapToLine(lines[selected], p).pos,
@@ -398,6 +432,12 @@ export function startApp() {
     const timelines = planned && live.isActive() ? planned.map((t, i) => (i === selected ? live.adjust(t) : t)) : planned;
     const tl = timelines?.[selected];
     lastTimelines = timelines;
+    map.setRoutes(
+      routes.map((r) => r.coords),
+      selected,
+      onRouteClick,
+      timelines ? routes.map((_, i) => ({ pos: routeLabels[i], text: formatDuration(totalS(timelines[i])) })) : [],
+    );
     breakRows = routes.length
       ? breaks.map((b, i) => {
           const at = tl?.breaks[i];
@@ -446,7 +486,7 @@ export function startApp() {
   function currentState(): TripState | null {
     const settings = readSettings();
     const filled = stops.filter((s) => s.pos);
-    if (typeof settings === "string" || !stops[0].pos || !stops[stops.length - 1].pos) return null;
+    if (typeof settings === "string" || filled.length < 2) return null;
     const sp = settings.speed;
     return {
       stops: filled.map((s) => ({ label: shortLabel(s.label), lat: s.pos!.lat, lon: s.pos!.lon })),
@@ -514,20 +554,7 @@ export function startApp() {
     stopsChanged();
   }
 
-  // Map click fills the first empty stop, else adds a via stop before the end.
-  function onMapClick(pos: LatLon) {
-    let i = stops.findIndex((s) => !s.pos);
-    if (i < 0) {
-      i = stops.length - 1;
-      stops.splice(i, 0, { label: "", pos: null });
-    }
-    const target = { label: formatCoord(pos), pos };
-    stops[i] = target;
-    stopsChanged();
-    labelLater(target);
-  }
-
-  async function labelLater(stop: Stop) {
+  async function labelLater(stop: TripStop) {
     if (!stop.pos) return;
     const label = await reverseLabel(stop.pos);
     // Skip if the stop was replaced or removed meanwhile.
@@ -539,21 +566,22 @@ export function startApp() {
 
   async function updateRoute() {
     const my = ++routeSeq;
-    const start = stops[0].pos;
-    const end = stops[stops.length - 1].pos;
-    if (!start || !end) {
+    // Empty rows are skipped, like a map app does while a new stop is being typed.
+    const filled = stops.flatMap((s) => (s.pos ? [s.pos] : []));
+    if (filled.length < 2) {
       routes = [];
       renderRoutes();
-      status(start || end ? "Rota için başlangıç ve bitiş seçin." : "");
+      status(filled.length ? "Rota için başlangıç ve bitiş seçin." : "");
       return;
     }
     status("Rota hesaplanıyor…", "loading");
-    const routed = stops.flatMap((s, i) => (s.pos ? [{ pos: s.pos, title: titleOf(i) }] : []));
+    const routed = filled.map((pos, k) => ({ pos, title: titleOfStop(k, filled.length) }));
     try {
       const result = await getRoutes(routed.map((s) => s.pos));
       if (my !== routeSeq) return;
       routes = result;
       lines = result.map((r) => makeLine(r.coords));
+      routeLabels = lines.map((l, i) => labelPoint(l, lines.filter((_, j) => j !== i)));
       routeScores = []; // scores belong to the old routes
       routedTitles = routed.map((s) => s.title);
       selected = pendingSelected < result.length ? pendingSelected : 0;
@@ -575,9 +603,14 @@ export function startApp() {
   $("locate").innerHTML = icons.locate;
 
   $("add-via").addEventListener("click", () => {
-    stops.splice(stops.length - 1, 0, { label: "", pos: null });
+    stops.push({ label: "", pos: null });
     renderStops();
-    stopsEl.querySelectorAll("input")[stops.length - 2]?.focus();
+    stopsEl.querySelectorAll("input")[stops.length - 1]?.focus();
+  });
+  $("swap").innerHTML = icons.swap;
+  $("swap").addEventListener("click", () => {
+    stops.reverse();
+    stopsChanged();
   });
 
   $("locate").addEventListener("click", () => {

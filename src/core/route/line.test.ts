@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { bearingAt, haversineM, lineLength, makeLine, pointAtDistance, segmentBoxes, sliceLine, snapToLine } from "./line";
+import { bearingAt, haversineM, labelPoint, lineLength, makeLine, pointAtDistance, segmentBoxes, sliceLine, snapToLine } from "./line";
 
 // Along the equator 0.01° of longitude is about 1113 m.
 const line = makeLine([
@@ -55,4 +55,22 @@ test("segmentBoxes covers the line in padded pieces that share their joints", ()
     { south: 0, west: 0, north: 0, east: 0.01 },
     { south: 0, west: 0.01, north: 0.01, east: 0.01 },
   ]);
+});
+
+test("route label sits where the route leaves the others", () => {
+  // Main road straight east; the alternative shares its ends but bulges north in the middle.
+  const main = makeLine([
+    { lat: 0, lon: 0 },
+    { lat: 0, lon: 0.1 },
+  ]);
+  const alt = makeLine([
+    { lat: 0, lon: 0 },
+    { lat: 0, lon: 0.02 },
+    { lat: 0.03, lon: 0.05 },
+    { lat: 0, lon: 0.08 },
+    { lat: 0, lon: 0.1 },
+  ]);
+  const p = labelPoint(alt, [main]);
+  expect(p.lat).toBeGreaterThan(0.025);
+  expect(labelPoint(main, [])).toEqual({ lat: 0, lon: 0.05 });
 });
