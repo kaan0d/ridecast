@@ -121,8 +121,9 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
   }
   map.on("zoomend", thinWeather);
 
-  // Stop pins shrink as the map zooms out, full size from zoom 12 (style.css reads --pin-scale).
-  const scalePins = () => el.style.setProperty("--pin-scale", String(Math.min(1, Math.max(0.5, 0.5 + (map.getZoom() - 6) * 0.085))));
+  // Stop pins shrink as the map zooms out: 0.6 at zoom 6 and below, full size from 12 (style.css
+  // reads --pin-scale).
+  const scalePins = () => el.style.setProperty("--pin-scale", String(Math.min(1, Math.max(0.6, 0.6 + (map.getZoom() - 6) * 0.067))));
   map.on("zoom", scalePins);
   scalePins();
 
@@ -188,7 +189,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
 
   // Start and end pins carry their name beside them: they sit on the town's own map label.
   const pin = (kind: StopKind, name: string) => {
-    const size = kind === "via" ? 18 : 22;
+    const size = kind === "via" ? 11 : 14;
     const html = document.createElement("span");
     html.innerHTML = `<span class="pin pin-${kind}" style="width:${size}px;height:${size}px"></span>`;
     if (kind !== "via") html.append(Object.assign(document.createElement("span"), { className: "pin-name", textContent: name }));
