@@ -1761,6 +1761,12 @@ button.stop-glyph {
   display: none;
 }
 
+/* Ride map not following (dragged away): "my location" lights up as the way back. */
+.live-free #locate {
+  background: var(--focus);
+  color: #fff;
+}
+
 .live-dot {
   fill: var(--focus);
   fill-opacity: 1;
