@@ -21,3 +21,10 @@ test("ranking: lowest score, then earliest, without candidates missing data", ()
   const ranked = rankDepartures([d(0, 2), d(1, 0.5), d(2, 0.5), d(3, 0.1, 0.6), d(4, 1)], 3, 0.25);
   expect(ranked.map((r) => r.departMs)).toEqual([T0 + H, T0 + 2 * H, T0 + 4 * H]);
 });
+
+test("ranking keeps the picks apart: neighbours of a pick are skipped", () => {
+  const d = (h: number, score: number): ScoredDeparture => ({ departMs: T0 + h * H, arrivalMs: T0 + (h + 3) * H, score: { score, worst: 1, missingShare: 0 } });
+  // A dry morning 06-09 and a dry evening at 18; without a gap the list would be 06, 07, 08.
+  const all = [d(6, 0), d(7, 0), d(8, 0), d(9, 0.1), d(12, 2), d(18, 0.2)];
+  expect(rankDepartures(all, 3, 0.25, 2).map((r) => (r.departMs - T0) / H)).toEqual([6, 8, 18]);
+});

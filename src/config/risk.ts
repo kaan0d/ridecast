@@ -6,6 +6,7 @@ import type { VehicleType } from "./vehicles";
 export const RISK: Record<VehicleType, RiskThresholds> = {
   motorcycle: {
     rainMm: [0.1, 1, 4],
+    rainProbPct: 60,
     gustKmh: [35, 50, 65],
     visibilityM: [5000, 2000, 800],
     coldC: [10, 5, 0], // wind chill at riding speed, at or below
@@ -19,6 +20,7 @@ export const RISK: Record<VehicleType, RiskThresholds> = {
   },
   bicycle: {
     rainMm: [0.1, 1, 4],
+    rainProbPct: 60,
     gustKmh: [25, 40, 55],
     visibilityM: [3000, 1000, 500],
     coldC: [5, 0, -5],
@@ -32,6 +34,7 @@ export const RISK: Record<VehicleType, RiskThresholds> = {
   },
   car: {
     rainMm: [1, 4, 10],
+    rainProbPct: null, // enclosed: rain that may not come is not worth a warning
     gustKmh: [50, 70, 90],
     visibilityM: [2000, 1000, 300],
     coldC: null, // enclosed: no wind chill warnings
@@ -45,6 +48,7 @@ export const RISK: Record<VehicleType, RiskThresholds> = {
   },
   walking: {
     rainMm: [0.5, 2, 6],
+    rainProbPct: 70,
     gustKmh: [40, 60, 80],
     visibilityM: [1000, 500, 200],
     coldC: [5, 0, -5],
@@ -68,7 +72,7 @@ export const WET_ROAD = {
 // A break gets advice when rain starts within it, or stops within this many minutes after it.
 export const BREAK_ADVICE = { rainMm: 0.1, maxExtendMin: 90 };
 
-// Route risk score: distance-weighted mean of these weights per level (none, low, medium, high).
+// Route risk score: riding-time-weighted mean of these weights per level (none, low, medium, high).
 // Squared-ish steps so a stretch of high risk outweighs a long stretch of low risk.
 export const RISK_WEIGHTS = [0, 1, 3, 9] as const;
 

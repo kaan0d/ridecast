@@ -1,21 +1,27 @@
 import type { Level } from "./risk";
 
 export interface RouteScore {
-  score: number; // distance-weighted mean of the level weights along the route
+  score: number; // riding-time-weighted mean of the level weights along the route
   worst: Level;
-  missingShare: number; // part of the route with no forecast (0..1)
+  missingShare: number; // part of the riding time with no forecast (0..1)
 }
 
-// Each sample point stands for the route halfway to its neighbours. Points without a forecast
-// (level null) are left out of the mean and reported as missingShare.
-export function routeScore(points: { distM: number; level: Level | null }[], totalM: number, weights: readonly number[]): RouteScore {
+// Each sample point stands for the route halfway to its neighbours, for as long as it takes to
+// ride that stretch at the speed there: a slow stretch in the rain counts more than a fast one of
+// the same length. Breaks do not count. Points without a forecast (level null) are left out of the
+// mean and reported as missingShare.
+export function routeScore(points: { distM: number; level: Level | null; kmh: number }[], totalM: number, weights: readonly number[]): RouteScore {
+  const spans = points.map((p, k) => {
+    const from = k === 0 ? 0 : (points[k - 1].distM + p.distM) / 2;
+    const to = k === points.length - 1 ? totalM : (p.distM + points[k + 1].distM) / 2;
+    return p.kmh > 0 ? (to - from) / p.kmh : 0;
+  });
+  const total = spans.reduce((a, b) => a + b, 0);
   let sum = 0;
   let known = 0;
   let worst: Level = 0;
   points.forEach((p, k) => {
-    const from = k === 0 ? 0 : (points[k - 1].distM + p.distM) / 2;
-    const to = k === points.length - 1 ? totalM : (p.distM + points[k + 1].distM) / 2;
-    const share = totalM > 0 ? (to - from) / totalM : 0;
+    const share = total > 0 ? spans[k] / total : 0;
     if (p.level === null) return;
     sum += weights[p.level] * share;
     known += share;

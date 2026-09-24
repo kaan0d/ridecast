@@ -6,6 +6,7 @@ type Triple = [number, number, number];
 
 export interface RiskThresholds {
   rainMm: Triple; // mm in the forecast hour
+  rainProbPct: number | null; // low warning from this precipitation probability on, even without forecast rain
   gustKmh: Triple;
   visibilityM: Triple; // at or below
   coldC: Triple | null; // felt temperature at or below
@@ -92,8 +93,11 @@ export function assessPoint(p: PointInput, t: RiskThresholds, wet: WetRoadRules)
   if (h.code >= 95) add("storm", t.storm, "Gök gürültülü fırtına");
   if (h.snowCm > 0 || (h.code >= 71 && h.code <= 77) || h.code === 85 || h.code === 86) add("snow", t.snow, "Kar yağışı");
   else {
+    // The probability (ensemble based) says how sure the rain amount is; a high one alone is a low warning.
     const rain = above(h.precipMm, t.rainMm);
-    add("rain", rain, `${rain === 3 ? "Şiddetli yağmur" : rain === 1 ? "Hafif yağmur" : "Yağmur"} ${h.precipMm.toFixed(1)} mm/sa`);
+    const prob = h.precipProb === null ? "" : ` · olasılık %${h.precipProb}`;
+    if (rain > 0) add("rain", rain, `${rain === 3 ? "Şiddetli yağmur" : rain === 1 ? "Hafif yağmur" : "Yağmur"} ${h.precipMm.toFixed(1)} mm/sa${prob}`);
+    else if (t.rainProbPct !== null && h.precipProb !== null && h.precipProb >= t.rainProbPct) add("rain", 1, `Yağış olasılığı %${h.precipProb}`);
   }
   add("gust", above(h.gustKmh, t.gustKmh), `Rüzgar hamlesi ${Math.round(h.gustKmh)} km/s`);
   const fog = h.code === 45 || h.code === 48;

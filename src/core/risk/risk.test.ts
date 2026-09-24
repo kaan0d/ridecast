@@ -22,6 +22,7 @@ const hour = (i: number, over: Partial<WeatherHour> = {}): WeatherHour => ({
 
 const moto: RiskThresholds = {
   rainMm: [0.1, 1, 4],
+  rainProbPct: 60,
   gustKmh: [35, 50, 65],
   visibilityM: [5000, 2000, 800],
   coldC: [10, 5, 0],
@@ -33,7 +34,7 @@ const moto: RiskThresholds = {
   dark: 2,
   road: { damp: 1, wet: 2 },
 };
-const car: RiskThresholds = { ...moto, rainMm: [1, 4, 10], gustKmh: [50, 70, 90], coldC: null, windChill: false, dark: 1, road: { damp: 0, wet: 1 } };
+const car: RiskThresholds = { ...moto, rainMm: [1, 4, 10], rainProbPct: null, gustKmh: [50, 70, 90], coldC: null, windChill: false, dark: 1, road: { damp: 0, wet: 1 } };
 const wet = { recentHours: 3, wetNowMm: 0.5, wetRecentMm: 1.5, dampRecentMm: 0.2 };
 const day = [{ riseMs: T0, setMs: T0 + 11 * H }];
 const at = (hours: WeatherHour[], i: number, t = moto, rideKmh = 90, headingDeg = 0) =>
@@ -86,6 +87,14 @@ describe("assessPoint", () => {
       ["gust", 1],
     ]);
     expect(c.events.map((e) => [e.kind, e.level])).toEqual([["road", 1]]);
+  });
+
+  test("precipitation probability: shown with rain, a low warning on its own when high", () => {
+    expect(at([hour(0, { precipMm: 1.2, precipProb: 40 })], 0).events[0]).toMatchObject({ kind: "rain", level: 2, text: "Yağmur 1.2 mm/sa · olasılık %40" });
+    expect(at([hour(0, { precipProb: 70 })], 0).events).toEqual([{ kind: "rain", level: 1, text: "Yağış olasılığı %70" }]);
+    expect(at([hour(0, { precipProb: 50 })], 0).events).toEqual([]);
+    expect(at([hour(0, { precipProb: 90 })], 0, car).events).toEqual([]);
+    expect(at([hour(0, { precipProb: null })], 0).events).toEqual([]);
   });
 
   test("cold uses the wind chill at riding speed, not the air temperature", () => {
