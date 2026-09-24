@@ -349,7 +349,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
       if (!points.length) return;
       map.fitBounds(L.latLngBounds(points.map(toLatLng)), {
         paddingTopLeft: [insets.left + 32, 48],
-        paddingBottomRight: [56, insets.bottom + 32],
+        paddingBottomRight: [104, insets.bottom + 32], // room for the end pin's name
       });
     },
   };
