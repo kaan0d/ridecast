@@ -150,6 +150,14 @@ export const tr: Messages = {
     loading: "Yakıt menzili kontrolü: yakıt noktaları yükleniyor…",
   },
 
+  ics: {
+    summary: (from, to) => `Sürüş: ${from} → ${to}`,
+    day: (k, n) => ` (${n} günün ${k}. günü)`,
+    breaks: "Molalar",
+    warnings: "Uyarılar",
+    plan: "Plan",
+  },
+
   gpx: {
     noPoints: "GPX dosyasında en az iki iz veya rota noktası bulunamadı.",
     loaded: (name, km, points) => `GPX rotası${name ? ` "${name}"` : ""}: ${km}, ${points} nokta. Paylaşım linki sadece başlangıç ve bitişi taşır.`,
@@ -385,6 +393,7 @@ export const tr: Messages = {
     reroute: "Rotayı yeniden hesapla",
     liveRefresh: "Havayı şimdi yenile",
     fuelRange: "Yakıt menzili",
+    icsSave: "Takvime ekle",
     fuelRangeNote: "Rota boyunca yakıt noktaları bundan daha seyrekse uyarır.",
   },
 };

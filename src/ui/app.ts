@@ -2,13 +2,14 @@ import { t } from "../i18n";
 import { DEFAULT_BREAK_MIN, OVERNIGHT } from "../config/breaks";
 import { DEPARTURE } from "../config/departure";
 import { SHARE } from "../config/share";
-import { autoBreakDistances, buildTimeline, etaAtDistance, resumeAtClock, totalS, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
+import { autoBreakDistances, buildTimeline, etaAtDistance, resumeAtClock, totalS, tripDays, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
 import type { LatLon } from "../core/geo";
 import { bestPerDay, rankDepartures, type ScoredDeparture } from "../core/advice/departure";
 import { fuelGaps } from "../core/advice/stops";
 import { pointRuns, type RouteScore } from "../core/risk/route";
 import { labelPoint, lineLength, makeLine, pointAtDistance, sliceLine, snapToLine, type Line } from "../core/route/line";
 import type { Forecast } from "../core/weather/weather";
+import { toIcs } from "../core/share/ics";
 import { encodeState, type TripState } from "../core/share/state";
 import { reverseLabel } from "../services/nominatim";
 import type { Route } from "../services/osrm";
@@ -19,6 +20,7 @@ import { adviseBreaks, bindBreaks, type BreakRow } from "./breaks";
 import { bindChanges } from "./changes";
 import { createForecast } from "./forecast";
 import { formatClock, formatCoord, formatDuration } from "./format";
+import { saveText, slug } from "./download";
 import { bindGpx } from "./gpx";
 import { icons } from "./icons";
 import { bindLayers } from "./layers";
@@ -70,6 +72,7 @@ export function startApp() {
   let weatherSeq = 0;
   let weatherTimer: number | undefined;
   let weatherPoints: WeatherPoint[] = [];
+  let lastWarnings: Warning[] = []; // the warning list as last shown, for the calendar export
   let bestWindow: BestWindow = "day"; // "Best time" over the next 24 hours or the next 7 days
 
   const stopsEl = $("stops");
@@ -447,6 +450,7 @@ export function startApp() {
           if (a) warnings.push({ level: 2, text: t.app.breakWarning(i + 1, a), when: `${formatClock(b.startMs)}–${formatClock(b.endMs)}`, where: t.km(Math.round(b.distM / 1000)) });
         });
         renderWarnings($("warnings"), warnings, !error && points.length > 0, openPoint);
+        lastWarnings = error ? [] : warnings;
         // Change tracking compares planned trips; live mode has its own alerts.
         const trip = currentState();
         if (!error && points.length && trip && !live.isActive()) changes.onForecast(encodeState(trip), tl.timeMs[0], warnings);
@@ -646,6 +650,42 @@ export function startApp() {
         last: [...stops].reverse().find((s) => s.pos)?.label.split(",")[0] ?? t.app.end,
       };
     },
+  });
+
+  // ---------- calendar ----------
+
+  // One event per riding day (overnight stops split days), with that day's breaks, the warnings
+  // and the plan link in the description.
+  $("ics-export").addEventListener("click", () => {
+    const tl = lastTimelines?.[selected];
+    if (!tl || !routes[selected]) return;
+    const overnight = breaks.map((b) => b.resumeMin !== undefined);
+    const days = tripDays(tl, overnight);
+    const first = stops.find((s) => s.pos)?.label.split(",")[0] ?? t.app.start;
+    const last = [...stops].reverse().find((s) => s.pos)?.label.split(",")[0] ?? t.app.end;
+    const events = days.map((d, k) => {
+      const dayBreaks = tl.breaks
+        .filter((b, i) => !overnight[i] && b.startMs >= d.startMs && b.endMs <= d.endMs)
+        .map((b) => `- ${formatClock(b.startMs)}–${formatClock(b.endMs)}, ${t.km(Math.round(b.distM / 1000))}`);
+      // Weather warnings go to the day they start; the others (breaks, fuel) to every day.
+      const warnings = lastWarnings
+        .filter((w) => !w.run || (w.run.startMs >= d.startMs && w.run.startMs <= d.endMs))
+        .map((w) => `- ${w.text} (${w.when ? w.when + ", " : ""}${w.where})`);
+      const description = [
+        ...(dayBreaks.length ? [t.ics.breaks + ":", ...dayBreaks, ""] : []),
+        ...(warnings.length ? [t.ics.warnings + ":", ...warnings, ""] : []),
+        `${t.ics.plan}: ${location.href}`,
+      ].join("\n");
+      return {
+        uid: `${d.startMs}-${k}@ridecast`,
+        startMs: d.startMs,
+        endMs: d.endMs,
+        summary: t.ics.summary(first, last) + (days.length > 1 ? t.ics.day(k + 1, days.length) : ""),
+        description,
+        location: k === 0 ? first : undefined,
+      };
+    });
+    saveText(`ridecast-${slug(first)}-${slug(last)}.ics`, toIcs(events, Date.now()), "text/calendar");
   });
 
   // ---------- trip card buttons, start ----------
