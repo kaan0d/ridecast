@@ -36,8 +36,6 @@
           <ol id="stops" class="trip-stops"></ol>
           <button type="button" id="swap" class="icon-btn trip-swap" aria-label="Swap start and destination" title="Swap start and destination" data-t-aria="swap" data-t-title="swap" hidden></button>
           <button type="button" id="add-via" class="trip-add"><span data-t="addStop">Add stop</span></button>
-          <button type="button" id="gpx-import" class="trip-add" data-t="gpxOpen">Open a GPX file</button>
-          <input type="file" id="gpx-file" accept=".gpx,application/gpx+xml" hidden />
         </div>
         <p class="hint" data-t="hint">Search an address or tap the map. Right click or long press: directions menu. Drag a stop's marker to reorder.</p>
         <p id="status" role="status" aria-live="polite"></p>
@@ -47,7 +45,6 @@
         <div id="share" class="share-row" hidden>
           <button type="button" id="live-start" class="button-primary" data-t="liveStart">Start ride</button>
           <button type="button" id="copy-link" class="button-secondary" data-t="copyLink">Copy link</button>
-          <button type="button" id="gpx-export" class="button-secondary" data-t="gpxSave">Save GPX</button>
           <button type="button" id="ics-export" class="button-secondary" data-t="icsSave">Add to calendar</button>
           <span id="copy-status" role="status"></span>
         </div>

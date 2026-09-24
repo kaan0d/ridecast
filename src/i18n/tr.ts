@@ -140,7 +140,6 @@ export const tr: Messages = {
     rainAtStart: "Mola başlarken yağmur başlıyor.",
     rainStarts: (m) => `Yağmur molanın ${m}. dakikasında başlıyor. Molayı ${m} dk'ya kısaltırsan yağmurdan önce yola çıkarsın.`,
     rainStops: (extend, total) => `Molanın sonunda yağmur var, ${extend} dk sonra diniyor. Molayı ${total} dk'ya uzatmayı düşün.`,
-    gpxName: (i, min, at) => `Mola ${i} · ${min} dk${at ? " · " + at : ""}`,
   },
 
   fuel: {
@@ -156,11 +155,6 @@ export const tr: Messages = {
     breaks: "Molalar",
     warnings: "Uyarılar",
     plan: "Plan",
-  },
-
-  gpx: {
-    noPoints: "GPX dosyasında en az iki iz veya rota noktası bulunamadı.",
-    loaded: (name, km, points) => `GPX rotası${name ? ` "${name}"` : ""}: ${km}, ${points} nokta. Paylaşım linki sadece başlangıç ve bitişi taşır.`,
   },
 
   share: {
@@ -342,12 +336,10 @@ export const tr: Messages = {
     clearRecent: "Son rotaları temizle",
     swap: "Başlangıç ile bitişi değiştir",
     addStop: "Durak ekle",
-    gpxOpen: "GPX dosyası aç",
     hint: "Adres ara ya da haritaya dokun. Sağ tık veya uzun basış: yol tarifi menüsü. Sırayı değiştirmek için durak işaretini sürükle.",
     recent: "Son rotalar",
     liveStart: "Yolculuğu başlat",
     copyLink: "Linki kopyala",
-    gpxSave: "GPX indir",
     changes: "Son bakıştan beri değişenler",
     weather: "Yol boyunca hava",
     warnings: "Uyarılar",

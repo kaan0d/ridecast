@@ -143,7 +143,6 @@ export const en = {
     rainAtStart: "Rain starts as the break begins.",
     rainStarts: (m: number) => `Rain starts ${m} min into the break. Cut it to ${m} min to leave before the rain.`,
     rainStops: (extend: number, total: number) => `It rains when the break ends and stops ${extend} min later. Consider ${total} min instead.`,
-    gpxName: (i: number, min: number, at: string | null) => `Break ${i} · ${min} min${at ? " · " + at : ""}`,
   },
 
   fuel: {
@@ -159,12 +158,6 @@ export const en = {
     breaks: "Breaks",
     warnings: "Warnings",
     plan: "Plan",
-  },
-
-  gpx: {
-    noPoints: "The GPX file has fewer than two track or route points.",
-    loaded: (name: string, km: string, points: number) =>
-      `GPX route${name ? ` "${name}"` : ""}: ${km}, ${points} points. The share link only carries its start and end.`,
   },
 
   share: {
