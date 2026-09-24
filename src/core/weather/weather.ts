@@ -19,7 +19,6 @@ export type WeatherSeries = WeatherHour[]; // sorted by time
 
 export interface Forecast {
   hours: WeatherSeries;
-  sun: { riseMs: number; setMs: number }[]; // one entry per forecast day
 }
 
 // Distances (m) from start to end inclusive, evenly spaced so that there is roughly one point per

@@ -32,3 +32,15 @@ export async function searchPlaces(query: string, near?: LatLon): Promise<Place[
     throw new Error(t.errors.searchFailed);
   }
 }
+
+// Address of a point for the place card and stops set on the map. Within 10 km, so a point in the
+// fields still gets its village. Null when there is nothing near or the request fails.
+export async function reverseLabel(pos: LatLon): Promise<string | null> {
+  const url = `${BASE.replace("/api/", "/reverse")}?limit=1&lang=default&radius=10&lat=${pos.lat.toFixed(5)}&lon=${pos.lon.toFixed(5)}`;
+  try {
+    const f = (await getJson<PhotonResponse>(url)).features[0];
+    return f ? placeLabel(f.properties) || null : null;
+  } catch {
+    return null;
+  }
+}

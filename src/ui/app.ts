@@ -9,7 +9,7 @@ import { pointRuns, type RouteScore } from "../core/risk/route";
 import { labelPoint, lineLength, makeLine, pointAtDistance, sliceLine, snapToLine, type Line } from "../core/route/line";
 import type { Forecast } from "../core/weather/weather";
 import { encodeState, type TripState } from "../core/share/state";
-import { reverseLabel } from "../services/nominatim";
+import { reverseLabel } from "../services/photon";
 import type { Route } from "../services/osrm";
 import { routeTrip, routingKey } from "../services/routing";
 import { renderClothing } from "./advice";
