@@ -24,6 +24,8 @@ import { bindBreaks } from "./breaks";
 import { formatClock, formatCoord, formatDuration, formatKm, formatTime } from "./format";
 import { icons } from "./icons";
 import { createMap } from "./map";
+import { bindLayers } from "./layers";
+import { createMeasure } from "./measure";
 import { closeMenu, openMenu, type MenuItem } from "./menu";
 import { placeCard } from "./place";
 import { kindOf as kindOfStop, renderTrip, titleOf as titleOfStop, type TripStop } from "./trip";
@@ -73,7 +75,15 @@ export function startApp() {
   let weatherPoints: WeatherPoint[] = [];
   const sheet = bindSheet();
   let routeLabels: LatLon[] = []; // duration bubble position per route
-  const map = createMap($("map"), { onClick: openPlace, onContext: openContext, onMoveStart: closeMenu });
+  const map = createMap($("map"), {
+    onClick: (pos) => (measure.isActive() ? measure.add(pos) : openPlace(pos)),
+    onContext: openContext,
+    onMoveStart: closeMenu,
+    onLocate: locate,
+    onRouteDrag,
+  });
+  const measure = createMeasure(map.leaflet, $("measure"));
+  bindLayers(map.leaflet, $("layers"), $("layers-panel"));
   const settingsCtl = bindSettings(renderRoutes);
   const readSettings = settingsCtl.read;
   const bestEl = $("depart-best");
@@ -161,7 +171,7 @@ export function startApp() {
       { label: "Durak ekle", action: () => addStopAt(pos) },
     ];
     if (routes.length) items.push({ label: "Buraya mola ekle", hint: "rotada", action: () => addBreakAt(snapToLine(lines[selected], pos).pos) });
-    items.push({ label: "Burada ne var?", action: () => openPlace(pos) });
+    items.push({ label: "Burada ne var?", action: () => openPlace(pos) }, { label: "Mesafe ölç", action: () => measure.start(pos) });
     openMenu(x, y, items, "Harita menüsü");
   }
 
@@ -173,10 +183,25 @@ export function startApp() {
 
   // Clicking the selected route adds a break there; clicking an alternative selects it.
   function onRouteClick(i: number, p: LatLon) {
+    if (measure.isActive()) return measure.add(p);
     if (i !== selected) return selectRoute(i);
     breaks.push({ pos: p, durationMin: DEFAULT_BREAK_MIN, auto: false });
     resnapBreaks();
     renderRoutes();
+  }
+
+  // A route line dragged to `drop` (Google Maps style): a via stop there, placed before the first
+  // stop that lies further along that route than the grabbed point.
+  function onRouteDrag(i: number, grab: LatLon, drop: LatLon) {
+    if (measure.isActive()) return;
+    const line = lines[i];
+    const at = snapToLine(line, grab).distM;
+    const filled = stops.flatMap((s, k) => (s.pos ? [{ pos: s.pos, k }] : []));
+    const next = filled.slice(1).find((x) => snapToLine(line, x.pos).distM > at) ?? filled[filled.length - 1];
+    const via = { label: formatCoord(drop), pos: drop };
+    stops.splice(next.k, 0, via);
+    stopsChanged();
+    labelLater(via);
   }
 
   function moveBreak(i: number, p: LatLon) {
@@ -600,7 +625,6 @@ export function startApp() {
   }
 
   $("add-via").insertAdjacentHTML("afterbegin", icons.plus);
-  $("locate").innerHTML = icons.locate;
 
   $("add-via").addEventListener("click", () => {
     stops.push({ label: "", pos: null });
@@ -613,14 +637,35 @@ export function startApp() {
     stopsChanged();
   });
 
-  $("locate").addEventListener("click", () => {
+  // "Konumumu göster": centre on the device and show a dot (tap it for the place card).
+  // With no start yet, the position also becomes the start, as before.
+  function locate() {
     if (!navigator.geolocation) return status("Tarayıcınız konum özelliğini desteklemiyor.", "error");
     status("Konum alınıyor…", "loading");
     navigator.geolocation.getCurrentPosition(
-      (p) => setStop(0, "Konumum", { lat: p.coords.latitude, lon: p.coords.longitude }),
+      (p) => {
+        const pos = { lat: p.coords.latitude, lon: p.coords.longitude };
+        status("");
+        map.showMe(pos, () => openPlace(pos));
+        if (!stops[0].pos) setStop(0, "Konumum", pos);
+      },
       (err) => status(err.code === err.PERMISSION_DENIED ? "Konum izni reddedildi." : "Konum alınamadı.", "error"),
       { enableHighAccuracy: true, timeout: 15000 },
     );
+  }
+
+  // Shortcuts: Escape closes the menu, card and measuring; "/" jumps to the next address field.
+  addEventListener("keydown", (e) => {
+    const typing = (e.target as Element).closest?.("input, select, textarea");
+    if (e.key === "Escape") {
+      closeMenu();
+      map.closePopup();
+      if (measure.isActive()) measure.stop();
+    } else if (e.key === "/" && !typing) {
+      e.preventDefault();
+      const inputs = [...stopsEl.querySelectorAll("input")];
+      (inputs.find((x) => !x.value) ?? inputs[inputs.length - 1])?.focus();
+    }
   });
 
   renderStops();

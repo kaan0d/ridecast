@@ -10,7 +10,12 @@
   </head>
   <body>
     <main id="map" aria-label="Harita"></main>
-    <button type="button" id="locate" class="fab" aria-label="Konumumu başlangıç yap" title="Konumumu kullan"></button>
+    <div id="layers-panel" class="layers-panel" role="dialog" aria-label="Katmanlar" hidden></div>
+    <div id="measure" class="measure-card" role="status" hidden>
+      <div><strong class="measure-total"></strong><span class="measure-count"></span></div>
+      <button type="button" class="measure-clear button-secondary">Temizle</button>
+      <button type="button" class="measure-close icon-btn" aria-label="Ölçümü kapat">×</button>
+    </div>
 
     <section id="sheet" class="sheet" aria-label="Rota paneli">
       <button type="button" id="sheet-toggle" class="sheet-grabber" aria-controls="sheet-body" aria-expanded="false">
