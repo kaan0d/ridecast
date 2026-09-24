@@ -27,3 +27,6 @@ export const ROAD_TYPE_RULES: RoadTypeRules = {
   motorwayRef: /^O-?\d/,
   primaryRef: /^D-?\d/,
 };
+
+// An imported GPX track has no road data; this speed only feeds the road type guess ("Ana yol").
+export const GPX_TRACK_KMH = 75;

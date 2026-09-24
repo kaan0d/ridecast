@@ -1,12 +1,13 @@
 import { DEFAULT_BREAK_MIN } from "../config/breaks";
 import { WEATHER_REQUEST, WEATHER_SAMPLE } from "../config/weather";
-import { ROAD_TYPE_RULES } from "../config/vehicles";
+import { GPX_TRACK_KMH, ROAD_TYPE_RULES } from "../config/vehicles";
 import { autoBreakDistances, buildTimeline, etaAtDistance, speedAtDistance, totalS, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
 import { assessPoint, breakAdvice, type Level } from "../core/risk/risk";
 import { BREAK_ADVICE, RISK, RISK_WEIGHTS, WET_ROAD } from "../config/risk";
 import { routeScore, type RouteScore } from "../core/risk/route";
 import type { VehicleType } from "../config/vehicles";
 import { type LatLon } from "../core/geo";
+import { parseGpx, toGpx } from "../core/route/gpx";
 import { bearingAt, labelPoint, lineLength, makeLine, pointAtDistance, sliceLine, snapToLine, type Line } from "../core/route/line";
 import { roadBreakdown } from "../core/route/roadType";
 import { nearestHourIndex, sampleDistances, type Forecast } from "../core/weather/weather";
@@ -85,6 +86,7 @@ export function startApp() {
   });
   const measure = createMeasure(map.leaflet, $("measure"));
   bindLayers(map.leaflet, $("layers"), $("layers-panel"));
+  let gpxRoute: Route | null = null; // an imported GPX track used as the route until the stops change
   let routedKey = ""; // vehicle profile and avoid options the current routes were made with
   // Vehicle or avoid options can change the route itself; everything else only re-plans on it.
   const settingsCtl = bindSettings(() => {
@@ -579,6 +581,7 @@ export function startApp() {
   });
 
   function stopsChanged() {
+    gpxRoute = null;
     renderStops();
     updateRoute();
   }
@@ -613,11 +616,13 @@ export function startApp() {
     const how = settingsCtl.routing();
     routedKey = routingKey(how.vehicle, how.avoid);
     try {
-      const result = await routeTrip(
-        routed.map((s) => s.pos),
-        how.vehicle,
-        how.avoid,
-      );
+      const result = gpxRoute
+        ? [gpxRoute]
+        : await routeTrip(
+            routed.map((s) => s.pos),
+            how.vehicle,
+            how.avoid,
+          );
       if (my !== routeSeq) return;
       routes = result;
       lines = result.map((r) => makeLine(r.coords));
@@ -669,6 +674,50 @@ export function startApp() {
     );
   }
 
+  // ---------- GPX ----------
+
+  // The track becomes the route itself (no routing server); stops are its two ends.
+  $<HTMLInputElement>("gpx-file").addEventListener("change", async (e) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+    const gpx = parseGpx(await file.text());
+    if (!gpx) return status("GPX dosyasında en az iki iz veya rota noktası bulunamadı.", "error");
+    const distanceM = lineLength(makeLine(gpx.points));
+    const durationS = distanceM / (GPX_TRACK_KMH / 3.6);
+    gpxRoute = { coords: gpx.points, distanceM, durationS, steps: [{ distanceM, durationS, ref: "", ferry: false, leg: 0 }] };
+    const first = gpx.points[0];
+    const last = gpx.points[gpx.points.length - 1];
+    const ends = [first, last].map((pos) => ({ label: formatCoord(pos), pos }));
+    stops.splice(0, stops.length, ...ends);
+    breaks = [];
+    renderStops();
+    ends.forEach(labelLater);
+    await updateRoute();
+    status(`GPX rotası${gpx.name ? ` "${gpx.name}"` : ""}: ${formatKm(distanceM)}, ${gpx.points.length} nokta. Paylaşım linki sadece başlangıç ve bitişi taşır.`);
+  });
+  $("gpx-import").addEventListener("click", () => $("gpx-file").click());
+
+  $("gpx-export").addEventListener("click", () => {
+    const route = routes[selected];
+    if (!route) return;
+    const tl = lastTimelines?.[selected];
+    const named = stops.flatMap((s, i) => (s.pos ? [{ pos: s.pos, name: `${titleOf(i)}: ${s.label.split(",")[0]}` }] : []));
+    const breakPts = breaks.map((b, i) => {
+      const at = tl?.breaks[i];
+      return { pos: snapToLine(lines[selected], b.pos).pos, name: `Mola ${i + 1} · ${b.durationMin} dk${at ? " · " + formatClock(at.startMs) : ""}` };
+    });
+    const first = stops.find((s) => s.pos)?.label.split(",")[0] ?? "Başlangıç";
+    const last = [...stops].reverse().find((s) => s.pos)?.label.split(",")[0] ?? "Bitiş";
+    const xml = toGpx(`${first} → ${last}`, route.coords, [...named, ...breakPts]);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([xml], { type: "application/gpx+xml" }));
+    a.download = `ridecast-${slug(first)}-${slug(last)}.gpx`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+
   // Offline: say so; the service worker serves the last routes and forecasts it saw.
   const offlineText = "Çevrimdışısın; son alınan rota ve hava verisi gösteriliyor.";
   const netChanged = () => {
@@ -701,3 +750,12 @@ export function startApp() {
   renderStops();
   if (!share.applyHash()) share.renderRecent();
 }
+
+// File-name safe ASCII: Turkish letters folded, other characters dropped.
+const slug = (s: string) =>
+  s
+    .toLocaleLowerCase("tr")
+    .replace(/[çğıöşü]/g, (ch) => ({ ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u" })[ch]!)
+    .normalize("NFD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "rota";

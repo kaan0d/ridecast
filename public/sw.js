@@ -57,6 +57,7 @@ self.addEventListener("fetch", (event) => {
     if (request.mode === "navigate") {
       event.respondWith(networkFirst(request, SHELL, false).catch(() => caches.match("./")));
     } else if (url.pathname.includes("/assets/")) {
+      // ponytail: files of older deploys stay in the shell cache (~250 kB each); bump SHELL to drop them.
       event.respondWith(caches.match(request).then((hit) => hit || networkFirst(request, SHELL, false)));
     }
     return;
