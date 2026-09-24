@@ -7,6 +7,7 @@ export type SpeedSetting =
 export interface Break {
   distM: number; // distance along the route (same scale as step distances)
   durationS: number;
+  resumeAt?: (arriveMs: number) => number; // overnight stop: when riding goes on, instead of durationS
 }
 
 export interface Timeline {
@@ -52,7 +53,7 @@ export function buildTimeline(steps: Step[], departMs: number, speed: SpeedSetti
         push();
       }
       const startMs = t;
-      t += b.durationS * 1000;
+      t = b.resumeAt ? Math.max(t, b.resumeAt(t)) : t + b.durationS * 1000;
       push();
       out.breaks.push({ distM: d, startMs, endMs: t });
     }
@@ -118,3 +119,35 @@ export function speedAtDistance(t: Timeline, d: number): number {
 
 // Whole trip in seconds, breaks included.
 export const totalS = (t: Timeline) => (t.timeMs[t.timeMs.length - 1] - t.timeMs[0]) / 1000;
+
+const DAY_MS = 86_400_000;
+
+// Overnight stop: the first time the local clock shows `minuteOfDay` at least `minStayMs` after
+// arriving. utcOffsetMin is the local offset (Turkey: 180).
+export function resumeAtClock(arriveMs: number, minuteOfDay: number, minStayMs: number, utcOffsetMin: number): number {
+  const offset = utcOffsetMin * 60_000;
+  const earliest = arriveMs + minStayMs;
+  const localMidnight = Math.floor((earliest + offset) / DAY_MS) * DAY_MS - offset;
+  const t = localMidnight + minuteOfDay * 60_000;
+  return t >= earliest ? t : t + DAY_MS;
+}
+
+export interface TripDay {
+  startMs: number;
+  endMs: number;
+  fromM: number;
+  toM: number;
+}
+
+// Riding days, split at the overnight breaks (flags in the order of timeline.breaks).
+export function tripDays(t: Timeline, overnight: boolean[]): TripDay[] {
+  const days: TripDay[] = [];
+  let start = { ms: t.timeMs[0], m: 0 };
+  t.breaks.forEach((b, i) => {
+    if (!overnight[i]) return;
+    days.push({ startMs: start.ms, endMs: b.startMs, fromM: start.m, toM: b.distM });
+    start = { ms: b.endMs, m: b.distM };
+  });
+  days.push({ startMs: start.ms, endMs: lastOf(t.timeMs), fromM: start.m, toM: lastOf(t.distM) });
+  return days;
+}

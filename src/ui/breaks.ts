@@ -1,6 +1,6 @@
-import { AUTO_BREAK_DEFAULT, BREAK_LIMITS_MIN, BREAK_PRESETS_MIN } from "../config/breaks";
+import { AUTO_BREAK_DEFAULT, BREAK_LIMITS_MIN, BREAK_PRESETS_MIN, OVERNIGHT } from "../config/breaks";
 import type { AutoBreakRule } from "../core/eta/eta";
-import { formatClock } from "./format";
+import { formatClock, formatTime } from "./format";
 import { icons } from "./icons";
 
 export interface BreakRow {
@@ -10,11 +10,13 @@ export interface BreakRow {
   startMs?: number;
   endMs?: number;
   advice?: string; // weather during the break
+  resumeMin?: number; // overnight: ride on at this local minute of the day
 }
 
 interface Handlers {
   onDuration(i: number, min: number): void;
   onRemove(i: number): void;
+  onOvernight(i: number, resumeMin: number | null): void;
   onAuto(rule: AutoBreakRule, durationMin: number): void;
 }
 
@@ -50,13 +52,16 @@ export function bindBreaks(h: Handlers) {
         li.className = "break-row";
         const title = document.createElement("span");
         title.className = "break-title";
-        title.textContent = `Mola ${i + 1}${b.auto ? " (oto)" : ""}`;
+        const overnight = b.resumeMin !== undefined;
+        title.textContent = overnight ? `Konaklama ${i + 1}` : `Mola ${i + 1}${b.auto ? " (oto)" : ""}`;
         const info = document.createElement("span");
         info.className = "break-info";
         info.textContent =
           b.distM === undefined || b.startMs === undefined || b.endMs === undefined
             ? "–"
-            : `km ${Math.round(b.distM / 1000)} · ${formatClock(b.startMs)}–${formatClock(b.endMs)}`;
+            : overnight
+              ? `km ${Math.round(b.distM / 1000)} · varış ${formatTime(b.startMs)}, yola çıkış ${formatTime(b.endMs)}`
+              : `km ${Math.round(b.distM / 1000)} · ${formatClock(b.startMs)}–${formatClock(b.endMs)}`;
 
         const dur = document.createElement("input");
         dur.type = "number";
@@ -72,6 +77,25 @@ export function bindBreaks(h: Handlers) {
         const durLabel = document.createElement("label");
         durLabel.className = "break-duration";
         durLabel.append(dur, " dk");
+        // Overnight: the duration becomes a "ride on at" time.
+        const resume = document.createElement("input");
+        resume.type = "time";
+        resume.value = overnight ? `${String(Math.floor(b.resumeMin! / 60)).padStart(2, "0")}:${String(b.resumeMin! % 60).padStart(2, "0")}` : "";
+        resume.setAttribute("aria-label", `Konaklama ${i + 1}: yola çıkış saati`);
+        resume.addEventListener("change", () => {
+          const [hh, mm] = resume.value.split(":").map(Number);
+          if (Number.isFinite(hh) && Number.isFinite(mm)) h.onOvernight(i, hh * 60 + mm);
+        });
+        const resumeLabel = document.createElement("label");
+        resumeLabel.className = "break-duration";
+        resumeLabel.append(resume);
+        const night = document.createElement("label");
+        night.className = "break-night";
+        const nightBox = document.createElement("input");
+        nightBox.type = "checkbox";
+        nightBox.checked = overnight;
+        nightBox.addEventListener("change", () => h.onOvernight(i, nightBox.checked ? OVERNIGHT.defaultResumeMin : null));
+        night.append(nightBox, " Gece konakla");
 
         const rm = document.createElement("button");
         rm.type = "button";
@@ -80,7 +104,7 @@ export function bindBreaks(h: Handlers) {
         rm.setAttribute("aria-label", `Mola ${i + 1} sil`);
         rm.addEventListener("click", () => h.onRemove(i));
 
-        li.append(title, durLabel, rm, info);
+        li.append(title, overnight ? resumeLabel : durLabel, rm, info, night);
         if (b.advice) {
           const adv = document.createElement("p");
           adv.className = "break-advice";

@@ -10,4 +10,5 @@ export const WEATHER_REQUEST = {
   maxForecastDays: 16,
   minForecastDays: 3, // today + 2: covers every best-departure candidate, so both use one request
   maxHourGapMin: 90, // an ETA further than this from any forecast hour has no data
+  farDays: 3, // forecasts further ahead than this are marked as uncertain
 };

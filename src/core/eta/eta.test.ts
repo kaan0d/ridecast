@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { guessRoadType, roadBreakdown, type RoadTypeRules, type Step } from "../route/roadType";
-import { autoBreakDistances, buildTimeline, distanceAtTime, etaAtDistance, speedAtDistance, type SpeedSetting } from "./eta";
+import { autoBreakDistances, buildTimeline, distanceAtTime, etaAtDistance, resumeAtClock, speedAtDistance, tripDays, type SpeedSetting } from "./eta";
 
 const rules: RoadTypeRules = { motorwayMinKmh: 90, primaryMinKmh: 70, motorwayRef: /^O-?\d/, primaryRef: /^D-?\d/ };
 const H = 3600_000;
@@ -110,4 +110,34 @@ test("speedAtDistance is the moving speed, also next to a break", () => {
   expect(speedAtDistance(t, 10_000)).toBeCloseTo(40, 6); // OSRM 50 km/h counts as urban
   expect(speedAtDistance(t, 50_000)).toBeCloseTo(40, 6); // at the break itself
   expect(speedAtDistance(t, 100_000)).toBeCloseTo(40, 6);
+});
+
+describe("overnight stops", () => {
+  const TR = 180; // UTC+3
+  const local = (d: number, h: number, m = 0) => Date.UTC(2026, 8, d, h - 3, m); // Turkish clock to UTC
+  const MIN_STAY = 4 * H;
+
+  test("resume at the next 08:00 local that leaves at least the minimum stay", () => {
+    expect(resumeAtClock(local(24, 19, 30), 8 * 60, MIN_STAY, TR)).toBe(local(25, 8));
+    expect(resumeAtClock(local(25, 1, 0), 8 * 60, MIN_STAY, TR)).toBe(local(25, 8)); // arrive after midnight: same morning
+    expect(resumeAtClock(local(25, 6, 0), 8 * 60, MIN_STAY, TR)).toBe(local(26, 8)); // only 2 h: next day
+  });
+
+  test("the timeline waits until the resume time and the trip splits into days", () => {
+    const steps = [step(100, 50), step(100, 50)];
+    const avg50: SpeedSetting = { mode: "average", kmh: 50 };
+    const depart = local(24, 16);
+    const t = buildTimeline(steps, depart, avg50, [
+      { distM: 100_000, durationS: 0, resumeAt: (ms) => resumeAtClock(ms, 8 * 60, MIN_STAY, TR) },
+      { distM: 150_000, durationS: 30 * 60 },
+    ]);
+    // 100 km at 50 km/h: arrive 18:00, sleep, go on 08:00; 50 km to 09:00, 30 min break, 50 km to 10:30.
+    expect(t.breaks[0]).toEqual({ distM: 100_000, startMs: local(24, 18), endMs: local(25, 8) });
+    expect(t.timeMs.at(-1)).toBe(local(25, 10, 30));
+    expect(tripDays(t, [true, false])).toEqual([
+      { startMs: depart, endMs: local(24, 18), fromM: 0, toM: 100_000 },
+      { startMs: local(25, 8), endMs: local(25, 10, 30), fromM: 100_000, toM: 200_000 },
+    ]);
+    expect(tripDays(t, [false, false])).toHaveLength(1);
+  });
 });

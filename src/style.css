@@ -1101,6 +1101,17 @@ button.stop-glyph {
   transition: opacity 0.2s var(--ease-out);
 }
 
+.wx-strip button.far {
+  outline: 1px dashed var(--ink-3);
+  outline-offset: -3px;
+}
+
+.wx-far {
+  margin: 8px 0 0;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
 .wx-strip.stale {
   opacity: 0.55;
 }
@@ -1909,6 +1920,25 @@ input:invalid {
 .break-row .icon-btn {
   grid-row: 1 / span 2;
   grid-column: 3;
+}
+
+.break-night {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+.break-duration input[type="time"] {
+  width: auto;
+  background: var(--fill);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-variant-numeric: tabular-nums;
 }
 
 .break-list .empty {

@@ -5,7 +5,7 @@ export type Vehicle = "motorcycle" | "car" | "bicycle" | "walking";
 
 export interface TripState {
   stops: { label: string; lat: number; lon: number }[];
-  breaks: { lat: number; lon: number; min: number; auto: boolean }[];
+  breaks: { lat: number; lon: number; min: number; auto: boolean; resumeMin?: number }[]; // resumeMin: overnight, go on at this local minute of the day
   vehicle: Vehicle;
   speed: { mode: "average"; kmh: number } | { mode: "road"; motorway: number; primary: number; urban: number };
   depart: { mode: "now" } | { mode: "at"; ms: number } | { mode: "best" };
@@ -26,7 +26,7 @@ export function encodeState(s: TripState): string {
   const p = new URLSearchParams();
   p.set("v", "1");
   p.set("s", s.stops.map((x) => `${c5(x.lat)},${c5(x.lon)}~${cleanLabel(x.label)}`).join(";"));
-  if (s.breaks.length) p.set("b", s.breaks.map((x) => `${c5(x.lat)},${c5(x.lon)},${x.min}${x.auto ? "a" : ""}`).join(";"));
+  if (s.breaks.length) p.set("b", s.breaks.map((x) => `${c5(x.lat)},${c5(x.lon)},${x.min}${x.auto ? "a" : ""}${x.resumeMin !== undefined ? `n${x.resumeMin}` : ""}`).join(";"));
   p.set("veh", VEHICLE_CODE[s.vehicle]);
   p.set("spd", s.speed.mode === "average" ? `a${s.speed.kmh}` : `r${s.speed.motorway},${s.speed.primary},${s.speed.urban}`);
   p.set("dep", s.depart.mode === "at" ? `at${s.depart.ms}` : s.depart.mode);
@@ -54,11 +54,14 @@ export function decodeState(hash: string, limits: { minKmh: number; maxKmh: numb
 
   const breaks: TripState["breaks"] = [];
   for (const part of (p.get("b") ?? "").split(";").filter(Boolean)) {
+    // "min", "min" + "a" (automatic), then optionally "n" + the overnight resume minute of the day.
     const [la, lo, m] = part.split(",");
-    const auto = m?.endsWith("a") ?? false;
-    const [lat, lon, min] = [num(la), num(lo), num(auto ? m.slice(0, -1) : m)];
-    if (!validLatLon(lat, lon) || min === null || min < limits.minBreak || min > limits.maxBreak) return null;
-    breaks.push({ lat: lat!, lon: lon!, min, auto });
+    const f = (m ?? "").match(/^(\d+(?:\.\d+)?)(a?)(?:n(\d+))?$/);
+    const [lat, lon, min] = [num(la), num(lo), f ? Number(f[1]) : null];
+    if (!f || !validLatLon(lat, lon) || min === null || min < limits.minBreak || min > limits.maxBreak) return null;
+    const resume = f[3] === undefined ? undefined : Number(f[3]);
+    if (resume !== undefined && resume >= 24 * 60) return null;
+    breaks.push({ lat: lat!, lon: lon!, min, auto: f[2] === "a", ...(resume !== undefined ? { resumeMin: resume } : {}) });
   }
 
   const vehicle = CODE_VEHICLE[p.get("veh") ?? ""];
