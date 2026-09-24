@@ -4,6 +4,7 @@ import type { LatLon } from "../core/geo";
 import { parseGpx, toGpx } from "../core/route/gpx";
 import { lineLength, makeLine } from "../core/route/line";
 import type { Route } from "../services/osrm";
+import { saveText, slug } from "./download";
 import { formatKm } from "./format";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -38,19 +39,6 @@ export function bindGpx(deps: Deps) {
     const data = deps.exportData();
     if (!data) return;
     const xml = toGpx(`${data.first} → ${data.last}`, data.route.coords, data.waypoints);
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([xml], { type: "application/gpx+xml" }));
-    a.download = `ridecast-${slug(data.first)}-${slug(data.last)}.gpx`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    saveText(`ridecast-${slug(data.first)}-${slug(data.last)}.gpx`, xml, "application/gpx+xml");
   });
 }
-
-// File-name safe ASCII: Turkish letters folded, other characters dropped.
-const slug = (s: string) =>
-  s
-    .toLocaleLowerCase("tr")
-    .replace(/[çğıöşü]/g, (ch) => ({ ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u" })[ch]!)
-    .normalize("NFD")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "") || "rota";
