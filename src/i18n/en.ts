@@ -145,31 +145,12 @@ export const en = {
     rainStops: (extend: number, total: number) => `It rains when the break ends and stops ${extend} min later. Consider ${total} min instead.`,
   },
 
-  fuel: {
-    gap: (lengthKm: number, rangeKm: number) => `No fuel for ${lengthKm} km (range ${rangeKm} km)`,
-    fillUp: (name: string) => ` · fill up at ${name}`,
-    atStart: " · start with a full tank",
-    loading: "Checking the fuel range: loading fuel stops…",
-  },
-
   share: {
     badLink: "This link could not be read; no route loaded.",
     copied: "Copied",
     linkAria: "Share link",
     recent: "Recent routes",
     recentCleared: "Recent routes cleared.",
-  },
-
-  stops: {
-    kind: { fuel: "Fuel station", services: "Service area", rest: "Rest area" },
-    show: "Show fuel and rest stops",
-    searching: "Searching…",
-    none: "No fuel or rest stop within 1 km of the route.",
-    sheltered: " · sheltered, suggested in rain or cold",
-    shelteredShort: " · sheltered, suggested",
-    addBreak: "Add break",
-    addAria: (name: string) => `${name}: add a break`,
-    note: "OpenStreetMap data within 1 km of the route. One stop of each kind per 10 km; in rain and cold only sheltered ones.",
   },
 
   weather: {
@@ -300,6 +281,7 @@ export const en = {
     offline: "Offline: showing the last weather loaded; it refreshes when the connection is back.",
     soundOn: "Sound on",
     soundOff: "Sound off",
+    fuelLow: (km: number) => `Fuel looks quite low (about ${km} km left). A good time to look for a fuel station.`,
     noGeo: "This browser has no location support; live mode could not start.",
   },
 
@@ -311,9 +293,6 @@ export const en = {
     weatherTooFar: (days: number) => `The forecast only reaches ${days} days ahead.`,
     weatherBusy: "The weather service is busy, try again in a moment.",
     weatherDown: "Could not get the weather.",
-    stopsBusy: "The fuel and rest stop server is busy, try again in a moment.",
-    stopsDown: "Could not get fuel and rest stops.",
-    stopsPartial: "The fuel and rest stop server could not finish the query, try again in a moment.",
     searchFailed: "Address search failed.",
   },
 

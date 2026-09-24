@@ -68,7 +68,7 @@
               ><span data-t="fuelRange">Fuel range</span>
               <span class="row-value"><input type="number" id="fuel-range" min="10" max="3000" step="10" placeholder="–" aria-describedby="fuel-range-note" /> km</span></label
             >
-            <p class="footnote" id="fuel-range-note" data-t="fuelRangeNote">Warns where fuel stops along the route are further apart than this.</p>
+            <p class="footnote" id="fuel-range-note" data-t="fuelRangeNote">When set, a ride asks how full the tank is and warns when fuel runs low.</p>
           </div>
 
           <h2 class="group-title" data-t="speed">Speed</h2>
@@ -127,10 +127,6 @@
             </form>
           </div>
           <datalist id="break-presets"></datalist>
-          <div id="stops-section" hidden>
-            <h2 class="group-title" data-t="fuelStops">Fuel and rest stops</h2>
-            <div class="group" id="stops-panel"></div>
-          </div>
         </section>
       </div>
     </section>
@@ -143,6 +139,10 @@
       <div id="live-alert" class="live-alert" role="alert" hidden>
         <span id="live-alert-text"></span>
         <button type="button" id="live-alert-close" class="live-btn" data-t="ok">OK</button>
+      </div>
+      <div id="live-fuel" class="live-alert" role="alert" hidden>
+        <span id="live-fuel-text"></span>
+        <button type="button" id="live-refuel" class="live-btn" data-t="refuel">Filled up</button>
       </div>
       <div id="live-next" class="live-next" aria-live="polite"></div>
       <div class="live-main">
@@ -157,6 +157,18 @@
       <p id="live-notes" class="live-notes" aria-live="polite"></p>
       <button type="button" id="live-refresh" class="live-btn live-refresh" data-t="liveRefresh">Refresh weather now</button>
     </section>
+    <dialog id="fuel-ask" class="fuel-ask" aria-labelledby="fuel-ask-title">
+      <form method="dialog">
+        <h2 id="fuel-ask-title" data-t="fuelAsk">How full is the tank?</h2>
+        <div class="fuel-ask-levels">
+          <button value="1" class="button-secondary" data-t="fuelFull">Full</button>
+          <button value="0.75" class="button-secondary">¾</button>
+          <button value="0.5" class="button-secondary">½</button>
+          <button value="0.25" class="button-secondary">¼</button>
+        </div>
+        <button value="" class="fuel-ask-cancel" data-t="cancel">Cancel</button>
+      </form>
+    </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

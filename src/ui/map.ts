@@ -84,11 +84,9 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
   const riskLayer = L.layerGroup().addTo(map);
   const stopLayer = L.layerGroup().addTo(map);
   const weatherLayer = L.layerGroup().addTo(map);
-  const poiLayer = L.layerGroup().addTo(map);
   const labelLayer = L.layerGroup().addTo(map);
   let dropped: L.CircleMarker | null = null;
   const breakLayer = L.layerGroup().addTo(map);
-  let poiMarkers: L.Marker[] = [];
   let liveDot: L.CircleMarker | null = null;
   let meDot: L.CircleMarker | null = null;
   let weatherMarkers: L.Marker[] = [];
@@ -215,23 +213,6 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
       const m = weatherMarkers[i];
       if (!m) return;
       m.addTo(weatherLayer); // may be thinned out at this zoom
-      map.panTo(m.getLatLng());
-      m.openPopup();
-    },
-
-    // Fuel and rest stops; each popup is built by the caller (it holds the "add break" button).
-    setPois(pois: { pos: LatLon; pin: string; popup: () => HTMLElement }[]) {
-      poiLayer.clearLayers();
-      poiMarkers = pois.map((p) =>
-        L.marker(toLatLng(p.pos), { icon: L.divIcon({ className: "poi-marker", html: p.pin, iconSize: [26, 26] }) })
-          .bindPopup(p.popup, { className: "wx-popup", closeButton: false, offset: [0, -6] })
-          .addTo(poiLayer),
-      );
-    },
-
-    openPoi(i: number) {
-      const m = poiMarkers[i];
-      if (!m) return;
       map.panTo(m.getLatLng());
       m.openPopup();
     },

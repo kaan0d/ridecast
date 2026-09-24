@@ -2,10 +2,9 @@ import { t } from "../i18n";
 import { DEFAULT_BREAK_MIN, OVERNIGHT } from "../config/breaks";
 import { DEPARTURE } from "../config/departure";
 import { SHARE } from "../config/share";
-import { autoBreakDistances, buildTimeline, etaAtDistance, resumeAtClock, totalS, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
+import { autoBreakDistances, buildTimeline, resumeAtClock, totalS, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
 import type { LatLon } from "../core/geo";
 import { bestPerDay, rankDepartures, type ScoredDeparture } from "../core/advice/departure";
-import { fuelGaps } from "../core/advice/stops";
 import { pointRuns, type RouteScore } from "../core/risk/route";
 import { labelPoint, lineLength, makeLine, pointAtDistance, sliceLine, snapToLine, type Line } from "../core/route/line";
 import type { Forecast } from "../core/weather/weather";
@@ -29,10 +28,9 @@ import { closeMenu } from "./menu";
 import { bindSettings, type TripSettings } from "./settings";
 import { bindShare } from "./share";
 import { bindSheet } from "./sheet";
-import { createStopsPanel } from "./stops";
 import { renderRouteList as renderRouteOptions, renderSummary as renderSummaryInto, summaryRows } from "./summary";
 import { kindOf as kindOfStop, renderTrip, titleOf as titleOfStop, type TripStop } from "./trip";
-import { cardHtml, collectWarnings, pinHtml, renderStrip, renderWarnings, type Warning, type WeatherPoint } from "./weather";
+import { cardHtml, collectWarnings, pinHtml, renderStrip, renderWarnings, type WeatherPoint } from "./weather";
 
 interface BreakPoint {
   pos: LatLon; // where the user put it; shown snapped to the selected route
@@ -61,7 +59,6 @@ export function startApp() {
 
   let breakRows: BreakRow[] = [];
   let routeScores: (RouteScore | null)[] = []; // per route, filled when their forecasts arrive
-  let lastTimelines: Timeline[] | null = null;
   let plannedTimelines: Timeline[] | null = null; // before the live re-anchoring
   let pendingSelected = 0; // route index from a shared link, applied when the routes arrive
   let freshWeather = false; // next forecast request skips the cache (live refresh)
@@ -158,17 +155,6 @@ export function startApp() {
     onAuto: addAutoBreaks,
   });
 
-  const stopsPanel = createStopsPanel({
-    map,
-    route: () =>
-      routes[selected]
-        ? { route: routes[selected], line: lines[selected], scale: scaleOf(selected), timeline: lastTimelines?.[selected] ?? null, points: weatherPoints }
-        : null,
-    onAdd: addBreakAt,
-    onOpen: () => sheet.collapse(),
-    onLoaded: () => renderRoutes(), // fuel gaps need the stops
-  });
-
   // ---------- stops ----------
 
   function renderStops() {
@@ -201,7 +187,6 @@ export function startApp() {
     breaks = [];
     selected = pendingSelected = 0;
     routeScores = [];
-    stopsPanel.reset();
     map.closePopup();
     $("changes").replaceChildren();
     stopsChanged();
@@ -364,7 +349,6 @@ export function startApp() {
     // While riding, everything shown for the selected route counts from the rider's position and pace.
     const timelines = planned && live.isActive() ? planned.map((t, i) => (i === selected ? live.adjust(t) : t)) : planned;
     const tl = timelines?.[selected];
-    lastTimelines = timelines;
     map.setRoutes(
       routes.map((r) => r.coords),
       selected,
@@ -379,7 +363,6 @@ export function startApp() {
       : [];
     renderBreakList(breakRows);
     renderRouteList(timelines);
-    stopsPanel.render();
     share.sync();
     share.renderRecent();
     updateWeather(timelines, typeof settings === "string" ? null : settings);
@@ -454,7 +437,6 @@ export function startApp() {
         const advices = extra ? adviseBreaks(tl, extra.samples, extra.forecasts) : [];
         renderBreakList(breakRows.map((r, i) => ({ ...r, advice: advices[i] })));
         const warnings = collectWarnings(points);
-        warnings.push(...fuelWarnings(tl, settings?.fuelRangeKm ?? null));
         advices.forEach((a, i) => {
           const b = tl.breaks[i];
           if (a) warnings.push({ level: 2, text: t.app.breakWarning(i + 1, a), when: `${formatClock(b.startMs)}–${formatClock(b.endMs)}`, where: t.km(Math.round(b.distM / 1000)) });
@@ -465,7 +447,6 @@ export function startApp() {
         if (!error && points.length && trip && !live.isActive()) changes.onForecast(encodeState(trip), tl.timeMs[0], warnings);
         renderClothing($("clothing"), error ? [] : points, vehicle);
         if (!error) live.onWeather(points);
-        stopsPanel.render();
       }
       renderStrip($("weather"), { points, loading, error, onRetry: () => updateWeather(timelines, settings), onOpen: openPoint });
     };
@@ -505,30 +486,6 @@ export function startApp() {
         if (bestMode) renderBest({ top: [], loading: false, error: (e as Error).message });
       }
     }, 300);
-  }
-
-  // Stretches without fuel longer than the tank range, with the place to fill up before them.
-  // Asks for the route's stops the first time a range is set.
-  function fuelWarnings(tl: Timeline, rangeKm: number | null): Warning[] {
-    if (rangeKm === null || !routes[selected]) return [];
-    const stations = stopsPanel.fuelStops();
-    if (!stations) {
-      stopsPanel.ensureLoaded();
-      return [];
-    }
-    return fuelGaps(
-      stations.map((s) => s.distM),
-      routes[selected].distanceM,
-      rangeKm * 1000,
-    ).map((g) => {
-      const before = stations.filter((s) => s.distM <= g.fromM).sort((a, b) => b.distM - a.distM)[0];
-      return {
-        level: 2,
-        text: t.fuel.gap(Math.round((g.toM - g.fromM) / 1000), rangeKm) + (before ? t.fuel.fillUp(before.name) : t.fuel.atStart),
-        when: `${formatClock(etaAtDistance(tl, g.fromM))}–${formatClock(etaAtDistance(tl, g.toM))}`,
-        where: `${t.km(Math.round(g.fromM / 1000))}–${Math.round(g.toM / 1000)}`,
-      };
-    });
   }
 
   // The selected route coloured by risk level, with the dark parts dotted.
@@ -572,7 +529,6 @@ export function startApp() {
     settingsCtl.apply(s);
     pendingSelected = s.selected;
     routeScores = [];
-    stopsPanel.reset();
     stopsChanged();
   }
 
@@ -609,9 +565,21 @@ export function startApp() {
     },
     showPosition: (p, follow, zoom, bottom) => map.setLivePosition(p, follow, zoom, bottom),
   });
-  $("live-start").addEventListener("click", () => {
+  // With a fuel range set, the tank level is asked first; closing the question cancels the start.
+  const fuelAsk = $<HTMLDialogElement>("fuel-ask");
+  const startLive = (fuel: { leftKm: number; fullKm: number } | null) => {
     sheet.collapse();
-    live.start();
+    live.start(fuel);
+  };
+  $("live-start").addEventListener("click", () => {
+    const settings = readSettings();
+    const fullKm = typeof settings === "string" ? null : settings.fuelRangeKm;
+    if (fullKm === null) return startLive(null);
+    fuelAsk.returnValue = "";
+    fuelAsk.onclose = () => {
+      if (fuelAsk.returnValue) startLive({ leftKm: fullKm * Number(fuelAsk.returnValue), fullKm });
+    };
+    fuelAsk.showModal();
   });
 
   // Offline: say so; the service worker serves the last routes and forecasts it saw.

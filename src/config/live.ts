@@ -9,5 +9,9 @@ export const LIVE = {
   replanPaceDelta: 0.05, // or when the pace changes more than this
   nextMinLevel: 1 as const, // "next warning" shows low warnings too
   alertMinLevel: 2 as const, // alerts only for medium and high
+  fuel: {
+    warnFraction: 0.2, // "fuel is getting low" once the estimated range left is at most this share of a full tank
+    minStepM: 20, // odometer: smallest counted move between fixes
+  },
   pace: { windowMs: 15 * 60_000, minElapsedMs: 3 * 60_000, minDistM: 2000, min: 0.5, max: 1.6 },
 };

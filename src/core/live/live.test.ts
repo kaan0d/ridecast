@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { buildTimeline } from "../eta/eta";
 import type { Assessment } from "../risk/risk";
 import type { Step } from "../route/roadType";
-import { liveTimeline, newOrWorse, nextWarning, offRouteCount, paceFactor, type Fix } from "./live";
+import { liveTimeline, newOrWorse, nextWarning, odometerStep, offRouteCount, paceFactor, type Fix } from "./live";
 
 const M = 60_000;
 const T0 = Date.UTC(2026, 8, 24, 5);
@@ -71,4 +71,14 @@ test("offRouteCount counts consecutive fixes away from the route, allowing for a
   expect(offRouteCount(1, 220, 10, 150)).toBe(2);
   expect(offRouteCount(2, 200, 200, 150)).toBe(0); // 200 m off with 200 m accuracy: not sure
   expect(offRouteCount(2, 50, 10, 150)).toBe(0);
+});
+
+test("odometerStep counts real moves and ignores jitter within the accuracy", () => {
+  const a = { lat: 0, lon: 0 };
+  expect(odometerStep(null, a, 10, 20)).toEqual({ addM: 0, anchor: a });
+  const near = { lat: 0, lon: 0.0001 }; // ~11 m
+  expect(odometerStep(a, near, 10, 20)).toEqual({ addM: 0, anchor: a });
+  const far = { lat: 0, lon: 0.001 }; // ~111 m
+  expect(odometerStep(a, far, 10, 20).addM).toBeCloseTo(111.2, 0);
+  expect(odometerStep(a, far, 150, 20).addM).toBe(0); // worse accuracy than the move
 });

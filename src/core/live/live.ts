@@ -1,5 +1,7 @@
 import { etaAtDistance, type Timeline } from "../eta/eta";
+import type { LatLon } from "../geo";
 import type { Assessment, Level } from "../risk/risk";
+import { haversineM } from "../route/line";
 
 // One GPS fix mapped onto the route.
 export interface Fix {
@@ -78,4 +80,13 @@ export function newOrWorse(prev: Map<string, Level>, points: RiskPoint[], curDis
 // threshold and further than its own accuracy allows; any fix back on the route resets.
 export function offRouteCount(prevCount: number, offM: number, accuracyM: number, thresholdM: number): number {
   return offM > Math.max(thresholdM, accuracyM * 1.5) ? prevCount + 1 : 0;
+}
+
+// Odometer for the fuel estimate, from raw fixes (not the route, so reroutes and detours count).
+// A fix counts only once it is further from the last counted one than its accuracy and minStepM,
+// so GPS jitter while standing still adds nothing.
+export function odometerStep(anchor: LatLon | null, p: LatLon, accuracyM: number, minStepM: number): { addM: number; anchor: LatLon } {
+  if (!anchor) return { addM: 0, anchor: p };
+  const d = haversineM(anchor, p);
+  return d > Math.max(accuracyM, minStepM) ? { addM: d, anchor: p } : { addM: 0, anchor };
 }
