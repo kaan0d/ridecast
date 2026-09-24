@@ -19,6 +19,7 @@ Live: https://kaandinc.com/ridecast/ (GitHub Pages, deployed by `.github/workflo
 | 9 | Share link, saved routes | done |
 | 10 | Live mode (GPS) | done |
 | 11 | Deploy to kaandinc.com/ridecast | done |
+| 12 | Split `ui/app.ts` into modules | done |
 
 ## Setup
 
@@ -60,7 +61,7 @@ The build uses relative asset paths (`base: "./"` in `vite.config.ts`), so `dist
 src/config/    vehicle defaults, road type rules (all tunable numbers)
 src/core/      pure TypeScript, no DOM/fetch: coordinates, route geometry (snap, slice, bearing), road type guess, ETA timeline with breaks, weather sampling, forecast hour matching, WMO codes, risk levels, wind chill, wet road estimate, break advice
 src/services/  Photon, Nominatim, OSRM, Open-Meteo, Overpass clients + in-memory request cache
-src/ui/        Leaflet map, address inputs, panel
+src/ui/        Leaflet map, address inputs, panel; app.ts wires state, summary.ts / best.ts / share.ts / stops.ts render their panels
 ```
 
 ## Tested
@@ -85,6 +86,7 @@ src/ui/        Leaflet map, address inputs, panel
 - Stage 10 in Chrome with a fake GPS (`watchPosition` replaced by a stub fed with points of the real OSRM route and made-up timestamps): 15 km in 10 min (90 km/h against 80 planned, pace 1.125) gave 258 km and 2 h 51 min left (3 h 13 min planned / 1.125) and an arrival 2:51 after the last fix. Three fixes 1.1 km north of the route showed the off-route banner only on the third, a fix with 300 m accuracy did not count, and "Rotayı yeniden hesapla" re-planned from "Konumum" with live mode still running. With every forecast hour made 5 mm/h rain and "Havayı şimdi yenile", a level 3 alert appeared ("Şiddetli yağmur 5.0 mm/sa · 16 km ileride"). The minimise pill, "Bitir" (tracking cleared, dot removed) and a denied permission (message, live mode not opened) worked. In that automated, hidden tab the wake lock was refused and the note showed. Three problems found and fixed on the way: after a reroute the old route's last fix re-anchored the new route; the first forecast of a new route raised alerts for everything on it; and a warning flickering out and back, or a weaker alert, replaced an open one.
 - Manually in Chrome: address search suggestions, pick start, map click for end, reverse-geocoded label, route with one alternative (Kadıköy to Eskişehir area: 359 km / 386 km), switching the selected route, OSRM network failure shows an error message.
 - Stage 11: `dist` served from a `/ridecast/` sub-path locally (python http.server): assets load, the Kadıköy-Eskişehir share link gives route, arrival 08:29 and weather capsules; phone width (390 px iframe) shows the bottom sheet. Photon for "kadıköy moda" returned 5 local-name suggestions (`lang=default`; without it the browser language turned names into "Istanbul, Turkey").
+- Stage 12 (refactor, no behaviour change): `ui/app.ts` 885 to 595 lines. Checked in Chrome on the Kadıköy-Eskişehir link: arrival, 2 routes with risk and the safest badge, 15 weather points, 7 warnings, best departure (3 listed, picking the second re-plans), 35 stops loaded and one added as a break, recent routes reopen a trip, live mode with a stubbed GPS shows time left and ends cleanly.
 
 ## Limits
 

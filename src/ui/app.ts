@@ -1,34 +1,27 @@
 import { DEFAULT_BREAK_MIN } from "../config/breaks";
 import { WEATHER_REQUEST, WEATHER_SAMPLE } from "../config/weather";
 import { ROAD_TYPE_RULES } from "../config/vehicles";
-import { autoBreakDistances, buildTimeline, etaAtDistance, speedAtDistance, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
+import { autoBreakDistances, buildTimeline, etaAtDistance, speedAtDistance, totalS, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
 import { assessPoint, breakAdvice, type Level } from "../core/risk/risk";
-import { BREAK_ADVICE, RISK, RISK_WEIGHTS, SAFEST_MIN_DROP, WET_ROAD } from "../config/risk";
-import { chooseSafest, routeScore, type RouteScore } from "../core/risk/route";
+import { BREAK_ADVICE, RISK, RISK_WEIGHTS, WET_ROAD } from "../config/risk";
+import { routeScore, type RouteScore } from "../core/risk/route";
 import type { VehicleType } from "../config/vehicles";
 import { type LatLon } from "../core/geo";
 import { bearingAt, lineLength, makeLine, pointAtDistance, sliceLine, snapToLine, type Line } from "../core/route/line";
 import { roadBreakdown } from "../core/route/roadType";
 import { nearestHourIndex, sampleDistances, type Forecast } from "../core/weather/weather";
 import { fetchForecast } from "../services/openmeteo";
-import { cardHtml, collectWarnings, LEVEL_LABEL, pinHtml, renderStrip, renderWarnings, type WeatherPoint } from "./weather";
+import { cardHtml, collectWarnings, pinHtml, renderStrip, renderWarnings, type WeatherPoint } from "./weather";
 import type { BreakRow } from "./breaks";
 import { renderClothing } from "./advice";
 import { createLive } from "./live";
-import { decodeState, encodeState, type TripState } from "../core/share/state";
-import { addRecent, parseRecent, type RecentRoute } from "../core/share/recent";
+import type { TripState } from "../core/share/state";
 import { SHARE } from "../config/share";
-import { SPEED_LIMITS_KMH } from "../config/vehicles";
-import { BREAK_LIMITS_MIN } from "../config/breaks";
-import { pickStops, type Poi, type StopOnRoute } from "../core/advice/stops";
-import { STOPS } from "../config/stops";
-import { fetchStops } from "../services/overpass";
-import { renderStops as renderStopList, stopPin } from "./stops";
-import { haversineM, segmentBoxes } from "../core/route/line";
+import { createStopsPanel } from "./stops";
 import { reverseLabel } from "../services/nominatim";
 import { getRoutes, type Route } from "../services/osrm";
 import { bindBreaks } from "./breaks";
-import { formatClock, formatCoord, formatDay, formatDuration, formatKm, formatTime } from "./format";
+import { formatClock, formatCoord, formatDuration, formatKm, formatTime } from "./format";
 import { icons } from "./icons";
 import { createMap, type StopKind } from "./map";
 import { placeInput } from "./search";
@@ -36,6 +29,9 @@ import { bindSettings, type TripSettings } from "./settings";
 import { departureCandidates, rankDepartures, type ScoredDeparture } from "../core/advice/departure";
 import { DEPARTURE } from "../config/departure";
 import { bindSheet } from "./sheet";
+import { renderBest as renderBestList } from "./best";
+import { bindShare } from "./share";
+import { renderRouteList as renderRouteOptions, renderSummary as renderSummaryInto } from "./summary";
 
 interface Stop {
   label: string;
@@ -69,10 +65,6 @@ export function startApp() {
   const weatherEl = $("weather");
   const warningsEl = $("warnings");
   const clothingEl = $("clothing");
-  const stopsPanelEl = $("stops-panel");
-  // Stops found for one route (by route geometry), loaded on request.
-  let poiState: { route: Route; pois: Poi[] | null; loading: boolean; error?: string } | null = null;
-  let shownStops: StopOnRoute[] = [];
   let breakRows: BreakRow[] = [];
   let routeScores: (RouteScore | null)[] = []; // per route, filled when their forecasts arrive
   let lastTimelines: Timeline[] | null = null;
@@ -174,10 +166,6 @@ export function startApp() {
       .map((x) => x.b);
   }
 
-  // Sample points depend only on the route; their ETAs follow the timeline. The forecast request
-  // is keyed by rounded coordinates, so ETA-only changes are served from the cache.
-  // Forecast and risk for one route. Sample points depend only on the route; their ETAs follow
-  // the timeline, and the request is keyed by rounded coordinates, so ETA-only changes hit the cache.
   // Sample points of a route: fixed by the route itself, not by speed or departure.
   function samplesOf(i: number) {
     const route = routes[i];
@@ -231,35 +219,11 @@ export function startApp() {
     return rankDepartures(all, DEPARTURE.count, DEPARTURE.maxMissing);
   }
 
-  function renderBest(state: { top: ScoredDeparture[]; loading: boolean; error?: string }) {
-    if (state.error || state.loading || !state.top.length) {
-      const p = document.createElement("p");
-      p.className = "footnote";
-      p.textContent = state.error ?? (state.loading ? "Önümüzdeki 24 saat karşılaştırılıyor…" : "Karşılaştırma için önce bir rota oluşturun.");
-      return bestEl.replaceChildren(p);
-    }
-    const list = document.createElement("ol");
-    list.className = "best-list";
-    for (const d of state.top) {
-      const li = document.createElement("li");
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "best-item";
-      b.setAttribute("aria-pressed", String(settingsCtl.best() === d.departMs));
-      const score = d.score.score.toFixed(1).replace(".", ",");
-      b.innerHTML = `<span class="best-time">${formatTime(d.departMs)}</span><span class="best-meta"><span class="risk-dot risk-${d.score.worst}" aria-hidden="true"></span>varış ${formatClock(d.arrivalMs)} · risk ${score}</span>`;
-      b.addEventListener("click", () => {
-        settingsCtl.setBest(d.departMs);
-        renderRoutes();
-      });
-      li.append(b);
-      list.append(li);
-    }
-    const note = document.createElement("p");
-    note.className = "footnote";
-    note.textContent = `Önümüzdeki ${DEPARTURE.windowH} saat, saat başı adaylar arasından en düşük riskli ${state.top.length} çıkış.`;
-    bestEl.replaceChildren(list, note);
-  }
+  const renderBest = (state: { top: ScoredDeparture[]; loading: boolean; error?: string }) =>
+    renderBestList(bestEl, state, settingsCtl.best(), (ms) => {
+      settingsCtl.setBest(ms);
+      renderRoutes();
+    });
 
   function updateWeather(timelines: Timeline[] | null, settings: TripSettings | null) {
     const vehicle = settings?.vehicle ?? "motorcycle";
@@ -299,7 +263,7 @@ export function startApp() {
         renderWarnings(warningsEl, warnings, !error && points.length > 0, openPoint);
         renderClothing(clothingEl, error ? [] : points, vehicle);
         if (!error) live.onWeather(points);
-        renderStopsPanel();
+        stopsPanel.render();
       }
       renderStrip(weatherEl, { points, loading, error, onRetry: () => updateWeather(timelines, settings), onOpen: openPoint });
     };
@@ -383,87 +347,21 @@ export function startApp() {
     });
   }
 
-  async function loadStops() {
-    const route = routes[selected];
-    if (!route) return;
-    poiState = { route, pois: null, loading: true };
-    renderStopsPanel();
-    try {
-      const pois = await fetchStops(segmentBoxes(lines[selected], STOPS.boxSegmentM, STOPS.boxPadDeg));
-      if (poiState?.route !== route) return;
-      poiState = { route, pois, loading: false };
-    } catch (e) {
-      if (poiState?.route !== route) return;
-      poiState = { route, pois: null, loading: false, error: (e as Error).message };
-    }
-    renderStopsPanel();
+  function addBreakAt(pos: LatLon) {
+    breaks.push({ pos, durationMin: DEFAULT_BREAK_MIN, auto: false });
+    resnapBreaks();
+    renderRoutes();
   }
 
-  // Stops of the selected route with km, ETA and the shelter recommendation from the weather points.
-  function renderStopsPanel() {
-    const route = routes[selected];
-    const state = poiState && poiState.route === route ? poiState : null;
-    const tl = lastTimelines?.[selected];
-    const scale = route ? scaleOf(selected) : 1;
-    const badAt = (d: number) => {
-      if (!weatherPoints.length) return false;
-      const p = weatherPoints.reduce((a, b) => (Math.abs(b.distM - d) < Math.abs(a.distM - d) ? b : a));
-      const r = p.risk;
-      return !!r && (r.events.some((e) => e.kind === "rain" || e.kind === "snow" || e.kind === "storm") || r.feltC <= STOPS.badFeltC);
-    };
-    shownStops =
-      route && state?.pois
-        ? pickStops(
-            state.pois.flatMap((p) => {
-              const s = snapToLine(lines[selected], p.pos);
-              return haversineM(s.pos, p.pos) <= STOPS.corridorM ? [{ ...p, distM: s.distM * scale }] : [];
-            }),
-            badAt,
-            STOPS.minGapM,
-          )
-        : [];
-    const addStop = (s: StopOnRoute) => {
-      breaks.push({ pos: s.pos, durationMin: DEFAULT_BREAK_MIN, auto: false });
-      resnapBreaks();
-      map.closePopup();
-      renderRoutes();
-    };
-    map.setPois(
-      shownStops.map((s) => ({
-        pos: s.pos,
-        pin: stopPin(s),
-        popup: () => {
-          const div = document.createElement("div");
-          div.className = "poi-card";
-          const name = document.createElement("strong");
-          name.textContent = s.name;
-          const meta = document.createElement("span");
-          meta.textContent = `km ${Math.round(s.distM / 1000)}${s.recommended ? " · barınaklı, önerilir" : ""}`;
-          const b = document.createElement("button");
-          b.type = "button";
-          b.className = "button-secondary";
-          b.textContent = "Mola ekle";
-          b.addEventListener("click", () => addStop(s));
-          div.append(name, meta, b);
-          return div;
-        },
-      })),
-    );
-    $("stops-section").hidden = !route;
-    if (!route) return stopsPanelEl.replaceChildren();
-    renderStopList(stopsPanelEl, {
-      stops: state?.pois ? shownStops : null,
-      loading: !!state?.loading,
-      error: state?.error,
-      etaAt: (d) => (tl ? etaAtDistance(tl, d) : null),
-      onLoad: loadStops,
-      onAdd: addStop,
-      onOpen: (i) => {
-        sheet.collapse();
-        map.openPoi(i);
-      },
-    });
-  }
+  const stopsPanel = createStopsPanel({
+    map,
+    route: () =>
+      routes[selected]
+        ? { route: routes[selected], line: lines[selected], scale: scaleOf(selected), timeline: lastTimelines?.[selected] ?? null, points: weatherPoints }
+        : null,
+    onAdd: addBreakAt,
+    onOpen: () => sheet.collapse(),
+  });
 
   function addAutoBreaks(rule: AutoBreakRule, durationMin: number) {
     if (!routes.length) return status("Önce bir rota oluşturun.", "error");
@@ -508,9 +406,9 @@ export function startApp() {
       : [];
     renderBreakList(breakRows);
     renderRouteList(timelines);
-    renderStopsPanel();
-    syncHash();
-    renderRecent();
+    stopsPanel.render();
+    share.sync();
+    share.renderRecent();
     updateWeather(timelines, typeof settings === "string" ? null : settings);
     if (typeof settings === "string") return renderSummary(null, [], settings);
     const t = timelines?.[selected];
@@ -536,93 +434,9 @@ export function startApp() {
     renderSummary({ arrivalMs: t.timeMs[t.timeMs.length - 1], totalS: totalS(t), distanceM: routes[selected].distanceM }, rows);
   }
 
-  // Route options with duration and, once forecasts are in, risk and the safest-route mark.
-  function renderRouteList(timelines: Timeline[] | null) {
-    const choice =
-      timelines && routeScores.length === routes.length
-        ? chooseSafest(
-            routes.map((_, i) => ({ durationS: totalS(timelines[i]), score: routeScores[i] })),
-            SAFEST_MIN_DROP,
-          )
-        : null;
-    routesEl.replaceChildren(
-      ...routes.map((r, i) => {
-        const li = document.createElement("li");
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "route-item";
-        b.setAttribute("aria-pressed", String(i === selected));
-        const text = document.createElement("span");
-        const name = document.createElement("strong");
-        name.textContent = i === 0 ? "Önerilen rota" : `Alternatif ${i}`;
-        const sub = document.createElement("span");
-        sub.className = "sub";
-        const score = routeScores[i];
-        sub.textContent = formatKm(r.distanceM);
-        if (score) {
-          const risk = document.createElement("span");
-          risk.className = "route-risk";
-          risk.innerHTML = `<span class="risk-dot risk-${score.worst}" aria-hidden="true"></span>`;
-          risk.append(`risk ${score.score.toFixed(1).replace(".", ",")} · en yüksek: ${LEVEL_LABEL[score.worst].toLowerCase()}`);
-          sub.append(" · ", risk);
-        }
-        text.append(name, sub);
-        const dur = document.createElement("span");
-        dur.className = "dur";
-        dur.textContent = timelines ? formatDuration(totalS(timelines[i])) : "–";
-        b.append(text, dur);
-        if (choice && choice.safest === i) {
-          const badge = document.createElement("span");
-          badge.className = "safest";
-          const diff =
-            choice.safest === choice.base
-              ? "En hızlısı da bu"
-              : `${choice.extraMin >= 0 ? "+" : "−"}${Math.abs(choice.extraMin)} dk, risk %${Math.round(choice.riskDrop * 100)} daha düşük`;
-          badge.innerHTML = `<b>En güvenli rota</b><span>${diff}</span>`;
-          b.append(badge);
-        }
-        b.addEventListener("click", () => selectRoute(i));
-        li.append(b);
-        return li;
-      }),
-    );
-  }
-
-  // Big arrival time, then the details as a grouped list.
-  function renderSummary(eta: { arrivalMs: number; totalS: number; distanceM: number } | null, rows: [string, string][], error?: string) {
-    if (error) {
-      const p = document.createElement("p");
-      p.className = "eta-error";
-      p.textContent = error;
-      return summaryEl.replaceChildren(p);
-    }
-    if (!eta) return summaryEl.replaceChildren();
-    const head = document.createElement("div");
-    head.className = "eta";
-    const time = document.createElement("strong");
-    time.className = "eta-time";
-    time.textContent = formatClock(eta.arrivalMs);
-    const small = document.createElement("small");
-    small.textContent = "varış";
-    time.append(small);
-    const meta = document.createElement("span");
-    meta.className = "eta-meta";
-    meta.textContent = `${formatDuration(eta.totalS)} · ${formatKm(eta.distanceM)} · ${formatDay(eta.arrivalMs)}`;
-    head.append(time, meta);
-
-    const dl = document.createElement("dl");
-    dl.className = "group details";
-    for (const [k, v] of rows) {
-      const row = document.createElement("div");
-      const dt = document.createElement("dt");
-      dt.textContent = k;
-      const dd = document.createElement("dd");
-      dd.textContent = v;
-      row.append(dt, dd);
-      dl.append(row);
-    }
-    summaryEl.replaceChildren(head, dl);
-  }
+  const renderRouteList = (timelines: Timeline[] | null) => renderRouteOptions(routesEl, routes, timelines, routeScores, selected, selectRoute);
+  const renderSummary = (eta: Parameters<typeof renderSummaryInto>[1], rows: [string, string][], error?: string) =>
+    renderSummaryInto(summaryEl, eta, rows, error);
 
   // ---------- share link and recent routes ----------
 
@@ -644,98 +458,22 @@ export function startApp() {
     };
   }
 
-  // Keeps the address bar in step with the trip, so a reload or a copied URL restores it.
-  function syncHash() {
-    const s = currentState();
-    const hash = s ? "#" + encodeState(s) : "";
-    if (location.hash !== hash) history.replaceState(null, "", hash || location.pathname + location.search);
-    $("share").hidden = !s || !routes.length;
-  }
-
   function applyState(s: TripState) {
     stops.splice(0, stops.length, ...s.stops.map((x) => ({ label: x.label, pos: { lat: x.lat, lon: x.lon } })));
     breaks = s.breaks.map((b) => ({ pos: { lat: b.lat, lon: b.lon }, durationMin: b.min, auto: b.auto }));
     settingsCtl.apply(s);
     pendingSelected = s.selected;
     routeScores = [];
-    poiState = null;
+    stopsPanel.reset();
     stopsChanged();
   }
 
-  function applyHash(): boolean {
-    if (!location.hash) return false;
-    const s = decodeState(location.hash, {
-      minKmh: SPEED_LIMITS_KMH.min,
-      maxKmh: SPEED_LIMITS_KMH.max,
-      minBreak: BREAK_LIMITS_MIN.min,
-      maxBreak: BREAK_LIMITS_MIN.max,
-    });
-    if (!s) {
-      status("Bu link okunamadı; rota yüklenmedi.", "error");
-      syncHash(); // put the current trip back in the address bar
-      return false;
-    }
-    applyState(s);
-    return true;
-  }
-
-  // Browser storage can be missing or blocked (private mode); the app works without it.
-  function loadRecent(): RecentRoute[] {
-    try {
-      return parseRecent(localStorage.getItem(SHARE.storageKey));
-    } catch {
-      return [];
-    }
-  }
-
-  function saveRecent() {
-    const s = currentState();
-    if (!s) return;
-    const first = s.stops[0].label.split(",")[0] || "Başlangıç";
-    const last = s.stops[s.stops.length - 1].label.split(",")[0] || "Bitiş";
-    const entry: RecentRoute = {
-      key: s.stops.map((x) => `${x.lat.toFixed(4)},${x.lon.toFixed(4)}`).join(";"),
-      title: `${first} → ${last}`,
-      hash: encodeState(s),
-      savedMs: Date.now(),
-    };
-    try {
-      localStorage.setItem(SHARE.storageKey, JSON.stringify(addRecent(loadRecent(), entry, SHARE.maxRecent)));
-    } catch {
-      // not saved; nothing else depends on it
-    }
-    renderRecent();
-  }
-
-  function renderRecent() {
-    const el = $("recent");
-    const list = routes.length ? [] : loadRecent();
-    if (!list.length) return el.replaceChildren();
-    const title = document.createElement("h2");
-    title.className = "group-title";
-    title.textContent = "Son rotalar";
-    const ol = document.createElement("ol");
-    ol.className = "group recent-list";
-    for (const r of list) {
-      const li = document.createElement("li");
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "recent-item";
-      const t = document.createElement("span");
-      t.textContent = r.title;
-      const d = document.createElement("span");
-      d.className = "recent-date";
-      d.textContent = formatDay(r.savedMs);
-      b.append(t, d);
-      b.addEventListener("click", () => {
-        history.replaceState(null, "", "#" + r.hash);
-        applyHash();
-      });
-      li.append(b);
-      ol.append(li);
-    }
-    el.replaceChildren(title, ol);
-  }
+  const share = bindShare({
+    current: currentState,
+    hasRoute: () => routes.length > 0,
+    apply: applyState,
+    error: (text) => status(text, "error"),
+  });
 
   const live = createLive({
     route() {
@@ -765,32 +503,6 @@ export function startApp() {
     sheet.collapse();
     live.start();
   });
-
-  $("copy-link").addEventListener("click", async () => {
-    syncHash();
-    const note = $("copy-status");
-    try {
-      // A clipboard request can hang (e.g. waiting on a permission prompt); fall back after a moment.
-      await Promise.race([
-        navigator.clipboard.writeText(location.href),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("clipboard timeout")), SHARE.clipboardTimeoutMs)),
-      ]);
-      note.textContent = "Kopyalandı";
-    } catch {
-      // Clipboard can be blocked; show the link selected so it can be copied by hand.
-      const field = document.createElement("input");
-      field.readOnly = true;
-      field.className = "copy-field";
-      field.value = location.href;
-      field.setAttribute("aria-label", "Paylaşım linki");
-      note.replaceChildren(field);
-      field.select();
-      return;
-    }
-    setTimeout(() => (note.textContent = ""), 2500);
-  });
-
-  addEventListener("hashchange", () => applyHash());
 
   function stopsChanged() {
     renderStops();
@@ -847,7 +559,7 @@ export function startApp() {
       selected = pendingSelected < result.length ? pendingSelected : 0;
       pendingSelected = 0;
       resnapBreaks();
-      saveRecent();
+      share.saveRecent();
       renderRoutes();
       map.fit(result.flatMap((r) => r.coords), sheet.insets());
       status("");
@@ -879,7 +591,5 @@ export function startApp() {
   });
 
   renderStops();
-  if (!applyHash()) renderRecent();
+  if (!share.applyHash()) share.renderRecent();
 }
-
-const totalS = (t: Timeline) => (t.timeMs[t.timeMs.length - 1] - t.timeMs[0]) / 1000;
