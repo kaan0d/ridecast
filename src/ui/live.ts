@@ -25,7 +25,7 @@ interface Deps {
   replan(): void; // re-render with the live timeline (new ETAs, weather from cache)
   refreshWeather(): void; // same, but asks for a fresh forecast
   reroute(from: LatLon, aheadOfM: number): void;
-  showPosition(p: LatLon | null): void;
+  showPosition(p: LatLon | null, follow: boolean, zoom?: number): void; // zoom: jump to this zoom once
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -49,6 +49,21 @@ export function createLive(deps: Deps) {
   let baseline = false; // the first forecast after start sets what counts as "known"
   let baselineRoute: object | null = null;
   let lastPosition: LatLon | null = null;
+  let zoomNext = false; // the next position on the ride map sets the default zoom
+
+  // Ride map: the map follows the rider (north up, no heading from the browser). Entering it
+  // zooms to LIVE.mapZoom; after that the rider's own zoom is kept.
+  const onMap = () => view.dataset.min === "1";
+  function place(p: LatLon) {
+    deps.showPosition(p, onMap(), onMap() && zoomNext ? LIVE.mapZoom : undefined);
+    if (onMap()) zoomNext = false;
+  }
+  function showMap() {
+    view.dataset.min = "1";
+    zoomNext = true;
+    if (lastPosition) place(lastPosition);
+    render();
+  }
 
   // Fixes belong to one route; after a reroute the old ones mean nothing until a new fix comes.
   const current = () => (routeId === deps.route()?.id ? (fixes[fixes.length - 1] ?? null) : null);
@@ -90,7 +105,7 @@ export function createLive(deps: Deps) {
     offCount = offRouteCount(offCount, fix.offM, pos.coords.accuracy, LIVE.offRouteM);
     setNote("gps", pos.coords.accuracy > LIVE.poorAccuracyM ? t.live.gpsPoor(Math.round(pos.coords.accuracy)) : null);
     lastPosition = p;
-    deps.showPosition(p);
+    place(p);
     // Re-plan (ETAs, weather ETAs) when the pace moved enough, or once a minute.
     const pace = paceFactor(fixes, r.timeline, LIVE.pace);
     if (Math.abs(pace - lastPace) > LIVE.replanPaceDelta || fix.t - lastReplanMs > LIVE.replanEveryMs) {
@@ -164,8 +179,9 @@ export function createLive(deps: Deps) {
   }
 
   function render() {
-    view.hidden = !active || view.dataset.min === "1";
-    pill.hidden = !active || view.dataset.min !== "1";
+    view.hidden = !active || onMap();
+    pill.hidden = !active || !onMap();
+    document.documentElement.classList.toggle("live-map", active && onMap());
     if (!active) return;
     const r = deps.route();
     const f = current();
@@ -229,11 +245,11 @@ export function createLive(deps: Deps) {
     alert = null;
     offCount = 0;
     lastPace = 1;
-    view.dataset.min = "0";
+    lastPosition = null;
     watchId = navigator.geolocation.watchPosition(onPosition, onError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
     void lockScreen();
     refreshTimer = window.setInterval(() => deps.refreshWeather(), LIVE.weatherRefreshMs);
-    render();
+    showMap();
   }
 
   function stop() {
@@ -245,16 +261,13 @@ export function createLive(deps: Deps) {
     wakeLock = null;
     notes = [];
     lastPosition = null;
-    deps.showPosition(null);
+    deps.showPosition(null, false);
     render();
     deps.replan();
   }
 
   $("live-end").addEventListener("click", stop);
-  $("live-min").addEventListener("click", () => {
-    view.dataset.min = "1";
-    render();
-  });
+  $("live-min").addEventListener("click", showMap);
   pill.addEventListener("click", () => {
     view.dataset.min = "0";
     render();

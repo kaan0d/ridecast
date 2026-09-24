@@ -612,7 +612,7 @@ export function startApp() {
       breaks = breaks.filter((b) => ahead(b.pos));
       stopsChanged();
     },
-    showPosition: (p) => map.setLivePosition(p, $("live").hidden === true),
+    showPosition: (p, follow, zoom) => map.setLivePosition(p, follow, zoom),
   });
   $("live-start").addEventListener("click", () => {
     sheet.collapse();
