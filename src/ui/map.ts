@@ -16,6 +16,11 @@ interface MapHandlers {
   onRouteDrag(i: number, grab: LatLon, drop: LatLon): void; // a route line dragged to a new point
 }
 
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const DRAW_MS = 1300; // a new route draws itself in this time
+const WAVE_MS = 700; // stations of a route drawn earlier come in over this time
+const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2); // --ease-draw
+
 // A map button in a Leaflet corner, styled like the zoom buttons.
 function mapButton(position: L.ControlPosition, html: string, label: string, onClick: (b: HTMLButtonElement) => void, id?: string) {
   const Ctl = L.Control.extend({
@@ -93,7 +98,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
 
   // Shows only capsules that do not overlap the previous shown one, so the route stays visible
   // when zoomed out. The arrival point always shows.
-  const MIN_GAP_PX = 64;
+  const MIN_GAP_PX = 92;
   function thinWeather() {
     weatherLayer.clearLayers();
     let last: L.Point | null = null;
@@ -106,6 +111,58 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     });
   }
   map.on("zoomend", thinWeather);
+
+  // The signature moment: a new selected route draws itself from start to end with the red clock
+  // hand at its tip; alternatives fade in behind it, labels, risk colours and weather stations
+  // arrive in step. Only when the geometry is new, never on re-edits of the same route.
+  let drawn: LatLon[] | null = null;
+  let drawAt = -Infinity; // performance.now() when the last draw started
+  let riskFor: LatLon[] | null = null;
+  let weatherFor: LatLon[] | null = null;
+  const drawEnd = () => drawAt + DRAW_MS;
+
+  function drawIn(paths: SVGPathElement[]) {
+    const main = paths[paths.length - 1];
+    const hand = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    hand.setAttribute("r", "7");
+    hand.setAttribute("class", "route-hand");
+    main.parentNode!.appendChild(hand);
+    const t0 = performance.now();
+    const frame = (now: number) => {
+      if (!main.isConnected) return hand.remove();
+      const k = Math.min(1, (now - t0) / DRAW_MS);
+      const len = main.getTotalLength(); // every frame: a zoom mid-draw re-projects the path
+      const at = len * easeInOut(k);
+      for (const p of paths) p.style.strokeDasharray = `${at} ${len}`;
+      const pt = main.getPointAtLength(at);
+      hand.setAttribute("cx", String(pt.x));
+      hand.setAttribute("cy", String(pt.y));
+      if (k < 1) return void requestAnimationFrame(frame);
+      for (const p of paths) p.style.strokeDasharray = "";
+      hand.style.transformOrigin = `${pt.x}px ${pt.y}px`;
+      hand.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(2.2)" }], { duration: 420, easing: "ease-out" }).finished.then(() => hand.remove());
+    };
+    for (const p of paths) p.style.strokeDasharray = `0 ${main.getTotalLength()}`;
+    requestAnimationFrame(frame);
+  }
+
+  // A path drawn in from its start, after `delay` ms.
+  function sweep(path: SVGPathElement, delay: number, ms: number) {
+    const len = path.getTotalLength();
+    path.style.strokeDasharray = `${len} ${len}`;
+    path
+      .animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: ms, delay, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" })
+      .finished.then(
+        () => (path.style.strokeDasharray = ""),
+        () => {},
+      );
+  }
+
+  // Delay for something at `frac` of the route: when the hand passes it, or a quick wave after.
+  const arrivalDelay = (frac: number) => {
+    const now = performance.now();
+    return now < drawEnd() ? Math.max(0, drawAt + easeInOut(Math.min(1, frac)) * DRAW_MS - now) : frac * WAVE_MS;
+  };
 
   const pin = (kind: StopKind) => {
     const size = kind === "via" ? 18 : 22;
@@ -145,9 +202,19 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     setRoutes(routes: LatLon[][], selected: number, onRouteClick: (i: number, p: LatLon) => void, labels: { pos: LatLon; text: string }[] = []) {
       routeLayer.clearLayers();
       labelLayer.clearLayers();
+      const draw = !!routes[selected] && routes[selected] !== drawn && !reducedMotion.matches;
+      drawn = routes[selected] ?? null;
+      if (draw) drawAt = performance.now();
+      // Labels pop in just before the hand arrives, for as long as a draw is running.
+      const labelAt = Math.max(0, drawEnd() - performance.now() - 250);
+      const arriving = performance.now() < drawEnd();
       labels.forEach((l, i) => {
         L.marker(toLatLng(l.pos), {
-          icon: L.divIcon({ className: "route-label-marker", html: `<span class="route-label${i === selected ? " selected" : ""}">${l.text}</span>`, iconSize: undefined }),
+          icon: L.divIcon({
+            className: `route-label-marker${arriving ? " arrive" : ""}`,
+            html: `<span class="route-label${i === selected ? " selected" : ""}" style="--at:${Math.round(labelAt)}ms">${l.text}</span>`,
+            iconSize: undefined,
+          }),
           keyboard: false,
           zIndexOffset: i === selected ? 2000 : 1500, // over the weather capsules
         })
@@ -171,6 +238,9 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
             })
             .on("mousedown", (e) => startRouteDrag(i, e));
         }
+        const paths = lines.map((l) => l.getElement() as SVGPathElement | undefined).filter((p): p is SVGPathElement => !!p);
+        if (draw && i === selected) drawIn(paths);
+        else if (draw) for (const p of paths) p.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: DRAW_MS * 0.45, fill: "backwards" });
       }
     },
 
@@ -190,22 +260,45 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
 
     // Risk colours over the selected route and a dotted pattern on dark parts. Not clickable,
     // so a click still reaches the route below (adds a break).
-    setRisk(segments: { coords: LatLon[]; level: number }[], night: LatLon[][]) {
+    // The first colours of a route seep into the line from each segment's start once the hand has
+    // passed (`frac`: where the segment starts, as a share of the route).
+    setRisk(segments: { coords: LatLon[]; level: number; frac: number }[], night: { coords: LatLon[]; frac: number }[]) {
       riskLayer.clearLayers();
-      for (const s of segments) {
-        if (s.level > 0) L.polyline(s.coords.map(toLatLng), { weight: 6, interactive: false, className: `route route-risk-${s.level}` }).addTo(riskLayer);
-      }
-      for (const n of night) L.polyline(n.map(toLatLng), { weight: 3, interactive: false, className: "route route-night" }).addTo(riskLayer);
+      const animate = !!drawn && riskFor !== drawn && (segments.some((s) => s.level > 0) || night.length > 0) && !reducedMotion.matches;
+      if (animate) riskFor = drawn;
+      const wait = Math.max(0, drawEnd() - performance.now());
+      const add = (coords: LatLon[], cls: string, weight: number, frac: number) => {
+        const path = L.polyline(coords.map(toLatLng), { weight, interactive: false, className: `route ${cls}` }).addTo(riskLayer).getElement() as SVGPathElement | undefined;
+        if (animate && path) sweep(path, wait + frac * WAVE_MS, 650);
+      };
+      for (const s of segments) if (s.level > 0) add(s.coords, `route-risk-${s.level}`, 6, s.frac);
+      for (const n of night) add(n.coords, "route-night", 3, n.frac);
     },
 
-    // Weather capsules with a card popup each, over the stop pins (the first and last sit on them).
-    setWeather(points: { pos: LatLon; pin: string; card: string }[]) {
-      weatherMarkers = points.map((p) =>
-        L.marker(toLatLng(p.pos), { icon: L.divIcon({ className: "wx-marker", html: p.pin, iconSize: undefined }), keyboard: false, zIndexOffset: 1500 }).bindPopup(
-          p.card,
-          { className: "wx-popup", closeButton: false, offset: [0, -8], maxWidth: 280, minWidth: 240 },
-        ),
-      );
+    // Weather tags with a card popup each, over the stop pins (the first and last sit on them).
+    // The first forecast of a route brings its stations in as the hand passes them (`frac`: share
+    // of the route); afterwards the plain icon, so tags re-added by zoom thinning do not replay it.
+    setWeather(points: { pos: LatLon; pin: string; card: string; frac: number }[]) {
+      const arrive = points.length > 0 && !!drawn && weatherFor !== drawn && !reducedMotion.matches;
+      if (arrive) weatherFor = drawn;
+      const plain = (pin: string) => L.divIcon({ className: "wx-marker", html: pin, iconSize: undefined });
+      let longest = 0;
+      weatherMarkers = points.map((p) => {
+        const delay = arrive ? arrivalDelay(p.frac) : 0;
+        longest = Math.max(longest, delay);
+        const icon = arrive ? L.divIcon({ className: "wx-marker arrive", html: `<span style="--at:${Math.round(delay)}ms">${p.pin}</span>`, iconSize: undefined }) : plain(p.pin);
+        return L.marker(toLatLng(p.pos), { icon, keyboard: false, zIndexOffset: 1500 }).bindPopup(p.card, {
+          className: "wx-popup",
+          closeButton: false,
+          offset: [0, -40],
+          maxWidth: 280,
+          minWidth: 240,
+        });
+      });
+      if (arrive) {
+        const markers = weatherMarkers;
+        setTimeout(() => markers.forEach((m, i) => m.setIcon(plain(points[i].pin))), longest + 700);
+      }
       thinWeather();
     },
 

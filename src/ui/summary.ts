@@ -8,7 +8,42 @@ import type { Route } from "../services/osrm";
 import { formatClock, formatDay, formatDuration, formatKm, formatTime } from "./format";
 import { LEVEL_LABEL } from "./weather";
 
-// Big arrival time, then the details as a grouped list.
+// Digits roll to their value like a counter: each digit is a reel of 0-9 slid into place, other
+// characters stay. A new shape (another digit count) builds fresh reels that roll in from 0.
+export function roll(el: HTMLElement, text: string) {
+  const chars = [...text];
+  const shape = chars.map((c) => (/\d/.test(c) ? "#" : c)).join("");
+  if (el.dataset.shape !== shape) {
+    el.dataset.shape = shape;
+    el.replaceChildren(
+      Object.assign(document.createElement("span"), { className: "sr-only" }),
+      ...chars.map((c) => {
+        const cell = document.createElement("span");
+        cell.setAttribute("aria-hidden", "true");
+        if (!/\d/.test(c)) {
+          cell.className = "roll-sep";
+          cell.textContent = c;
+          return cell;
+        }
+        cell.className = "roll-col";
+        const reel = document.createElement("span");
+        for (let d = 0; d < 10; d++) reel.append(Object.assign(document.createElement("span"), { textContent: String(d) }));
+        cell.append(reel);
+        return cell;
+      }),
+    );
+    void el.offsetWidth; // reels start at 0, so the first values roll in
+  }
+  el.querySelector(".sr-only")!.textContent = text;
+  el.querySelectorAll<HTMLElement>(".roll-col > span").forEach((reel, i) => {
+    const d = Number(text.replace(/\D/g, "")[i]);
+    reel.style.transitionDelay = `${i * 70}ms`;
+    reel.style.transform = `translateY(-${d * 10}%)`;
+  });
+}
+
+// Big arrival time, then the details as a grouped list. The head stays in place between renders,
+// so a changed arrival rolls from the old time to the new one.
 export function renderSummary(
   el: HTMLElement,
   eta: { arrivalMs: number; totalS: number; distanceM: number } | null,
@@ -22,18 +57,16 @@ export function renderSummary(
     return el.replaceChildren(p);
   }
   if (!eta) return el.replaceChildren();
-  const head = document.createElement("div");
-  head.className = "eta";
-  const time = document.createElement("strong");
-  time.className = "eta-time";
-  time.textContent = formatClock(eta.arrivalMs);
-  const small = document.createElement("small");
-  small.textContent = t.summary.arrival;
-  time.append(small);
-  const meta = document.createElement("span");
-  meta.className = "eta-meta";
-  meta.textContent = `${formatDuration(eta.totalS)} · ${formatKm(eta.distanceM)} · ${formatDay(eta.arrivalMs)}`;
-  head.append(time, meta);
+  let head = el.querySelector<HTMLElement>(":scope > .eta");
+  if (!head) {
+    head = document.createElement("div");
+    head.className = "eta";
+    head.innerHTML = `<strong class="eta-time"><span class="roll"></span><small></small></strong><span class="eta-meta"></span>`;
+    el.replaceChildren(head);
+  }
+  roll(head.querySelector(".roll")!, formatClock(eta.arrivalMs));
+  head.querySelector("small")!.textContent = t.summary.arrival;
+  head.querySelector(".eta-meta")!.textContent = `${formatDuration(eta.totalS)} · ${formatKm(eta.distanceM)} · ${formatDay(eta.arrivalMs)}`;
 
   const dl = document.createElement("dl");
   dl.className = "group details";
@@ -46,7 +79,8 @@ export function renderSummary(
     row.append(dt, dd);
     dl.append(row);
   }
-  el.replaceChildren(head, dl);
+  for (const old of el.querySelectorAll(":scope > :not(.eta)")) old.remove();
+  el.append(dl);
 }
 
 // Route options with duration and, once forecasts are in, risk and the safest-route mark.

@@ -74,6 +74,7 @@ export function startApp() {
   let weatherSeq = 0;
   let weatherTimer: number | undefined;
   let weatherPoints: WeatherPoint[] = [];
+  let stripFor: Route | null = null; // route whose stations already came into the strip
   let bestWindow: BestWindow = "day"; // "Best time" over the next 24 hours or the next 7 days
 
   const stopsEl = $("stops");
@@ -445,7 +446,10 @@ export function startApp() {
     };
     const show = (points: WeatherPoint[], loading: boolean, error?: string, extra?: { samples: { distM: number }[]; forecasts: Forecast[] }) => {
       weatherPoints = points;
-      map.setWeather(points.map((p) => ({ pos: p.pos, pin: pinHtml(p), card: cardHtml(p) })));
+      map.setWeather(points.map((p) => ({ pos: p.pos, pin: pinHtml(p), card: cardHtml(p), frac: p.distM / route.distanceM })));
+      // The strip's stations come in once per route, with its first forecast.
+      const arrive = !loading && points.length > 0 && stripFor !== route;
+      if (arrive) stripFor = route;
       if (!loading) {
         paintRisk(points);
         const advices = extra ? adviseBreaks(tl, extra.samples, extra.forecasts) : [];
@@ -462,7 +466,7 @@ export function startApp() {
         renderClothing($("clothing"), error ? [] : points, vehicle);
         if (!error) live.onWeather(points);
       }
-      renderStrip($("weather"), { points, loading, error, onRetry: () => updateWeather(timelines, settings), onOpen: openPoint });
+      renderStrip($("weather"), { points, loading, error, arrive, onRetry: () => updateWeather(timelines, settings), onOpen: openPoint });
     };
     // Keep the old capsules (dimmed) while the next forecast loads.
     show(weatherPoints.length === forecast.sampleCount(selected) ? weatherPoints : [], true);
@@ -508,10 +512,10 @@ export function startApp() {
     const totalM = routes[selected].distanceM;
     const cut = (r: { from: number; to: number }) => sliceLine(lines[selected], r.from / scale, r.to / scale);
     map.setRisk(
-      pointRuns(points, totalM, (p) => p.risk?.level ?? 0).map((r) => ({ coords: cut(r), level: r.v })),
+      pointRuns(points, totalM, (p) => p.risk?.level ?? 0).map((r) => ({ coords: cut(r), level: r.v, frac: r.from / totalM })),
       pointRuns(points, totalM, (p) => Number(p.risk?.dark ?? false))
         .filter((r) => r.v === 1)
-        .map(cut),
+        .map((r) => ({ coords: cut(r), frac: r.from / totalM })),
     );
   }
 
