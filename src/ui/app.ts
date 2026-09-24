@@ -115,7 +115,9 @@ export function startApp() {
     onClick: (pos) => actions.onClick(pos),
     onContext: (pos, x, y) => actions.onContext(pos, x, y),
     onMoveStart: closeMenu,
-    onLocate: () => actions.locate(),
+    onDrag: () => live.pauseFollow(),
+    // While riding, "my location" re-centres the ride map on the rider and follows again.
+    onLocate: () => (live.isActive() ? live.recenter() : actions.locate()),
     onRouteDrag,
   });
   const measure = createMeasure(map.leaflet, $("measure"));

@@ -50,18 +50,33 @@ export function createLive(deps: Deps) {
   let baselineRoute: object | null = null;
   let lastPosition: LatLon | null = null;
   let zoomNext = false; // the next position on the ride map sets the default zoom
+  let follow = true; // off once the rider drags the ride map, back on with "my location"
 
   // Ride map: the map follows the rider (north up, no heading from the browser). Entering it
-  // zooms to LIVE.mapZoom; after that the rider's own zoom is kept.
+  // zooms to LIVE.mapZoom; after that the rider's own zoom is kept. Dragging the map stops the
+  // following (Google Maps style) until "my location" is tapped.
   const onMap = () => view.dataset.min === "1";
   function place(p: LatLon) {
-    deps.showPosition(p, onMap(), onMap() && zoomNext ? LIVE.mapZoom : undefined);
-    if (onMap()) zoomNext = false;
+    const track = onMap() && follow;
+    deps.showPosition(p, track, track && zoomNext ? LIVE.mapZoom : undefined);
+    if (track) zoomNext = false;
   }
   function showMap() {
     view.dataset.min = "1";
     zoomNext = true;
+    follow = true;
     if (lastPosition) place(lastPosition);
+    render();
+  }
+  function recenter() {
+    if (!onMap()) return showMap();
+    follow = true;
+    if (lastPosition) place(lastPosition);
+    render();
+  }
+  function pauseFollow() {
+    if (!active || !onMap() || !follow) return;
+    follow = false;
     render();
   }
 
@@ -182,6 +197,7 @@ export function createLive(deps: Deps) {
     view.hidden = !active || onMap();
     pill.hidden = !active || !onMap();
     document.documentElement.classList.toggle("live-map", active && onMap());
+    document.documentElement.classList.toggle("live-free", active && onMap() && !follow);
     if (!active) return;
     const r = deps.route();
     const f = current();
@@ -310,6 +326,8 @@ export function createLive(deps: Deps) {
   return {
     start,
     stop,
+    recenter,
+    pauseFollow,
     isActive: () => active,
     adjust,
     onWeather,

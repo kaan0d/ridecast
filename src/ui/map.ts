@@ -11,6 +11,7 @@ interface MapHandlers {
   onClick(p: LatLon): void;
   onContext(p: LatLon, x: number, y: number): void; // right click or long press, screen point
   onMoveStart(): void;
+  onDrag(): void; // the user dragged the map (not a programmatic pan)
   onLocate(): void;
   onRouteDrag(i: number, grab: LatLon, drop: LatLon): void; // a route line dragged to a new point
 }
@@ -77,6 +78,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     h.onContext(fromLatLng(e.latlng), e.originalEvent.clientX, e.originalEvent.clientY);
   });
   map.on("movestart zoomstart", () => h.onMoveStart());
+  map.on("dragstart", () => h.onDrag());
 
   const routeLayer = L.layerGroup().addTo(map);
   const riskLayer = L.layerGroup().addTo(map);
