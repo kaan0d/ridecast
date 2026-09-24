@@ -149,7 +149,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
         L.marker(toLatLng(l.pos), {
           icon: L.divIcon({ className: "route-label-marker", html: `<span class="route-label${i === selected ? " selected" : ""}">${l.text}</span>`, iconSize: undefined }),
           keyboard: false,
-          zIndexOffset: i === selected ? 500 : 0,
+          zIndexOffset: i === selected ? 2000 : 1500, // over the weather capsules
         })
           .on("click", () => i !== selected && onRouteClick(i, l.pos))
           .addTo(labelLayer);
@@ -198,10 +198,10 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
       for (const n of night) L.polyline(n.map(toLatLng), { weight: 3, interactive: false, className: "route route-night" }).addTo(riskLayer);
     },
 
-    // Weather capsules with a card popup each.
+    // Weather capsules with a card popup each, over the stop pins (the first and last sit on them).
     setWeather(points: { pos: LatLon; pin: string; card: string }[]) {
       weatherMarkers = points.map((p) =>
-        L.marker(toLatLng(p.pos), { icon: L.divIcon({ className: "wx-marker", html: p.pin, iconSize: undefined }), keyboard: false }).bindPopup(
+        L.marker(toLatLng(p.pos), { icon: L.divIcon({ className: "wx-marker", html: p.pin, iconSize: undefined }), keyboard: false, zIndexOffset: 1500 }).bindPopup(
           p.card,
           { className: "wx-popup", closeButton: false, offset: [0, -8], maxWidth: 280, minWidth: 240 },
         ),
