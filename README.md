@@ -20,6 +20,7 @@ Live: https://kaandinc.com/ridecast/ (GitHub Pages, deployed by `.github/workflo
 | 10 | Live mode (GPS) | done |
 | 11 | Deploy to kaandinc.com/ridecast | done |
 | 12 | Split `ui/app.ts` into modules | done |
+| 13 | Google Maps style directions: stop editing, context menu, place card, route bubbles | done |
 
 ## Setup
 
@@ -36,8 +37,10 @@ The build uses relative asset paths (`base: "./"` in `vite.config.ts`), so `dist
 
 ## Usage
 
-- Type an address in Başlangıç / Bitiş and pick a suggestion (Photon, as you type), or click the map: a click fills the first empty stop, otherwise adds a via stop before the end.
-- "+ Ara durak" adds an empty via stop; "×" removes it.
+- Type an address in Başlangıç / Bitiş and pick a suggestion (Photon, as you type, biased to the map centre); arrow keys move through the suggestions and Enter takes the first or the focused one.
+- Directions work like Google Maps: "Durak ekle" appends a new destination (the old one becomes a via stop); drag a stop's glyph in the card (or focus it and press the arrow keys) to reorder; with two stops a swap button reverses the trip, with more every row has a remove button. Empty rows are skipped when routing.
+- Map: clicking an empty spot drops a pin with a place card (address from Nominatim, coordinates, "Buradan", "Buraya", "Durak ekle"). Right click (long press on a phone) opens a menu: coordinates (click to copy), "Buradan yol tarifi", "Buraya yol tarifi", "Durak ekle", "Buraya mola ekle" (snapped to the selected route), "Burada ne var?". Stop pins can be dragged to a new place; the route and label follow.
+- Every route has a duration bubble placed where it leaves the other routes (`labelPoint` in `core/route/line.ts`); clicking an alternative's bubble or line selects it.
 - "Konumumu kullan" sets the start to the current GPS position.
 - The route is fetched as soon as start and end are set. Alternatives are drawn in grey; click one on the map or in the panel to select it.
 - Araç: motorcycle (default), car, bicycle, walking. Changing it resets the speeds to that vehicle's defaults (`src/config/vehicles.ts`).
@@ -87,6 +90,7 @@ src/ui/        Leaflet map, address inputs, panel; app.ts wires state, summary.t
 - Manually in Chrome: address search suggestions, pick start, map click for end, reverse-geocoded label, route with one alternative (Kadıköy to Eskişehir area: 359 km / 386 km), switching the selected route, OSRM network failure shows an error message.
 - Stage 11: `dist` served from a `/ridecast/` sub-path locally (python http.server): assets load, the Kadıköy-Eskişehir share link gives route, arrival 08:29 and weather capsules; phone width (390 px iframe) shows the bottom sheet. Photon for "kadıköy moda" returned 5 local-name suggestions (`lang=default`; without it the browser language turned names into "Istanbul, Turkey").
 - Stage 12 (refactor, no behaviour change): `ui/app.ts` 885 to 595 lines. Checked in Chrome on the Kadıköy-Eskişehir link: arrival, 2 routes with risk and the safest badge, 15 weather points, 7 warnings, best departure (3 listed, picking the second re-plans), 35 stops loaded and one added as a break, recent routes reopen a trip, live mode with a stubbed GPS shows time left and ends cleanly.
+- Stage 13 in Chrome (dev server, a 1280x760 and a 390x760 same-origin frame): context menu lists coordinates and the five actions with the first item focused; the place card showed the reverse address and "Buraya" made that point the end; swap reversed Kadıköy/Eskişehir; "Durak ekle" appended an empty row, hid the swap button and showed 3 remove buttons; Kadıköy-İzmit-Eskişehir reordered with ArrowDown on the first glyph and with pointer events on the third glyph (dropped between the other two); route bubbles "3 sa 25 dk" (selected) and "3 sa 53 dk". One problem found and fixed: the weather capsules at the start and end sat above the stop pins, so the pins could not be grabbed (pins now have a higher z-index). Not verified here: dragging a stop pin on the map, because the automated tab was hidden (no animation frames, and the drag tool's mouse presses never reached the page); the same Leaflet drag code is used for break markers.
 
 ## Limits
 
