@@ -1,4 +1,6 @@
+import type { LatLon } from "../geo";
 import type { WeatherHour } from "../weather/weather";
+import { angleBetween, sunPosition } from "./sun";
 
 // 0 = no warning, 1 = düşük, 2 = orta, 3 = yüksek
 export type Level = 0 | 1 | 2 | 3;
@@ -17,6 +19,16 @@ export interface RiskThresholds {
   storm: Level;
   dark: Level;
   road: { damp: Level; wet: Level };
+  glare: Level; // low sun ahead
+  heatC: Triple | null; // apparent temperature at or above
+}
+
+// Low sun in front of the rider: above the horizon, below maxElevationDeg, within maxAngleDeg of
+// the heading, and a sky clear enough to see it (WMO code up to maxCode).
+export interface GlareRules {
+  maxElevationDeg: number;
+  maxAngleDeg: number;
+  maxCode: number;
 }
 
 export interface WetRoadRules {
@@ -26,7 +38,7 @@ export interface WetRoadRules {
   dampRecentMm: number;
 }
 
-export type RiskKind = "storm" | "snow" | "rain" | "gust" | "visibility" | "ice" | "cold" | "road" | "dark";
+export type RiskKind = "storm" | "snow" | "rain" | "gust" | "visibility" | "ice" | "cold" | "road" | "dark" | "glare" | "heat";
 export interface RiskEvent {
   kind: RiskKind;
   level: Level;
@@ -83,9 +95,10 @@ export interface PointInput {
   rideKmh: number;
   headingDeg: number;
   sun: { riseMs: number; setMs: number }[];
+  pos: LatLon;
 }
 
-export function assessPoint(p: PointInput, t: RiskThresholds, wet: WetRoadRules): Assessment {
+export function assessPoint(p: PointInput, t: RiskThresholds, wet: WetRoadRules, glare: GlareRules): Assessment {
   const h = p.hours[p.i];
   const events: RiskEvent[] = [];
   const add = (kind: RiskKind, level: Level, text: string) => level > 0 && events.push({ kind, level, text });
@@ -116,8 +129,18 @@ export function assessPoint(p: PointInput, t: RiskThresholds, wet: WetRoadRules)
   const feltC = t.windChill ? windChillC(h.tempC, relativeWindKmh(p.rideKmh, h.windKmh, h.windFromDeg, p.headingDeg)) : h.feelsC;
   if (t.coldC) add("cold", below(feltC, t.coldC), `Sürüşte hissedilen ${Math.round(feltC)}°`);
 
+  if (t.heatC) {
+    const heat = above(h.feelsC, t.heatC);
+    add("heat", heat, `Sıcak stresi: hissedilen ${Math.round(h.feelsC)}°${heat >= 2 ? ", gölgede mola ve su" : ""}`);
+  }
+
   const dark = isDark(p.sun, p.etaMs);
   if (dark) add("dark", t.dark, "Karanlıkta sürüş");
+  else if (h.code <= glare.maxCode) {
+    const s = sunPosition(p.etaMs, p.pos.lat, p.pos.lon);
+    if (s.elevationDeg > 0 && s.elevationDeg <= glare.maxElevationDeg && angleBetween(s.azimuthDeg, p.headingDeg) <= glare.maxAngleDeg)
+      add("glare", t.glare, `Güneş karşıdan ve alçakta (${Math.round(s.elevationDeg)}°), göz kamaşabilir`);
+  }
 
   events.sort((a, b) => b.level - a.level);
   return { level: (events[0]?.level ?? 0) as Level, events, feltC, road, dark };

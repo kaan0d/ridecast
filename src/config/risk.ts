@@ -1,4 +1,4 @@
-import type { RiskThresholds } from "../core/risk/risk";
+import type { GlareRules, RiskThresholds } from "../core/risk/risk";
 import type { VehicleType } from "./vehicles";
 
 // Every risk threshold lives here. Triples are [low, medium, high].
@@ -17,6 +17,8 @@ export const RISK: Record<VehicleType, RiskThresholds> = {
     storm: 3,
     dark: 2,
     road: { damp: 1, wet: 2 },
+    glare: 2,
+    heatC: [30, 35, 40], // riding gear traps heat
   },
   bicycle: {
     rainMm: [0.1, 1, 4],
@@ -31,6 +33,8 @@ export const RISK: Record<VehicleType, RiskThresholds> = {
     storm: 3,
     dark: 2,
     road: { damp: 1, wet: 2 },
+    glare: 1,
+    heatC: [30, 35, 40],
   },
   car: {
     rainMm: [1, 4, 10],
@@ -45,6 +49,8 @@ export const RISK: Record<VehicleType, RiskThresholds> = {
     storm: 2,
     dark: 1,
     road: { damp: 0, wet: 1 },
+    glare: 2, // drivers are blinded too
+    heatC: null, // air conditioning assumed
   },
   walking: {
     rainMm: [0.5, 2, 6],
@@ -59,8 +65,13 @@ export const RISK: Record<VehicleType, RiskThresholds> = {
     storm: 3,
     dark: 1,
     road: { damp: 0, wet: 1 },
+    glare: 0,
+    heatC: [32, 37, 41],
   },
 };
+
+// Sun glare: sun up to 15° high, within 30° of the heading, sky clear to partly cloudy (WMO 0-2).
+export const GLARE: GlareRules = { maxElevationDeg: 15, maxAngleDeg: 30, maxCode: 2 };
 
 export const WET_ROAD = {
   recentHours: 3, // forecast hours up to the ETA counted for the wet road estimate

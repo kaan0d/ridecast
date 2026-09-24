@@ -3,7 +3,7 @@ import { WEATHER_REQUEST, WEATHER_SAMPLE } from "../config/weather";
 import { GPX_TRACK_KMH, ROAD_TYPE_RULES } from "../config/vehicles";
 import { autoBreakDistances, buildTimeline, etaAtDistance, speedAtDistance, totalS, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
 import { assessPoint, breakAdvice, type Level } from "../core/risk/risk";
-import { BREAK_ADVICE, RISK, RISK_WEIGHTS, WET_ROAD } from "../config/risk";
+import { BREAK_ADVICE, GLARE, RISK, RISK_WEIGHTS, WET_ROAD } from "../config/risk";
 import { routeScore, type RouteScore } from "../core/risk/route";
 import type { VehicleType } from "../config/vehicles";
 import { type LatLon } from "../core/geo";
@@ -259,9 +259,10 @@ export function startApp() {
       const idx = nearestHourIndex(f.hours, etaMs, WEATHER_REQUEST.maxHourGapMin);
       if (idx < 0) return { ...s, etaMs, hour: null, risk: null };
       const risk = assessPoint(
-        { hours: f.hours, i: idx, etaMs, rideKmh: speedAtDistance(tl, s.distM), headingDeg: bearingAt(line, s.distM / scale), sun: f.sun },
+        { hours: f.hours, i: idx, etaMs, rideKmh: speedAtDistance(tl, s.distM), headingDeg: bearingAt(line, s.distM / scale), sun: f.sun, pos: s.pos },
         RISK[vehicle],
         WET_ROAD,
+        GLARE,
       );
       return { ...s, etaMs, hour: f.hours[idx], risk };
     });

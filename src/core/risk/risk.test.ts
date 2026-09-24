@@ -33,12 +33,16 @@ const moto: RiskThresholds = {
   storm: 3,
   dark: 2,
   road: { damp: 1, wet: 2 },
+  glare: 2,
+  heatC: [30, 35, 40],
 };
-const car: RiskThresholds = { ...moto, rainMm: [1, 4, 10], rainProbPct: null, gustKmh: [50, 70, 90], coldC: null, windChill: false, dark: 1, road: { damp: 0, wet: 1 } };
+const car: RiskThresholds = { ...moto, rainMm: [1, 4, 10], rainProbPct: null, heatC: null, gustKmh: [50, 70, 90], coldC: null, windChill: false, dark: 1, road: { damp: 0, wet: 1 } };
 const wet = { recentHours: 3, wetNowMm: 0.5, wetRecentMm: 1.5, dampRecentMm: 0.2 };
 const day = [{ riseMs: T0, setMs: T0 + 11 * H }];
+const glare = { maxElevationDeg: 15, maxAngleDeg: 30, maxCode: 2 };
+const POS = { lat: 41, lon: 29 };
 const at = (hours: WeatherHour[], i: number, t = moto, rideKmh = 90, headingDeg = 0) =>
-  assessPoint({ hours, i, etaMs: hours[i].timeMs, rideKmh, headingDeg, sun: day }, t, wet);
+  assessPoint({ hours, i, etaMs: hours[i].timeMs, rideKmh, headingDeg, sun: day, pos: POS }, t, wet, glare);
 
 describe("wind chill", () => {
   test("matches the published table", () => {
@@ -97,6 +101,28 @@ describe("assessPoint", () => {
     expect(at([hour(0, { precipProb: null })], 0).events).toEqual([]);
   });
 
+  test("low sun ahead: east in the morning, not behind, not overcast, not high", () => {
+    // Istanbul 2026-09-24: sunrise 03:53 UTC almost due east; at 04:30 UTC the sun is about 6° up.
+    const morning = Date.UTC(2026, 8, 24, 4, 30);
+    const sunUp = [{ riseMs: Date.UTC(2026, 8, 24, 3, 53), setMs: Date.UTC(2026, 8, 24, 15, 58) }];
+    const one = (o: Partial<WeatherHour>, headingDeg: number, etaMs = morning) =>
+      assessPoint({ hours: [hour(0, { timeMs: etaMs, ...o })], i: 0, etaMs, rideKmh: 90, headingDeg, sun: sunUp, pos: POS }, moto, wet, glare).events;
+    expect(one({}, 95)).toEqual([{ kind: "glare", level: 2, text: "Güneş karşıdan ve alçakta (6°), göz kamaşabilir" }]);
+    expect(one({}, 275)).toEqual([]); // riding west: sun behind
+    expect(one({ code: 3 }, 95)).toEqual([]); // overcast
+    expect(one({}, 180, Date.UTC(2026, 8, 24, 10))).toEqual([]); // noon: sun high
+  });
+
+  test("heat stress from the apparent temperature, none for a car", () => {
+    expect(at([hour(0, { tempC: 33, feelsC: 36 })], 0).events.find((e) => e.kind === "heat")).toEqual({
+      kind: "heat",
+      level: 2,
+      text: "Sıcak stresi: hissedilen 36°, gölgede mola ve su",
+    });
+    expect(at([hour(0, { tempC: 29, feelsC: 31 })], 0).events.find((e) => e.kind === "heat")?.level).toBe(1);
+    expect(at([hour(0, { tempC: 33, feelsC: 42 })], 0, car).events.find((e) => e.kind === "heat")).toBeUndefined();
+  });
+
   test("cold uses the wind chill at riding speed, not the air temperature", () => {
     const hours = [hour(0, { tempC: 8, feelsC: 7 })];
     const a = at(hours, 0, moto, 100);
@@ -112,7 +138,7 @@ describe("assessPoint", () => {
     expect(at([hour(0, { code: 45, visibilityM: 8200 })], 0).events[0]).toMatchObject({ kind: "visibility", level: 1 });
     expect(at([hour(0, { tempC: 0.5, precipMm: 0.2 })], 0).events[0]).toMatchObject({ kind: "ice", level: 3 });
     expect(at([hour(0, { tempC: 2.5 })], 0).events.find((e) => e.kind === "ice")?.level).toBe(2);
-    const night = assessPoint({ hours: [hour(0)], i: 0, etaMs: T0 + 12 * H, rideKmh: 90, headingDeg: 0, sun: day }, moto, wet);
+    const night = assessPoint({ hours: [hour(0)], i: 0, etaMs: T0 + 12 * H, rideKmh: 90, headingDeg: 0, sun: day, pos: POS }, moto, wet, glare);
     expect(night.dark).toBe(true);
     expect(night.events).toEqual([{ kind: "dark", level: 2, text: "Karanlıkta sürüş" }]);
   });
