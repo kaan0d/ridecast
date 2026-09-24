@@ -200,7 +200,7 @@ export const tr: Messages = {
     rain: (level: Level, mm, prob) =>
       `${level === 3 ? "Şiddetli yağmur" : level === 1 ? "Hafif yağmur" : "Yağmur"} ${mm.toFixed(1)} mm/sa${prob === null ? "" : ` · olasılık %${prob}`}`,
     rainProb: (pct) => `Yağış olasılığı %${pct}`,
-    gust: (kmh) => `Rüzgar hamlesi ${r(kmh)} km/sa`,
+    gust: (kmh) => `Rüzgar Hamlesi · ${r(kmh)} km/sa`,
     crosswind: (kmh, fromRight) => `${fromRight ? "Sağ" : "Sol"} Yan Rüzgar · ${r(kmh)} km/sa`,
     visibility: (km, fog) => (fog ? `Sis, görüş ${km.toFixed(1)} km` : `Görüş ${km.toFixed(1)} km`),
     ice: (c) => `Buzlanma riski: ${r(c)}° ve ıslak yol (tahmin)`,
