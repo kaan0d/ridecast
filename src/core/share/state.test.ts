@@ -18,6 +18,7 @@ const trip: TripState = {
   speed: { mode: "road", motorway: 110, primary: 80, urban: 40 },
   depart: { mode: "at", ms: Date.UTC(2026, 8, 24, 5) },
   avoid: { highways: true, tolls: false, ferries: true },
+  fuelRangeKm: 220,
   selected: 1,
 };
 
@@ -30,6 +31,7 @@ test("round trip keeps every setting (coordinates to 5 decimals, label separator
   expect(back.speed).toEqual(trip.speed);
   expect(back.depart).toEqual(trip.depart);
   expect(back.avoid).toEqual(trip.avoid);
+  expect(back.fuelRangeKm).toBe(220);
   expect(encodeState(trip)).toContain("av=hf");
   expect(back.selected).toBe(1);
 });
@@ -45,8 +47,8 @@ test("links without avoid options (older links) avoid nothing; unknown letters a
 test("average speed, now and best departures, no breaks", () => {
   const s: TripState = { ...trip, breaks: [], speed: { mode: "average", kmh: 80 }, depart: { mode: "best" }, selected: 0, vehicle: "car" };
   const enc = encodeState(s);
-  expect(enc).not.toContain("b=");
-  expect(enc).not.toContain("r=");
+  expect(new URLSearchParams(enc).has("b")).toBe(false);
+  expect(new URLSearchParams(enc).has("r")).toBe(false);
   expect(decodeState(enc, limits)).toMatchObject({ breaks: [], speed: { mode: "average", kmh: 80 }, depart: { mode: "best" }, vehicle: "car" });
   expect(decodeState(encodeState({ ...s, depart: { mode: "now" } }), limits)?.depart).toEqual({ mode: "now" });
 });
@@ -70,4 +72,8 @@ test("broken or tampered links give null", () => {
   expect(decodeState(swap("veh", "x"), limits)).toBeNull();
   expect(decodeState(swap("dep", "tomorrow"), limits)).toBeNull();
   expect(decodeState(swap("r", "-1"), limits)?.selected).toBe(0);
+  expect(decodeState(swap("fr", "5"), limits)).toBeNull(); // below the smallest range
+  const noRange = new URLSearchParams(good);
+  noRange.delete("fr");
+  expect(decodeState(noRange.toString(), limits)?.fuelRangeKm).toBeNull();
 });

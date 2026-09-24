@@ -44,3 +44,12 @@ export function pickStops(stops: (Poi & { distM: number })[], badWeatherAt: (dis
   }
   return out;
 }
+
+// Stretches longer than the fuel range between two places to fill up: the start (a full tank is
+// assumed), every fuel stop along the route, and the arrival. Distances along the route, metres.
+export function fuelGaps(fuelM: number[], totalM: number, rangeM: number): { fromM: number; toM: number }[] {
+  const at = [0, ...fuelM.filter((d) => d > 0 && d < totalM).sort((a, b) => a - b), totalM];
+  const out: { fromM: number; toM: number }[] = [];
+  for (let i = 1; i < at.length; i++) if (at[i] - at[i - 1] > rangeM) out.push({ fromM: at[i - 1], toM: at[i] });
+  return out;
+}

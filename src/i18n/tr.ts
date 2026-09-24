@@ -139,6 +139,13 @@ export const tr: Messages = {
     gpxName: (i, min, at) => `Mola ${i} · ${min} dk${at ? " · " + at : ""}`,
   },
 
+  fuel: {
+    gap: (lengthKm, rangeKm) => `${lengthKm} km yakıt yok (menzil ${rangeKm} km)`,
+    fillUp: (name) => ` · ${name} noktasında depoyu doldur`,
+    atStart: " · depo dolu çık",
+    loading: "Yakıt menzili kontrolü: yakıt noktaları yükleniyor…",
+  },
+
   gpx: {
     noPoints: "GPX dosyasında en az iki iz veya rota noktası bulunamadı.",
     loaded: (name, km, points) => `GPX rotası${name ? ` "${name}"` : ""}: ${km}, ${points} nokta. Paylaşım linki sadece başlangıç ve bitişi taşır.`,
@@ -373,5 +380,7 @@ export const tr: Messages = {
     offRoute: "Rotanın dışındasın.",
     reroute: "Rotayı yeniden hesapla",
     liveRefresh: "Havayı şimdi yenile",
+    fuelRange: "Yakıt menzili",
+    fuelRangeNote: "Rota boyunca yakıt noktaları bundan daha seyrekse uyarır.",
   },
 };

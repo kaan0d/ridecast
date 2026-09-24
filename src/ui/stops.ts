@@ -87,6 +87,7 @@ interface PanelDeps {
   route(): { route: Route; line: Line; scale: number; timeline: Timeline | null; points: WeatherPoint[] } | null;
   onAdd(pos: LatLon): void; // add a break at the stop
   onOpen(): void; // before a stop is shown on the map (collapse the sheet)
+  onLoaded?(): void; // stops arrived for the selected route
 }
 
 // "Fuel and rest stops": Overpass stops of the selected route, loaded on request.
@@ -106,6 +107,7 @@ export function createStopsPanel(deps: PanelDeps) {
       const pois = await fetchStops(segmentBoxes(sel.line, STOPS.boxSegmentM, STOPS.boxPadDeg));
       if (state?.route !== route) return;
       state = { route, pois, loading: false };
+      deps.onLoaded?.();
     } catch (e) {
       if (state?.route !== route) return;
       state = { route, pois: null, loading: false, error: (e as Error).message };
@@ -177,5 +179,23 @@ export function createStopsPanel(deps: PanelDeps) {
     });
   }
 
-  return { render, reset: () => (state = null) };
+  // Fuel stops (stations and motorway services) near the selected route, as distances along it;
+  // null until loaded for this route. Unthinned, so no gap is made up by the list's thinning.
+  function fuelStops(): { distM: number; name: string }[] | null {
+    const sel = deps.route();
+    if (!sel || !state || state.route !== sel.route || !state.pois) return null;
+    return state.pois.flatMap((p) => {
+      if (p.kind === "rest") return [];
+      const s = snapToLine(sel.line, p.pos);
+      return haversineM(s.pos, p.pos) <= STOPS.corridorM ? [{ distM: s.distM * sel.scale, name: p.named ? p.name : t.stops.kind[p.kind] }] : [];
+    });
+  }
+
+  // Loads once per route (the fuel range check asks for it); a failed load is not retried here.
+  const ensureLoaded = () => {
+    const sel = deps.route();
+    if (sel && state?.route !== sel.route) void load();
+  };
+
+  return { render, reset: () => (state = null), fuelStops, ensureLoaded, loaded: () => !!state && !state.loading };
 }
