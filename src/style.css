@@ -15,6 +15,7 @@
   --rule: #deded9;
   --fill: #ececE8;
   --fill-2: #e2e2dd;
+  --thumb: #ffffff; /* selected segment */
   --material: rgb(250 250 248 / 0.94);
   --shadow: 0 24px 60px -12px rgb(20 21 23 / 0.22), 0 4px 14px -4px rgb(20 21 23 / 0.12);
   --shadow-small: 0 6px 18px -6px rgb(20 21 23 / 0.28), 0 1px 3px rgb(20 21 23 / 0.1);
@@ -60,6 +61,7 @@
   --rule: #2b2d31;
   --fill: #242629;
   --fill-2: #2e3034;
+  --thumb: #45484e;
   --material: rgb(23 24 27 / 0.94);
   --shadow: 0 24px 60px -12px rgb(0 0 0 / 0.6), 0 4px 14px -4px rgb(0 0 0 / 0.45);
   --shadow-small: 0 6px 18px -6px rgb(0 0 0 / 0.7), 0 1px 3px rgb(0 0 0 / 0.4);
@@ -1311,7 +1313,7 @@ button.stop-glyph {
 
 /* A station arriving with the hand (map.ts sets the delay). */
 .wx-marker.arrive .wx-pin {
-  animation: station-in 0.5s var(--ease-spring) backwards;
+  animation: station-in 0.55s var(--ease-out) backwards;
   animation-delay: var(--at, 0ms);
 }
 
@@ -1324,7 +1326,7 @@ button.stop-glyph {
 }
 
 .route-label-marker.arrive .route-label {
-  animation: label-in 0.5s var(--ease-spring) backwards;
+  animation: label-in 0.55s var(--ease-out) backwards;
   animation-delay: var(--at, 0ms);
 }
 
@@ -1991,7 +1993,7 @@ button.stop-glyph {
   color: #141517;
   font-size: 1.0625rem;
   font-weight: 700;
-  animation: alert-in 0.5s var(--ease-spring);
+  animation: alert-in 0.5s var(--ease-out);
 }
 
 @keyframes alert-in {
@@ -2363,7 +2365,7 @@ button.stop-glyph {
   left: 3px;
   width: calc((100% - 6px) / var(--n));
   border-radius: 8px;
-  background: var(--raised);
+  background: var(--thumb);
   box-shadow: 0 3px 8px -2px rgb(0 0 0 / 0.16), 0 0 0 0.5px rgb(0 0 0 / 0.05);
   transform: translateX(calc(var(--k) * 100%));
   transition: transform 0.42s var(--ease-spring);
@@ -2562,7 +2564,7 @@ input:invalid {
 }
 
 .best-window button[aria-pressed="true"] {
-  background: var(--raised);
+  background: var(--thumb);
   color: var(--ink);
   box-shadow: 0 3px 8px -2px rgb(0 0 0 / 0.16);
 }
