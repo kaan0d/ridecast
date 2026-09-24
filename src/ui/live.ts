@@ -8,6 +8,7 @@ import { haversineM, snapToLine, type Line } from "../core/route/line";
 import type { Level } from "../core/risk/risk";
 import { conditionOf } from "../core/weather/weather";
 import { formatClock, formatDuration, formatKm } from "./format";
+import { forceLight } from "./theme";
 import { weatherIcon, type WeatherPoint } from "./weather";
 
 // What live mode needs from the planner, read fresh on every fix.
@@ -203,6 +204,10 @@ export function createLive(deps: Deps) {
     const root = document.documentElement;
     root.classList.toggle("live-map", active);
     root.classList.toggle("live-free", active && !follow);
+    // Sunlight: the whole screen goes light, map included, with a starker map (style.css).
+    const sun = active && view.dataset.contrast === "high";
+    root.classList.toggle("live-sun", sun);
+    forceLight(sun);
     if (!active) return;
     const r = deps.route();
     const f = current();
@@ -321,7 +326,10 @@ export function createLive(deps: Deps) {
   } catch {
     setSun(prefersMore, false);
   }
-  $("live-sun").addEventListener("click", () => setSun(view.dataset.contrast !== "high"));
+  $("live-sun").addEventListener("click", () => {
+    setSun(view.dataset.contrast !== "high");
+    render();
+  });
   $("live-alert-close").addEventListener("click", () => {
     alert = null;
     render();

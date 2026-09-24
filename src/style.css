@@ -1485,7 +1485,15 @@ button.stop-glyph {
 }
 
 /* Sunlight: pure black on white, risk colours dark enough for text contrast, thicker rings.
-   On by the "Güneş" button; starts on when the system asks for more contrast (ui/live.ts). */
+   On by the "Güneş" button; starts on when the system asks for more contrast (ui/live.ts).
+   The rest of the screen switches to the light theme (ui/theme.ts) with a white, sharper map
+   and a black route. */
+:root.live-sun {
+  --map-filter: grayscale(1) contrast(1.1) brightness(1.08);
+  --route: #000000;
+  --route-casing: #ffffff;
+}
+
 .live[data-contrast="high"] {
   --ground: #ffffff;
   --card: #ffffff;
