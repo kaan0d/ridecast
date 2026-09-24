@@ -1,12 +1,12 @@
 // ridecast service worker, written by hand (no build plugin).
 // - App shell: index.html and the hashed files it links, cached at install; network first for the
 //   page (so a deploy shows up), cache first for /assets/ (hashed names never change).
-// - Trip data: the last OSRM routes and Open-Meteo forecasts, network first with the cached copy
+// - Trip data: the last routes (OSRM, FOSSGIS, Valhalla) and Open-Meteo forecasts, network first with the cached copy
 //   as the fallback, so a trip reopened without signal still shows its route and weather.
 // - Map tiles are not cached here (tile policies forbid prefetching); the browser cache applies.
-const SHELL = "ridecast-shell-v1";
+const SHELL = "ridecast-shell-v2";
 const DATA = "ridecast-data-v1";
-const DATA_HOSTS = ["router.project-osrm.org", "api.open-meteo.com"];
+const DATA_HOSTS = ["router.project-osrm.org", "routing.openstreetmap.de", "valhalla1.openstreetmap.de", "api.open-meteo.com"];
 const MAX_DATA = 40; // ponytail: oldest-first trim by insertion order; fine for a few trips
 
 self.addEventListener("install", (event) => {
