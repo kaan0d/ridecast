@@ -16,7 +16,6 @@ import { cardHtml, collectWarnings, pinHtml, renderStrip, renderWarnings, type W
 import type { BreakRow } from "./breaks";
 import { renderClothing } from "./advice";
 import { createLive } from "./live";
-import type { TripState } from "../core/share/state";
 import { SHARE } from "../config/share";
 import { createStopsPanel } from "./stops";
 import { reverseLabel } from "../services/nominatim";
@@ -37,6 +36,8 @@ import { DEPARTURE } from "../config/departure";
 import { bindSheet } from "./sheet";
 import { renderBest as renderBestList } from "./best";
 import { bindShare } from "./share";
+import { bindChanges } from "./changes";
+import { encodeState, type TripState } from "../core/share/state";
 import { renderRouteList as renderRouteOptions, renderSummary as renderSummaryInto } from "./summary";
 
 interface BreakPoint {
@@ -97,6 +98,7 @@ export function startApp() {
   });
   const readSettings = settingsCtl.read;
   const bestEl = $("depart-best");
+  const changes = bindChanges($("changes"));
   const renderBreakList = bindBreaks({
     onDuration(i, min) {
       breaks[i] = { ...breaks[i], durationMin: min, auto: false };
@@ -353,6 +355,9 @@ export function startApp() {
           if (a) warnings.push({ level: 2, text: `Mola ${i + 1}: ${a}`, when: `${formatClock(b.startMs)}–${formatClock(b.endMs)}`, where: `km ${Math.round(b.distM / 1000)}` });
         });
         renderWarnings(warningsEl, warnings, !error && points.length > 0, openPoint);
+        // Change tracking compares planned trips; live mode has its own alerts.
+        const trip = currentState();
+        if (!error && points.length && trip && !live.isActive()) changes.onForecast(encodeState(trip), tl.timeMs[0], warnings);
         renderClothing(clothingEl, error ? [] : points, vehicle);
         if (!error) live.onWeather(points);
         stopsPanel.render();

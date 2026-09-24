@@ -1,4 +1,5 @@
 import { WEATHER_REQUEST } from "../config/weather";
+import type { WarningSnap } from "../core/advice/changes";
 import type { Assessment, Level, RoadState } from "../core/risk/risk";
 import { compass, conditionOf, type Condition, type WeatherHour } from "../core/weather/weather";
 import type { LatLon } from "../core/geo";
@@ -130,11 +131,12 @@ export interface Warning {
   when: string; // time range
   where: string; // km range
   open?: number; // weather point to open on click
+  run?: WarningSnap; // the run behind a weather warning (kind, level, km, start), for change tracking
 }
 
 // Consecutive points with the same kind of warning become one row, at the worst level seen.
 export function collectWarnings(points: WeatherPoint[]): Warning[] {
-  const out: (Warning & { startMs: number })[] = [];
+  const out: (Warning & { startMs: number; run: WarningSnap })[] = [];
   const open = new Map<string, { from: number; to: number; worst: number }>();
   const close = (kind: string) => {
     const r = open.get(kind)!;
@@ -149,6 +151,7 @@ export function collectWarnings(points: WeatherPoint[]): Warning[] {
       where: r.from === r.to ? km(a.distM) : `${km(a.distM)}–${Math.round(b.distM / 1000)}`,
       open: r.worst,
       startMs: a.etaMs,
+      run: { kind: worst.kind, level: worst.level, text: worst.text, fromM: a.distM, toM: b.distM, startMs: a.etaMs },
     });
   };
   points.forEach((p, i) => {
