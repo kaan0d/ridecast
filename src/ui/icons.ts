@@ -30,6 +30,7 @@ export const icons = {
   swap: svg('<path d="M8 20V4M4 8l4-4 4 4M16 4v16M12 16l4 4 4-4"/>'),
   arrowUp: svg('<path d="M12 19V5M6 11l6-6 6 6"/>'),
   settings: svg('<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>'),
+  link: svg('<path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/>'),
   back: svg('<path d="M19 12H5M11 6l-6 6 6 6"/>'),
 };
 

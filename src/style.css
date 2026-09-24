@@ -1520,7 +1520,8 @@ button.stop-glyph {
   font-size: 0.9375rem;
 }
 
-.share-row .button-secondary {
+.share-row .button-secondary,
+.share-row .share-link {
   background: var(--fill);
   color: var(--ink);
 }

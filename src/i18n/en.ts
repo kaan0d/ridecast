@@ -152,14 +152,6 @@ export const en = {
     loading: "Checking the fuel range: loading fuel stops…",
   },
 
-  ics: {
-    summary: (from: string, to: string) => `Ride: ${from} → ${to}`,
-    day: (k: number, n: number) => ` (day ${k} of ${n})`,
-    breaks: "Breaks",
-    warnings: "Warnings",
-    plan: "Plan",
-  },
-
   share: {
     badLink: "This link could not be read; no route loaded.",
     copied: "Copied",
