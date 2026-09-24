@@ -4,6 +4,7 @@ export const LIVE = {
   offRouteM: 150, // a fix further than this from the route (and than its accuracy allows) is off
   offRouteFixes: 3, // consecutive off fixes before suggesting a new route
   poorAccuracyM: 100,
+  mapZoom: 18, // ride map: the scale bar reads 30 m at Turkish latitudes; pinch or +/- changes it
   replanEveryMs: 60_000, // re-plan ETAs at least this often
   replanPaceDelta: 0.05, // or when the pace changes more than this
   nextMinLevel: 1 as const, // "next warning" shows low warnings too

@@ -2269,6 +2269,19 @@ input:invalid {
   .leaflet-bottom {
     bottom: var(--sheet-inset);
   }
+
+  /* Ride map (live.ts): the whole screen is map, with zoom buttons for gloved hands. */
+  .live-map .sheet {
+    display: none;
+  }
+
+  .live-map .leaflet-bottom {
+    bottom: env(safe-area-inset-bottom);
+  }
+
+  .live-map .leaflet-control-zoom {
+    display: block;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
