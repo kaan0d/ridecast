@@ -512,22 +512,17 @@ button {
   box-shadow: var(--shadow-small);
 }
 
-.tagline {
-  color: var(--ink-2);
-  font-size: 0.9375rem;
-}
-
 .sheet-back {
   align-self: center;
   margin: -6px -2px -6px -8px;
 }
 
-.settings-open {
+.settings-btn {
   align-self: center;
   margin: -6px -8px -6px 0;
 }
 
-.settings-open[aria-expanded="true"] {
+.settings-btn[aria-expanded="true"] {
   background: var(--fill);
   color: var(--ink);
 }
@@ -2221,7 +2216,8 @@ input:invalid {
     transition: transform 0.45s var(--ease-out);
   }
 
-  .sheet.dragging {
+  .sheet.dragging,
+  .sheet.jump {
     transition: none;
   }
 
@@ -2244,8 +2240,9 @@ input:invalid {
     opacity: 0.6;
   }
 
+  /* Top padding clears the header buttons' circles, which reach 6px above the header row. */
   .sheet-body {
-    padding: 2px 14px calc(28px + env(safe-area-inset-bottom));
+    padding: 8px 14px calc(28px + env(safe-area-inset-bottom));
   }
 
   /* Phone: no wordmark (the sheet is short), only the language switch. */
@@ -2253,8 +2250,7 @@ input:invalid {
     margin: 0 4px 8px;
   }
 
-  .brand .wordmark,
-  .brand .tagline {
+  .brand .wordmark {
     display: none;
   }
 
