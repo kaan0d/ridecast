@@ -2,7 +2,7 @@
 
 ridecast (route weather): a motorcycle-focused web app that shows weather, risks and warnings along a route, based on the time you reach each point. English UI with a Turkish option, map-first layout that works like a phone app (bottom sheet on phones, floating card on desktop), system light and dark themes.
 
-Not published: the repository is private and the former kaandinc.com/ridecast deploy (`.github/workflows/pages.yml`) is no longer live.
+Live: https://kaandinc.com/ridecast/ (GitHub Pages, deployed by `.github/workflows/pages.yml` on every push to `main`).
 
 ## Status
 
