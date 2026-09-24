@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { chooseSafest, routeScore, type RouteScore } from "./route";
+import { chooseSafest, pointRuns, routeScore, type RouteScore } from "./route";
 
 const W = [0, 1, 3, 9];
 
@@ -72,4 +72,19 @@ describe("chooseSafest", () => {
     expect(chooseSafest([{ durationS: 100, score: sc(2) }], 0.1)).toBeNull();
     expect(chooseSafest([{ durationS: 100, score: sc(2) }, { durationS: 90, score: null }], 0.1)).toBeNull();
   });
+});
+
+test("pointRuns: halfway boundaries, equal neighbours merged", () => {
+  const pts = [
+    { distM: 0, l: 0 },
+    { distM: 20_000, l: 2 },
+    { distM: 40_000, l: 2 },
+    { distM: 100_000, l: 0 },
+  ];
+  expect(pointRuns(pts, 100_000, (p) => p.l)).toEqual([
+    { from: 0, to: 10_000, v: 0 },
+    { from: 10_000, to: 70_000, v: 2 },
+    { from: 70_000, to: 100_000, v: 0 },
+  ]);
+  expect(pointRuns([], 100, () => 0)).toEqual([]);
 });

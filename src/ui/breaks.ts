@@ -1,5 +1,8 @@
 import { AUTO_BREAK_DEFAULT, BREAK_LIMITS_MIN, BREAK_PRESETS_MIN, OVERNIGHT } from "../config/breaks";
-import type { AutoBreakRule } from "../core/eta/eta";
+import { BREAK_ADVICE } from "../config/risk";
+import type { AutoBreakRule, Timeline } from "../core/eta/eta";
+import { breakAdvice } from "../core/risk/risk";
+import type { Forecast } from "../core/weather/weather";
 import { formatClock, formatTime } from "./format";
 import { icons } from "./icons";
 
@@ -121,4 +124,22 @@ export function bindBreaks(h: Handlers) {
       list.append(li);
     }
   };
+}
+
+// Rain during each break, read from the forecast of the sample point nearest to it.
+export function adviseBreaks(tl: Timeline, samples: { distM: number }[], forecasts: Forecast[]): (string | undefined)[] {
+  return tl.breaks.map((b) => {
+    let k = 0;
+    samples.forEach((s, j) => {
+      if (Math.abs(s.distM - b.distM) < Math.abs(samples[k].distM - b.distM)) k = j;
+    });
+    const a = breakAdvice(forecasts[k]?.hours ?? [], b.startMs, b.endMs, BREAK_ADVICE.rainMm, BREAK_ADVICE.maxExtendMin);
+    const minutes = Math.round((b.endMs - b.startMs) / 60_000);
+    if (a?.kind === "rainStarts")
+      return a.atMin === 0
+        ? "Mola başlarken yağmur başlıyor."
+        : `Yağmur molanın ${a.atMin}. dakikasında başlıyor. Molayı ${a.atMin} dk'ya kısaltırsan yağmurdan önce yola çıkarsın.`;
+    if (a?.kind === "rainStops") return `Molanın sonunda yağmur var, ${a.extendMin} dk sonra diniyor. Molayı ${minutes + a.extendMin} dk'ya uzatmayı düşün.`;
+    return undefined;
+  });
 }

@@ -55,3 +55,18 @@ export function chooseSafest(routes: { durationS: number; score: RouteScore | nu
     riskDrop: pick === fastest ? 0 : drop,
   };
 }
+
+// Each point stands for the route halfway to its neighbours; neighbours with the same value merge
+// into one run. Used to colour the route by risk level and to mark the dark parts.
+export function pointRuns<P extends { distM: number }>(points: P[], totalM: number, value: (p: P) => number): { from: number; to: number; v: number }[] {
+  const out: { from: number; to: number; v: number }[] = [];
+  points.forEach((p, k) => {
+    const from = k === 0 ? 0 : (points[k - 1].distM + p.distM) / 2;
+    const to = k === points.length - 1 ? totalM : (p.distM + points[k + 1].distM) / 2;
+    const v = value(p);
+    const last = out[out.length - 1];
+    if (last && last.v === v) last.to = to;
+    else out.push({ from, to, v });
+  });
+  return out;
+}
