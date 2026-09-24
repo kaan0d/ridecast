@@ -78,6 +78,18 @@
             </div>
           </div>
 
+          <h2 class="group-title" data-t="mapStyle">Map</h2>
+          <div class="group" id="map-style">
+            <div class="segmented" role="radiogroup" aria-label="Map" data-t-aria="mapStyle">
+              <label><input type="radio" name="map-style" value="osm" /><span data-t="mapDetailed">Detailed</span></label>
+              <label><input type="radio" name="map-style" value="simple" /><span data-t="mapSimple">Simple</span></label>
+            </div>
+            <div id="simple-options">
+              <label class="row"><span data-t="mapLabels">Place names</span> <input type="checkbox" name="map-labels" /></label>
+            </div>
+            <p class="footnote" data-t="mapNote">Detailed: OpenStreetMap. Simple: Esri's grey map, only main roads and a few names.</p>
+          </div>
+
           <h2 class="group-title" data-t="language">Language</h2>
           <div class="group">
             <div id="lang" class="segmented" role="radiogroup" aria-label="Language" data-t-aria="language">
