@@ -1,29 +1,31 @@
-/* ridecast: ride-app sheet over a muted map. Light and dark follow the system. */
+/* ridecast: ride-app sheet over a muted map. Soft tones instead of pure black and white, so long
+   looks do not tire the eyes. The theme is data-theme on <html>: set before the first paint in
+   index.html, switched by the header button (ui/theme.ts), following the system by default. */
 
 :root {
-  --ground: #ffffff;
-  --grouped: #f2f2f7;
-  --card: #ffffff;
-  --ink: #000000;
-  --ink-2: #6c6c70;
-  --ink-3: #8e8e93;
-  --on-ink: #ffffff;
-  --separator: #d1d1d6;
-  --fill: #e9e9eb;
-  --material: rgb(255 255 255 / 0.86);
-  --shadow: 0 10px 40px rgb(0 0 0 / 0.16), 0 2px 8px rgb(0 0 0 / 0.08);
-  --shadow-small: 0 2px 10px rgb(0 0 0 / 0.14), 0 1px 2px rgb(0 0 0 / 0.1);
-  --route: #000000;
-  --route-casing: #ffffff;
-  --alt: #9a9aa0;
-  --break: #5e5ce6;
+  --ground: #f5f5f3;
+  --grouped: #eeeeeb;
+  --card: #fbfbfa;
+  --ink: #25282d;
+  --ink-2: #5e636b;
+  --ink-3: #858a92;
+  --on-ink: #fbfbfa;
+  --separator: #d9d9d5;
+  --fill: #e6e6e2;
+  --material: rgb(249 249 247 / 0.88);
+  --shadow: 0 10px 40px rgb(30 34 40 / 0.14), 0 2px 8px rgb(30 34 40 / 0.07);
+  --shadow-small: 0 2px 10px rgb(30 34 40 / 0.12), 0 1px 2px rgb(30 34 40 / 0.08);
+  --route: #2f3d58;
+  --route-casing: #fbfbfa;
+  --alt: #9aa0a9;
+  --break: #5b5bd6;
   --on-break: #ffffff;
-  --risk-1: #e6b800;
-  --risk-2: #ff8a00;
-  --risk-3: #ff3b30;
-  --error: #d70015;
-  --focus: #0a84ff;
-  --map-filter: grayscale(0.85) contrast(0.92) brightness(1.04);
+  --risk-1: #d6a70f;
+  --risk-2: #ea8a22;
+  --risk-3: #dc4a40;
+  --error: #c2362d;
+  --focus: #2f7ddf;
+  --map-filter: grayscale(0.8) contrast(0.88) brightness(0.98);
 
   --radius-sheet: 22px;
   --radius-card: 14px;
@@ -31,7 +33,7 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --sheet-inset: 0px; /* map area covered by the sheet, set by sheet.ts */
 
-  color-scheme: light dark;
+  color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   font-size: 100%;
   line-height: 1.35;
@@ -40,31 +42,30 @@
   caret-color: var(--focus);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ground: #000000;
-    --grouped: #1c1c1e;
-    --card: #2c2c2e;
-    --ink: #ffffff;
-    --ink-2: #a1a1a8;
-    --ink-3: #8e8e93;
-    --on-ink: #000000;
-    --separator: #3a3a3c;
-    --fill: #3a3a3c;
-    --material: rgb(28 28 30 / 0.84);
-    --shadow: 0 10px 40px rgb(0 0 0 / 0.55), 0 2px 8px rgb(0 0 0 / 0.4);
-    --shadow-small: 0 2px 10px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.4);
-    --route: #ffffff;
-    --route-casing: #000000;
-    --alt: #7c7c82;
-    --error: #ff6961;
-    --break: #7d7aff;
-    --risk-1: #ffd60a;
-    --risk-2: #ff9f0a;
-    --risk-3: #ff453a;
-    --focus: #409cff;
-    --map-filter: invert(1) hue-rotate(180deg) grayscale(0.9) brightness(0.82) contrast(0.95);
-  }
+:root[data-theme="dark"] {
+  --ground: #15171a;
+  --grouped: #1b1e22;
+  --card: #23272c;
+  --ink: #e3e5e8;
+  --ink-2: #a2a8b0;
+  --ink-3: #7e848c;
+  --on-ink: #15171a;
+  --separator: #343940;
+  --fill: #2f343b;
+  --material: rgb(27 30 34 / 0.86);
+  --shadow: 0 10px 40px rgb(0 0 0 / 0.45), 0 2px 8px rgb(0 0 0 / 0.3);
+  --shadow-small: 0 2px 10px rgb(0 0 0 / 0.4), 0 1px 2px rgb(0 0 0 / 0.3);
+  --route: #c6d3ea;
+  --route-casing: #15171a;
+  --alt: #6e757f;
+  --error: #ef7a71;
+  --break: #8a87ef;
+  --risk-1: #e2c04c;
+  --risk-2: #eea04c;
+  --risk-3: #ec6a5f;
+  --focus: #5b9ff0;
+  --map-filter: invert(1) hue-rotate(180deg) grayscale(0.9) brightness(0.76) contrast(0.9);
+  color-scheme: dark;
 }
 
 * {
@@ -496,6 +497,11 @@ button {
   padding: 2px;
   border-radius: 8px;
   background: var(--fill);
+}
+
+.theme-btn {
+  align-self: center;
+  margin: -6px -4px;
 }
 
 .lang-switch button {
@@ -1554,7 +1560,7 @@ button.stop-glyph {
   padding: 10px 14px;
   border-radius: var(--radius-card);
   background: var(--risk-2);
-  color: #1c1c1e;
+  color: #25282d;
   font-size: 1.0625rem;
   font-weight: 700;
 }
@@ -1570,7 +1576,7 @@ button.stop-glyph {
 
 #live-refuel {
   flex-shrink: 0;
-  background: #1c1c1e;
+  background: #25282d;
   color: #fff;
 }
 

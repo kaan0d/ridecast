@@ -298,6 +298,8 @@ export const en = {
 
   lang: { label: "Language", en: "EN", tr: "TR" },
 
+  theme: { system: "Theme: system (tap for light)", light: "Theme: light (tap for dark)", dark: "Theme: dark (tap for system)" },
+
   // Static page texts by data-t key; English ones are written in index.html itself.
   html: {} as Record<string, string>,
 };

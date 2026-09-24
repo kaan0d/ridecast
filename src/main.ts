@@ -2,6 +2,7 @@ import "leaflet/dist/leaflet.css";
 import "./style.css";
 import { lang, setLang, t, translatePage, type Lang } from "./i18n";
 import { startApp } from "./ui/app";
+import { bindTheme } from "./ui/theme";
 
 translatePage();
 
@@ -18,6 +19,7 @@ for (const l of ["en", "tr"] as Lang[]) {
   langSwitch.append(b);
 }
 
+bindTheme(document.getElementById("theme")!);
 startApp();
 
 // Offline shell and last trip data (public/sw.js). Not in dev, where Vite serves unbundled files.
