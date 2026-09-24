@@ -115,3 +115,6 @@ export function speedAtDistance(t: Timeline, d: number): number {
   const dt = t.timeMs[i] - t.timeMs[i - 1];
   return dd > 0 && dt > 0 ? (dd / dt) * 3600 : 0;
 }
+
+// Whole trip in seconds, breaks included.
+export const totalS = (t: Timeline) => (t.timeMs[t.timeMs.length - 1] - t.timeMs[0]) / 1000;
