@@ -1,9 +1,9 @@
-import { searchPlaces, type Place } from "../services/nominatim";
+import { searchPlaces, type Place } from "../services/photon";
 
-const DEBOUNCE_MS = 600;
+const DEBOUNCE_MS = 350;
 const MIN_QUERY = 3;
 
-// Address input with Nominatim suggestions. Searches only after the user stops typing.
+// Address input with Photon suggestions. Searches only after the user stops typing.
 export function placeInput(value: string, placeholder: string, label: string, onPick: (p: Place) => void): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = "place-input";
