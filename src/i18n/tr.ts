@@ -342,7 +342,6 @@ export const tr: Messages = {
     settings: "Ayarlar",
     history: "Geçmiş",
     clearRecent: "Son rotaları temizle",
-    tagline: "Rota hava durumu",
     swap: "Başlangıç ile bitişi değiştir",
     addStop: "Durak ekle",
     gpxOpen: "GPX dosyası aç",

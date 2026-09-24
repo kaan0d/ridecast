@@ -91,8 +91,14 @@ export function bindSheet(onBack: () => void) {
   });
 
   // Typing an address needs room for the suggestions; on desktop this opens the compact bar.
+  // No slide here: the phone keyboard scrolls the page up to where the field is when it opens,
+  // and a field still low on the screen mid-slide would push the whole sheet past the top.
   sheet.addEventListener("focusin", (e) => {
-    if ((e.target as HTMLElement).closest(".place-input")) snap(true);
+    if (expanded || !(e.target as HTMLElement).closest(".place-input")) return;
+    sheet.classList.add("jump");
+    snap(true);
+    getComputedStyle(sheet).transform; // settle at the top before the transition comes back
+    sheet.classList.remove("jump");
   });
 
   // Back: clear the trip (the caller) and go back to the bare map with the compact bar.
