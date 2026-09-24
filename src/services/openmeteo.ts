@@ -24,7 +24,6 @@ interface OmLocation {
     visibility: number[];
     is_day: number[];
   };
-  daily: { sunrise: number[]; sunset: number[] };
 }
 
 const round = (v: number) => (Math.round(v / WEATHER_REQUEST.coordRoundDeg) * WEATHER_REQUEST.coordRoundDeg).toFixed(2);
@@ -37,7 +36,7 @@ export async function fetchForecast(points: LatLon[], untilMs: number, fresh = f
   if (days > WEATHER_REQUEST.maxForecastDays) throw new Error(t.errors.weatherTooFar(WEATHER_REQUEST.maxForecastDays - 1));
   const url =
     `${BASE}?latitude=${points.map((p) => round(p.lat)).join(",")}&longitude=${points.map((p) => round(p.lon)).join(",")}` +
-    `&hourly=${HOURLY}&daily=sunrise,sunset&timeformat=unixtime&timezone=auto&past_hours=${WEATHER_REQUEST.pastHours}&forecast_days=${Math.max(WEATHER_REQUEST.minForecastDays, days)}`;
+    `&hourly=${HOURLY}&timeformat=unixtime&timezone=auto&past_hours=${WEATHER_REQUEST.pastHours}&forecast_days=${Math.max(WEATHER_REQUEST.minForecastDays, days)}`;
   let data: OmLocation | OmLocation[];
   try {
     data = await getJson<OmLocation | OmLocation[]>(url, 15000, fresh);
@@ -46,8 +45,7 @@ export async function fetchForecast(points: LatLon[], untilMs: number, fresh = f
     throw new Error(t.errors.weatherDown);
   }
   // One location comes back as an object, several as an array.
-  return (Array.isArray(data) ? data : [data]).map(({ hourly: h, daily: d }) => ({
-    sun: d.sunrise.map((rise, i) => ({ riseMs: rise * 1000, setMs: d.sunset[i] * 1000 })),
+  return (Array.isArray(data) ? data : [data]).map(({ hourly: h }) => ({
     hours: h.time.map((t, i) => ({
       timeMs: t * 1000,
       tempC: h.temperature_2m[i],

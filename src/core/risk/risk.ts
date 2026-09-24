@@ -110,9 +110,10 @@ export function roadState(hours: WeatherHour[], i: number, rules: WetRoadRules, 
   return wet ? "wet" : damp ? "damp" : "dry";
 }
 
-export function isDark(sun: { riseMs: number; setMs: number }[], ms: number): boolean {
-  if (!sun.length) return false;
-  return !sun.some((d) => ms >= d.riseMs && ms <= d.setMs);
+// Between sunset and sunrise: the sun's centre more than 0.833° below the horizon (refraction and
+// the sun's radius), the same definition forecast services use for sunrise and sunset.
+export function isDark(ms: number, pos: LatLon): boolean {
+  return sunPosition(ms, pos.lat, pos.lon).elevationDeg < -0.833;
 }
 
 export interface PointInput {
@@ -121,7 +122,6 @@ export interface PointInput {
   etaMs: number;
   rideKmh: number;
   headingDeg: number;
-  sun: { riseMs: number; setMs: number }[];
   pos: LatLon;
 }
 
@@ -166,7 +166,7 @@ export function assessPoint(p: PointInput, t: RiskThresholds, wet: WetRoadRules,
     add("heat", heat, tx.heat(h.feelsC, heat >= 2));
   }
 
-  const dark = isDark(p.sun, p.etaMs);
+  const dark = isDark(p.etaMs, p.pos);
   if (dark) add("dark", t.dark, tx.dark);
   else if (h.code <= glare.maxCode) {
     const s = sunPosition(p.etaMs, p.pos.lat, p.pos.lon);

@@ -40,11 +40,10 @@ const moto: RiskThresholds = {
 };
 const car: RiskThresholds = { ...moto, rainMm: [1, 4, 10], rainProbPct: null, heatC: null, gustKmh: [50, 70, 90], coldC: null, windChill: false, dark: 1, road: { damp: 0, wet: 1 } };
 const wet = { recentHours: 3, wetNowMm: 0.5, wetRecentMm: 1.5, dampRecentMm: 0.2 };
-const day = [{ riseMs: T0, setMs: T0 + 11 * H }];
 const glare = { maxElevationDeg: 15, maxAngleDeg: 30, maxCode: 2 };
 const POS = { lat: 41, lon: 29 };
 const at = (hours: WeatherHour[], i: number, t = moto, rideKmh = 90, headingDeg = 0) =>
-  assessPoint({ hours, i, etaMs: hours[i].timeMs, rideKmh, headingDeg, sun: day, pos: POS }, t, wet, glare, tr.risk);
+  assessPoint({ hours, i, etaMs: hours[i].timeMs, rideKmh, headingDeg, pos: POS }, t, wet, glare, tr.risk);
 
 describe("wind chill", () => {
   test("matches the published table", () => {
@@ -121,9 +120,8 @@ describe("assessPoint", () => {
   test("low sun ahead: east in the morning, not behind, not overcast, not high", () => {
     // Istanbul 2026-09-24: sunrise 03:53 UTC almost due east; at 04:30 UTC the sun is about 6° up.
     const morning = Date.UTC(2026, 8, 24, 4, 30);
-    const sunUp = [{ riseMs: Date.UTC(2026, 8, 24, 3, 53), setMs: Date.UTC(2026, 8, 24, 15, 58) }];
     const one = (o: Partial<WeatherHour>, headingDeg: number, etaMs = morning) =>
-      assessPoint({ hours: [hour(0, { timeMs: etaMs, ...o })], i: 0, etaMs, rideKmh: 90, headingDeg, sun: sunUp, pos: POS }, moto, wet, glare, tr.risk).events;
+      assessPoint({ hours: [hour(0, { timeMs: etaMs, ...o })], i: 0, etaMs, rideKmh: 90, headingDeg, pos: POS }, moto, wet, glare, tr.risk).events;
     expect(one({}, 95)).toEqual([{ kind: "glare", level: 2, text: "Güneş karşıdan ve alçakta (6°), göz kamaşabilir" }]);
     expect(one({}, 275)).toEqual([]); // riding west: sun behind
     expect(one({ code: 3 }, 95)).toEqual([]); // overcast
@@ -155,17 +153,18 @@ describe("assessPoint", () => {
     expect(at([hour(0, { code: 45, visibilityM: 8200 })], 0).events[0]).toMatchObject({ kind: "visibility", level: 1 });
     expect(at([hour(0, { tempC: 0.5, precipMm: 0.2 })], 0).events[0]).toMatchObject({ kind: "ice", level: 3 });
     expect(at([hour(0, { tempC: 2.5 })], 0).events.find((e) => e.kind === "ice")?.level).toBe(2);
-    const night = assessPoint({ hours: [hour(0)], i: 0, etaMs: T0 + 12 * H, rideKmh: 90, headingDeg: 0, sun: day, pos: POS }, moto, wet, glare, tr.risk);
+    const night = assessPoint({ hours: [hour(0)], i: 0, etaMs: T0 + 12 * H, rideKmh: 90, headingDeg: 0, pos: POS }, moto, wet, glare, tr.risk);
     expect(night.dark).toBe(true);
     expect(night.events).toEqual([{ kind: "dark", level: 2, text: "Karanlıkta sürüş" }]);
   });
 });
 
-test("isDark needs sun times and checks every day", () => {
-  expect(isDark([], T0)).toBe(false);
-  expect(isDark(day, T0 + H)).toBe(false);
-  expect(isDark(day, T0 - H)).toBe(true);
-  expect(isDark([...day, { riseMs: T0 + 24 * H, setMs: T0 + 35 * H }], T0 + 25 * H)).toBe(false);
+test("isDark follows sunrise and sunset at the point", () => {
+  // Istanbul 2026-09-24, Open-Meteo: sunrise 03:53 UTC, sunset 15:58 UTC.
+  const at = (h: number, m: number) => isDark(Date.UTC(2026, 8, 24, h, m), POS);
+  expect([at(3, 45), at(4, 0), at(12, 0), at(15, 50), at(16, 5), at(22, 0)]).toEqual([true, false, false, false, true, true]);
+  // The same UTC moment is day in Istanbul and still night 90° further west.
+  expect(isDark(Date.UTC(2026, 8, 24, 6), { lat: 41, lon: -61 })).toBe(true);
 });
 
 describe("breakAdvice", () => {

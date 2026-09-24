@@ -1,6 +1,6 @@
 import { t } from "../i18n";
 import type { LatLon } from "../core/geo";
-import { reverseLabel } from "../services/nominatim";
+import { reverseLabel } from "../services/photon";
 import { formatCoord } from "./format";
 
 export interface PlaceAction {

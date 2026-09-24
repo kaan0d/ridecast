@@ -39,13 +39,13 @@ export function createForecast(deps: { view(i: number): RouteView; breaks(i: num
     const { line, scale } = deps.view(i);
     return samples.map((s, k): WeatherPoint => {
       const etaMs = etaAtDistance(tl, s.distM);
-      const f = forecasts[k] ?? { hours: [], sun: [] };
+      const f = forecasts[k] ?? { hours: [] };
       const around = bracketHours(f.hours, etaMs, WEATHER_REQUEST.maxHourGapMin);
       if (!around.length) return { ...s, etaMs, hour: null, risk: null };
       const rideKmh = speedAtDistance(tl, s.distM);
       const headingDeg = bearingAt(line, s.distM / scale);
       const worst = around
-        .map((i) => ({ i, risk: assessPoint({ hours: f.hours, i, etaMs, rideKmh, headingDeg, sun: f.sun, pos: s.pos }, RISK[vehicle], WET_ROAD, GLARE, t.risk) }))
+        .map((i) => ({ i, risk: assessPoint({ hours: f.hours, i, etaMs, rideKmh, headingDeg, pos: s.pos }, RISK[vehicle], WET_ROAD, GLARE, t.risk) }))
         .reduce((a, b) => (b.risk.level > a.risk.level ? b : a));
       return { ...s, etaMs, hour: f.hours[worst.i], risk: worst.risk };
     });
