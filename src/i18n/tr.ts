@@ -117,6 +117,10 @@ export const tr: Messages = {
 
   best: {
     comparing: "Önümüzdeki 24 saat karşılaştırılıyor…",
+    comparingWeek: "Önümüzdeki 7 gün karşılaştırılıyor…",
+    windowDay: "24 saat",
+    windowWeek: "7 gün",
+    noteWeek: (days, farDays) => `Önümüzdeki ${days} günün her biri için en iyi çıkış, saat başı adaylar karşılaştırıldı. ${farDays} günden uzak günler (kesik çizgili) belirsiz.`,
     needRoute: "Karşılaştırma için önce bir rota oluşturun.",
     meta: (arrival, score) => `varış ${arrival} · risk ${score}`,
     note: (hours, n) => `Önümüzdeki ${hours} saat, saat başı adaylar arasından en düşük riskli ${n} çıkış (en az 2 saat arayla).`,

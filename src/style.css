@@ -1902,6 +1902,35 @@ input:invalid {
   padding: 0 12px 4px;
 }
 
+.best-window {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  margin: 10px 0 4px;
+  border-radius: 9px;
+  background: var(--fill);
+}
+
+.best-window button {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: 7px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.best-window button[aria-pressed="true"] {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--shadow-small);
+}
+
+.best-item.far {
+  outline: 1px dashed var(--ink-3);
+  outline-offset: -3px;
+}
+
 .best-list {
   display: grid;
   gap: 6px;

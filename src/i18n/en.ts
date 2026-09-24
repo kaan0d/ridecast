@@ -119,6 +119,11 @@ export const en = {
 
   best: {
     comparing: "Comparing the next 24 hours…",
+    comparingWeek: "Comparing the next 7 days…",
+    windowDay: "Next 24 h",
+    windowWeek: "Next 7 days",
+    noteWeek: (days: number, farDays: number) =>
+      `The best departure of each of the next ${days} days, every full hour compared. Days more than ${farDays} ahead (dashed) are uncertain.`,
     needRoute: "Plan a route first to compare.",
     meta: (arrival: string, score: string) => `arrival ${arrival} · risk ${score}`,
     note: (hours: number, n: number) => `The ${n} lowest-risk departures among every full hour in the next ${hours} hours, at least 2 hours apart.`,

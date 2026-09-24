@@ -3,7 +3,7 @@ import { DEPARTURE } from "../config/departure";
 import { GLARE, RISK, RISK_WEIGHTS, WET_ROAD } from "../config/risk";
 import type { VehicleType } from "../config/vehicles";
 import { WEATHER_REQUEST, WEATHER_SAMPLE } from "../config/weather";
-import { departureCandidates, rankDepartures, type ScoredDeparture } from "../core/advice/departure";
+import { departureCandidates, type ScoredDeparture } from "../core/advice/departure";
 import { buildTimeline, etaAtDistance, speedAtDistance, type Break, type SpeedSetting, type Timeline } from "../core/eta/eta";
 import type { LatLon } from "../core/geo";
 import { assessPoint } from "../core/risk/risk";
@@ -73,13 +73,12 @@ export function createForecast(deps: { view(i: number): RouteView; breaks(i: num
     return { samples, forecasts, points: assess(i, tl, vehicle, samples, forecasts) };
   }
 
-  // Scores route i for every departure candidate in the next hours, from one forecast.
-  function rankBest(i: number, vehicle: VehicleType, speed: SpeedSetting, samples: Sample[], forecasts: Forecast[]): ScoredDeparture[] {
-    const all = departureCandidates(Date.now(), DEPARTURE.windowH, DEPARTURE.stepH).map((departMs) => {
+  // Scores route i for every full-hour departure in the next `windowH` hours, from one forecast.
+  function scoreDepartures(i: number, vehicle: VehicleType, speed: SpeedSetting, samples: Sample[], forecasts: Forecast[], windowH: number): ScoredDeparture[] {
+    return departureCandidates(Date.now(), windowH, DEPARTURE.stepH).map((departMs) => {
       const tl = buildTimeline(deps.view(i).route.steps, departMs, speed, deps.breaks(i));
       return { departMs, arrivalMs: tl.timeMs[tl.timeMs.length - 1], score: scoreOf(i, tl, assess(i, tl, vehicle, samples, forecasts)) };
     });
-    return rankDepartures(all, DEPARTURE.count, DEPARTURE.maxMissing, DEPARTURE.minGapH);
   }
 
   const sampleCount = (i: number) => {
@@ -87,5 +86,5 @@ export function createForecast(deps: { view(i: number): RouteView; breaks(i: num
     return sampleDistances(route.distanceM, route.durationS, WEATHER_SAMPLE.intervalMin, WEATHER_SAMPLE.maxPoints).length;
   };
 
-  return { pointsFor, scoreOf, rankBest, sampleCount };
+  return { pointsFor, scoreOf, scoreDepartures, sampleCount };
 }

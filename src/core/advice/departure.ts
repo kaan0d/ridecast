@@ -28,3 +28,17 @@ export function rankDepartures(all: ScoredDeparture[], count: number, maxMissing
   }
   return picked;
 }
+
+// The best departure of each day (lowest score, ties to the earlier one), in day order. `dayOf`
+// names the day of a departure in the rider's calendar; candidates missing too much forecast are
+// left out as in rankDepartures.
+export function bestPerDay(all: ScoredDeparture[], dayOf: (ms: number) => string, maxMissing: number): ScoredDeparture[] {
+  const best = new Map<string, ScoredDeparture>();
+  for (const d of all) {
+    if (d.score.missingShare > maxMissing) continue;
+    const key = dayOf(d.departMs);
+    const b = best.get(key);
+    if (!b || d.score.score < b.score.score || (d.score.score === b.score.score && d.departMs < b.departMs)) best.set(key, d);
+  }
+  return [...best.values()].sort((a, b) => a.departMs - b.departMs);
+}
