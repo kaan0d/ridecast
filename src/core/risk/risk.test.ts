@@ -110,8 +110,8 @@ describe("assessPoint", () => {
   });
 
   test("precipitation probability: shown with rain, a low warning on its own when high", () => {
-    expect(at([hour(0, { precipMm: 1.2, precipProb: 40 })], 0).events[0]).toMatchObject({ kind: "rain", level: 2, text: "Yağmur 1.2 mm/sa · olasılık %40" });
-    expect(at([hour(0, { precipProb: 70 })], 0).events).toEqual([{ kind: "rain", level: 1, text: "Yağış olasılığı %70" }]);
+    expect(at([hour(0, { precipMm: 1.2, precipProb: 40 })], 0).events[0]).toMatchObject({ kind: "rain", level: 2, text: "Yağmur · 1.2 mm/sa · olasılık %40" });
+    expect(at([hour(0, { precipProb: 70 })], 0).events).toEqual([{ kind: "rain", level: 1, text: "Yağış Olasılığı · %70" }]);
     expect(at([hour(0, { precipProb: 50 })], 0).events).toEqual([]);
     expect(at([hour(0, { precipProb: 90 })], 0, car).events).toEqual([]);
     expect(at([hour(0, { precipProb: null })], 0).events).toEqual([]);
@@ -122,7 +122,7 @@ describe("assessPoint", () => {
     const morning = Date.UTC(2026, 8, 24, 4, 30);
     const one = (o: Partial<WeatherHour>, headingDeg: number, etaMs = morning) =>
       assessPoint({ hours: [hour(0, { timeMs: etaMs, ...o })], i: 0, etaMs, rideKmh: 90, headingDeg, pos: POS }, moto, wet, glare, tr.risk).events;
-    expect(one({}, 95)).toEqual([{ kind: "glare", level: 2, text: "Güneş karşıdan ve alçakta (6°), göz kamaşabilir" }]);
+    expect(one({}, 95)).toEqual([{ kind: "glare", level: 2, text: "Alçak Güneş · karşıdan, 6° · göz kamaşabilir" }]);
     expect(one({}, 275)).toEqual([]); // riding west: sun behind
     expect(one({ code: 3 }, 95)).toEqual([]); // overcast
     expect(one({}, 180, Date.UTC(2026, 8, 24, 10))).toEqual([]); // noon: sun high
@@ -132,7 +132,7 @@ describe("assessPoint", () => {
     expect(at([hour(0, { tempC: 33, feelsC: 36 })], 0).events.find((e) => e.kind === "heat")).toEqual({
       kind: "heat",
       level: 2,
-      text: "Sıcak stresi: hissedilen 36°, gölgede mola ve su",
+      text: "Sıcak Stresi · hissedilen 36° · gölgede mola ve su",
     });
     expect(at([hour(0, { tempC: 29, feelsC: 31 })], 0).events.find((e) => e.kind === "heat")?.level).toBe(1);
     expect(at([hour(0, { tempC: 33, feelsC: 42 })], 0, car).events.find((e) => e.kind === "heat")).toBeUndefined();
@@ -155,7 +155,7 @@ describe("assessPoint", () => {
     expect(at([hour(0, { tempC: 2.5 })], 0).events.find((e) => e.kind === "ice")?.level).toBe(2);
     const night = assessPoint({ hours: [hour(0)], i: 0, etaMs: T0 + 12 * H, rideKmh: 90, headingDeg: 0, pos: POS }, moto, wet, glare, tr.risk);
     expect(night.dark).toBe(true);
-    expect(night.events).toEqual([{ kind: "dark", level: 2, text: "Karanlıkta sürüş" }]);
+    expect(night.events).toEqual([{ kind: "dark", level: 2, text: "Karanlıkta Sürüş" }]);
   });
 });
 
