@@ -3,6 +3,7 @@ import L from "leaflet";
 import { fromLatLng, toLatLng, type LatLon } from "../core/geo";
 import { lineLength, makeLine } from "../core/route/line";
 import { formatKm } from "./format";
+import { icons } from "./icons";
 
 // "Mesafe ölç", as in Google Maps: each map click adds a point, points can be dragged, clicking a
 // point removes it; a card shows the total. While active, map clicks belong to the tool.
@@ -63,7 +64,9 @@ export function createMeasure(map: L.Map, card: HTMLElement) {
     points = points.slice(0, 1);
     draw();
   });
-  card.querySelector(".measure-close")!.addEventListener("click", stop);
+  const close = card.querySelector(".measure-close")!;
+  close.innerHTML = icons.close;
+  close.addEventListener("click", stop);
 
   return {
     start,
