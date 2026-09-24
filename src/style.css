@@ -1527,17 +1527,39 @@ button.stop-glyph {
 
 /* ---------- Live mode: glance view ---------- */
 
+/* Live card: the ride screen is the map with this card at the bottom (live.ts). Buttons, alert
+   and next warning span the card; time left and the weather here share a row. */
 .live {
   position: fixed;
-  inset: 0;
   z-index: 3000;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: calc(16px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: min(100%, 520px);
+  max-height: 60dvh;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
   background: var(--ground);
   color: var(--ink);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  box-shadow: var(--shadow);
   overflow-y: auto;
+}
+
+.live > * {
+  grid-column: 1 / -1;
+}
+
+.live > .live-main {
+  grid-column: 1;
+}
+
+.live > .live-weather {
+  grid-column: 2;
 }
 
 .live[hidden] {
@@ -1595,11 +1617,11 @@ button.stop-glyph {
 }
 
 .live-btn {
-  padding: 10px 16px;
+  padding: 8px 14px;
   border-radius: 999px;
   background: var(--fill);
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9375rem;
 }
 
 .live-btn[aria-pressed="true"] {
@@ -1617,11 +1639,11 @@ button.stop-glyph {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 18px;
+  padding: 10px 14px;
   border-radius: var(--radius-card);
   background: var(--risk-2);
   color: #1c1c1e;
-  font-size: 1.25rem;
+  font-size: 1.0625rem;
   font-weight: 700;
 }
 
@@ -1636,22 +1658,22 @@ button.stop-glyph {
 
 .live-next {
   display: grid;
-  gap: 4px;
-  padding: 18px;
-  border-radius: 20px;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 16px;
   background: var(--card);
   box-shadow: inset 0 0 0 1px var(--separator);
 }
 
 .live-next strong {
-  font-size: 2rem;
+  font-size: 1.375rem;
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
 
 .live-next span {
   color: var(--ink-2);
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1669,11 +1691,12 @@ button.stop-glyph {
 
 .live-main {
   display: grid;
-  gap: 6px;
+  gap: 2px;
 }
 
 #live-left {
-  font-size: clamp(3.5rem, 18vw, 6rem);
+  font-size: 2.25rem;
+  white-space: nowrap;
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -1682,30 +1705,35 @@ button.stop-glyph {
 
 #live-meta {
   color: var(--ink-2);
-  font-size: 1.375rem;
+  font-size: 1.0625rem;
   font-variant-numeric: tabular-nums;
 }
 
 .live-weather {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
-  gap: 12px;
-  font-size: 1.25rem;
+  gap: 2px 8px;
+  max-width: 45vw;
+  text-align: right;
 }
 
 .live-weather .icon {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   stroke-width: 1.5;
 }
 
 .live-weather b {
-  font-size: 2.25rem;
+  font-size: 1.75rem;
   font-weight: 800;
 }
 
 .live-weather span {
+  flex-basis: 100%;
   color: var(--ink-2);
+  font-size: 0.875rem;
 }
 
 .live-off {
@@ -1713,10 +1741,10 @@ button.stop-glyph {
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  padding: 14px 18px;
+  padding: 10px 14px;
   border-radius: var(--radius-card);
   background: var(--fill);
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
@@ -1727,7 +1755,7 @@ button.stop-glyph {
 .live-notes {
   margin: 0;
   color: var(--ink-2);
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
 }
 
 .live-notes:empty {
@@ -1735,30 +1763,18 @@ button.stop-glyph {
 }
 
 .live-refresh {
-  align-self: flex-start;
-  margin-top: auto;
+  justify-self: start;
+  padding: 6px 12px;
+  font-size: 0.875rem;
 }
 
-.live-pill {
-  position: fixed;
-  z-index: 2500;
-  top: calc(12px + env(safe-area-inset-top));
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: calc(100vw - 110px);
-  padding: 10px 18px;
-  border-radius: 999px;
-  background: var(--ink);
-  color: var(--on-ink);
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-shadow: var(--shadow);
-}
-
-.live-pill[hidden] {
+/* Ride screen: map and live card only; map controls sit above the card. */
+.live-map .sheet {
   display: none;
+}
+
+.live-map .leaflet-bottom {
+  bottom: var(--live-inset, 0px);
 }
 
 /* Ride map not following (dragged away): "my location" lights up as the way back. */
@@ -2276,15 +2292,7 @@ input:invalid {
     bottom: var(--sheet-inset);
   }
 
-  /* Ride map (live.ts): the whole screen is map, with zoom buttons for gloved hands. */
-  .live-map .sheet {
-    display: none;
-  }
-
-  .live-map .leaflet-bottom {
-    bottom: env(safe-area-inset-bottom);
-  }
-
+  /* Ride screen: zoom buttons for gloved hands. */
   .live-map .leaflet-control-zoom {
     display: block;
   }

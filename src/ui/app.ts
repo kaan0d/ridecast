@@ -614,7 +614,7 @@ export function startApp() {
       breaks = breaks.filter((b) => ahead(b.pos));
       stopsChanged();
     },
-    showPosition: (p, follow, zoom) => map.setLivePosition(p, follow, zoom),
+    showPosition: (p, follow, zoom, bottom) => map.setLivePosition(p, follow, zoom, bottom),
   });
   $("live-start").addEventListener("click", () => {
     sheet.collapse();
