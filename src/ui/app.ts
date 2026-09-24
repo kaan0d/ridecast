@@ -267,8 +267,13 @@ export function startApp() {
     });
   }
 
-  const scoreOf = (i: number, points: WeatherPoint[]) =>
-    routeScore(points.map((p) => ({ distM: p.distM, level: p.risk ? p.risk.level : null })), routes[i].distanceM, RISK_WEIGHTS);
+  // Riding speed at each point weights it by the time spent there (see routeScore).
+  const scoreOf = (i: number, tl: Timeline, points: WeatherPoint[]) =>
+    routeScore(
+      points.map((p) => ({ distM: p.distM, level: p.risk ? p.risk.level : null, kmh: speedAtDistance(tl, p.distM) })),
+      routes[i].distanceM,
+      RISK_WEIGHTS,
+    );
 
   // Forecast and risk for one route. The request is keyed by rounded coordinates and a minimum
   // forecast length, so ETA-only changes and departure candidates are served from the cache.
@@ -287,9 +292,9 @@ export function startApp() {
   function rankBest(settings: TripSettings, samples: { distM: number; pos: LatLon }[], forecasts: Forecast[]): ScoredDeparture[] {
     const all = departureCandidates(Date.now(), DEPARTURE.windowH, DEPARTURE.stepH).map((departMs) => {
       const tl = buildTimeline(routes[selected].steps, departMs, settings.speed, breaksOn(selected));
-      return { departMs, arrivalMs: tl.timeMs[tl.timeMs.length - 1], score: scoreOf(selected, assess(selected, tl, settings.vehicle, samples, forecasts)) };
+      return { departMs, arrivalMs: tl.timeMs[tl.timeMs.length - 1], score: scoreOf(selected, tl, assess(selected, tl, settings.vehicle, samples, forecasts)) };
     });
-    return rankDepartures(all, DEPARTURE.count, DEPARTURE.maxMissing);
+    return rankDepartures(all, DEPARTURE.count, DEPARTURE.maxMissing, DEPARTURE.minGapH);
   }
 
   const renderBest = (state: { top: ScoredDeparture[]; loading: boolean; error?: string }) =>
@@ -365,7 +370,7 @@ export function startApp() {
           routes.map((_, i) => (i === selected ? Promise.resolve(main.points) : pointsFor(i, timelines[i], vehicle).then((r) => r.points, () => null))),
         );
         if (my !== weatherSeq) return;
-        routeScores = all.map((pts, i) => (pts ? scoreOf(i, pts) : null));
+        routeScores = all.map((pts, i) => (pts ? scoreOf(i, timelines[i], pts) : null));
         renderRouteList(timelines);
       } catch (e) {
         if (my !== weatherSeq) return;
