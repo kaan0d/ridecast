@@ -42,14 +42,21 @@ export function roll(el: HTMLElement, text: string) {
   });
 }
 
-// Big arrival time, then the details as a grouped list. The head stays in place between renders,
-// so a changed arrival rolls from the old time to the new one.
-export function renderSummary(
-  el: HTMLElement,
-  eta: { arrivalMs: number; totalS: number; distanceM: number } | null,
-  rows: [string, string][],
-  error?: string,
-) {
+export interface Eta {
+  departMs: number;
+  arrivalMs: number;
+  totalS: number;
+  distanceM: number;
+  from: string; // stop names at both ends
+  to: string;
+}
+
+// The departure board line: the arrival in big rolling digits with its day, then one timetable row,
+// departure time and place, the rail with duration and distance, the destination. The row is a
+// button that opens the stop editor (sheet.ts hides the trip card while a route shows). The head
+// stays in place between renders, so a changed arrival rolls from the old time to the new one.
+// Extra rows (breaks, days, via arrivals, road types) follow as a grouped list.
+export function renderSummary(el: HTMLElement, eta: Eta | null, rows: [string, string][], error?: string) {
   if (error) {
     const p = document.createElement("p");
     p.className = "eta-error";
@@ -61,13 +68,24 @@ export function renderSummary(
   if (!head) {
     head = document.createElement("div");
     head.className = "eta";
-    head.innerHTML = `<strong class="eta-time"><span class="roll"></span><small></small></strong><span class="eta-meta"></span>`;
+    head.innerHTML = `<strong class="eta-time"><span class="roll"></span><small><span class="eta-label"></span><span class="eta-day"></span></small></strong>
+      <button type="button" class="eta-route" aria-expanded="false"><span class="er-end er-from"><b></b><span></span></span><span class="er-rail"><span></span></span><span class="er-end er-to"><span></span></span></button>`;
     el.replaceChildren(head);
   }
   roll(head.querySelector(".roll")!, formatClock(eta.arrivalMs));
-  head.querySelector("small")!.textContent = t.summary.arrival;
-  head.querySelector(".eta-meta")!.textContent = `${formatDuration(eta.totalS)} · ${formatKm(eta.distanceM)} · ${formatDay(eta.arrivalMs)}`;
+  head.querySelector(".eta-label")!.textContent = t.summary.arrival;
+  head.querySelector(".eta-day")!.textContent = formatDay(eta.arrivalMs);
+  const route = head.querySelector(".eta-route")!;
+  route.setAttribute("aria-label", t.summary.editStops(eta.from, eta.to));
+  route.querySelector(".er-from b")!.textContent = formatClock(eta.departMs);
+  route.querySelector(".er-from span")!.textContent = eta.from;
+  route.querySelector(".er-rail span")!.textContent = `${formatDuration(eta.totalS)} · ${formatKm(eta.distanceM)}`;
+  route.querySelector(".er-to span")!.textContent = eta.to;
 
+  if (!rows.length) {
+    for (const old of el.querySelectorAll(":scope > :not(.eta)")) old.remove();
+    return;
+  }
   const dl = document.createElement("dl");
   dl.className = "group details";
   for (const [k, v] of rows) {
@@ -142,8 +160,8 @@ export function renderRouteList(
   );
 }
 
-// Detail rows under the arrival time: breaks, departure, one row per day of a multi-day trip,
-// the arrival at each stop, and in road-speed mode the km per guessed road type.
+// Detail rows under the arrival time: breaks, one row per day of a multi-day trip, the arrival at
+// each via stop, and in road-speed mode the km per guessed road type.
 export function summaryRows(tl: Timeline, overnight: boolean[], stopTitles: string[], roadSteps: Step[] | null): [string, string][] {
   const shortBreaks = tl.breaks.filter((_, i) => !overnight[i]);
   const days = tripDays(tl, overnight);
@@ -151,11 +169,11 @@ export function summaryRows(tl: Timeline, overnight: boolean[], stopTitles: stri
     ...(shortBreaks.length
       ? [[t.summary.breaks, t.summary.breaksValue(shortBreaks.length, formatDuration(shortBreaks.reduce((s, b) => s + b.endMs - b.startMs, 0) / 1000))] as [string, string]]
       : []),
-    [t.summary.departure, formatTime(tl.timeMs[0])],
     ...(days.length > 1
       ? days.map((d, k): [string, string] => [t.summary.day(k + 1), `${formatTime(d.startMs)}–${formatClock(d.endMs)} · ${formatKm(d.toM - d.fromM)}`])
       : []),
-    ...tl.legArrivalMs.map((ms, i): [string, string] => [t.summary.arrivalAt(stopTitles[i + 1]), formatTime(ms)]),
+    // Via stops only: departure and destination are on the timetable row above.
+    ...tl.legArrivalMs.slice(0, -1).map((ms, i): [string, string] => [t.summary.arrivalAt(stopTitles[i + 1]), formatTime(ms)]),
   ];
   if (roadSteps) {
     const b = roadBreakdown(roadSteps, ROAD_TYPE_RULES);

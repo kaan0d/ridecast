@@ -130,6 +130,16 @@ export function bindSheet(onBack: () => void) {
     });
   });
 
+  // With a route the trip card folds into the timetable row (summary.ts); tapping the row opens it.
+  sheet.addEventListener("click", (e) => {
+    const row = (e.target as HTMLElement).closest(".eta-route");
+    if (!row) return;
+    const on = !sheet.classList.contains("editing");
+    sheet.classList.toggle("editing", on);
+    row.setAttribute("aria-expanded", String(on));
+    if (on) snap(true);
+  });
+
   // The compact bar grows when the status line gets a message.
   new ResizeObserver(() => {
     if (sheet.classList.contains("compact") && !sheet.classList.contains("dragging")) snap(false);
@@ -150,6 +160,8 @@ export function bindSheet(onBack: () => void) {
     setRouted(r: boolean) {
       if (r === routed) return;
       routed = r;
+      sheet.classList.toggle("routed", r);
+      if (!r) sheet.classList.remove("editing");
       snap(expanded);
     },
   };

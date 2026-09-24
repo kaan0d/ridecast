@@ -189,7 +189,7 @@ export function startApp() {
       near: map.center,
     });
     map.setStops(
-      stops.flatMap((s, i) => (s.pos ? [{ pos: s.pos, kind: kindOf(i), index: i, title: titleOf(i) }] : [])),
+      stops.flatMap((s, i) => (s.pos ? [{ pos: s.pos, kind: kindOf(i), index: i, title: titleOf(i), name: placeName(s) }] : [])),
       (i, pos) => placeStop(i, pos),
     );
   }
@@ -389,7 +389,12 @@ export function startApp() {
       routedTitles,
       settings.speed.mode === "road" ? routes[selected].steps : null,
     );
-    renderSummaryInto($("summary"), { arrivalMs: tl.timeMs[tl.timeMs.length - 1], totalS: totalS(tl), distanceM: routes[selected].distanceM }, rows);
+    const [from, to] = endNames();
+    renderSummaryInto(
+      $("summary"),
+      { departMs: tl.timeMs[0], arrivalMs: tl.timeMs[tl.timeMs.length - 1], totalS: totalS(tl), distanceM: routes[selected].distanceM, from, to },
+      rows,
+    );
   }
 
   const renderRouteList = (timelines: Timeline[] | null) => renderRouteOptions($("routes"), routes, timelines, routeScores, selected, selectRoute);
@@ -466,7 +471,7 @@ export function startApp() {
         renderClothing($("clothing"), error ? [] : points, vehicle);
         if (!error) live.onWeather(points);
       }
-      renderStrip($("weather"), { points, loading, error, arrive, onRetry: () => updateWeather(timelines, settings), onOpen: openPoint });
+      renderStrip($("weather"), { points, loading, error, arrive, ends: endNames(), onRetry: () => updateWeather(timelines, settings), onOpen: openPoint });
     };
     // Keep the old capsules (dimmed) while the next forecast loads.
     show(weatherPoints.length === forecast.sampleCount(selected) ? weatherPoints : [], true);
@@ -522,6 +527,12 @@ export function startApp() {
   // ---------- share link and recent routes ----------
 
   const shortLabel = (l: string) => l.split(",").slice(0, 2).join(",").trim().slice(0, SHARE.maxLabel);
+  // A stop's name for the timetable row, the strip ends and the map pins: the first part of its label.
+  const placeName = (s: TripStop) => s.label.split(",")[0].trim() || formatCoord(s.pos!);
+  function endNames(): [string, string] {
+    const filled = stops.filter((s) => s.pos);
+    return [placeName(filled[0]), placeName(filled[filled.length - 1])];
+  }
 
   // The trip as it is set now, or null while fewer than two stops are set or a setting is invalid.
   function currentState(): TripState | null {
