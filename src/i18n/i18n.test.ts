@@ -15,8 +15,8 @@ test("both languages name the same clothing items and conditions", () => {
 });
 
 test("warning texts in both languages", () => {
-  expect(en.risk.rain(2, 1.2, 40)).toBe("Rain 1.2 mm/h · 40% likely");
-  expect(tr.risk.rain(2, 1.2, 40)).toBe("Yağmur 1.2 mm/sa · olasılık %40");
+  expect(en.risk.rain(2, 1.2, 40)).toBe("Rain · 1.2 mm/h · 40% likely");
+  expect(tr.risk.rain(2, 1.2, 40)).toBe("Yağmur · 1.2 mm/sa · olasılık %40");
   expect(en.duration(3, 25)).toBe("3 h 25 min");
   expect(tr.duration(0, 15)).toBe("15 dk");
 });
