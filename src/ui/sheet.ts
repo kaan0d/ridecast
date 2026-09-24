@@ -3,6 +3,7 @@ import { t } from "../i18n";
 // Desktop: a floating card; nothing to do here except report the covered map area.
 // Collapsed with no route (Google Maps style), both shrink to a compact search bar: the trip card's
 // last row, plus the status line when it has something to say. Tapping the bar opens the full sheet.
+// The gear in the header swaps the sheet's content for the settings page; back returns from it.
 
 const PEEK_SHARE = 0.42; // part of the viewport the sheet covers when collapsed with a route
 
@@ -24,8 +25,19 @@ export function bindSheet(onBack: () => void) {
   const maxOffset = () => Math.max(0, sheet.offsetHeight - peekPx());
   const setOffset = (px: number) => sheet.style.setProperty("--sheet-offset", `${px}px`);
 
+  const page = document.getElementById("settings-page")!;
+  const gear = document.getElementById("settings-open")!;
+  const showSettings = (on: boolean) => {
+    if (on === !page.hidden) return;
+    page.hidden = !on;
+    sheet.classList.toggle("settings-open", on);
+    gear.setAttribute("aria-expanded", String(on));
+    body.scrollTop = 0;
+  };
+
   function snap(exp: boolean) {
     expanded = exp;
+    if (!exp && !routed) showSettings(false); // the compact bar is the trip card
     sheet.classList.toggle("compact", !exp && !routed);
     grab.setAttribute("aria-expanded", String(exp));
     grab.querySelector(".sr-only")!.textContent = exp ? t.sheet.collapse : t.sheet.expand;
@@ -86,10 +98,16 @@ export function bindSheet(onBack: () => void) {
   // Back: clear the trip (the caller) and go back to the bare map with the compact bar.
   const back = document.getElementById("sheet-back")!;
   back.addEventListener("click", () => {
+    if (!page.hidden) return showSettings(false);
     onBack();
     (document.activeElement as HTMLElement | null)?.blur();
     body.scrollTop = 0;
     snap(false);
+  });
+
+  gear.addEventListener("click", () => {
+    showSettings(page.hidden === true);
+    snap(true);
   });
 
   // The compact bar grows when the status line gets a message.
