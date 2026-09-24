@@ -1171,6 +1171,23 @@ button.stop-glyph {
 
 /* ---------- Warnings ---------- */
 
+.change-list li {
+  padding: 10px 16px;
+  font-size: 0.9375rem;
+}
+
+.change-list li + li {
+  border-top: 1px solid var(--separator);
+}
+
+.change-list li[data-type="new"] {
+  font-weight: 600;
+}
+
+.change-list li[data-type="gone"] {
+  color: var(--ink-2);
+}
+
 .warn-list {
   padding: 0;
 }
