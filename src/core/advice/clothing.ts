@@ -31,9 +31,11 @@ export function summarize(points: { hour: WeatherHour | null; risk: Assessment |
 }
 
 // One row of the clothing table. Every condition given must hold; the rule applies to the
-// listed vehicles only.
+// listed vehicles only. Rules sharing a group are steps of one kind (cool, cold, freezing):
+// only the first matching one counts.
 export interface ClothingRule<V extends string = string> {
   item: string;
+  group?: string;
   vehicles: readonly V[];
   feltAtMostC?: number;
   tempAtLeastC?: number;
@@ -66,8 +68,9 @@ export interface ClothingTexts {
 // Rules are checked in table order; a rule with rain matches rain or a wet road.
 export function clothingFor<V extends string>(c: RouteConditions, vehicle: V, rules: readonly ClothingRule<V>[], tx: ClothingTexts): ClothingItem[] {
   const out: ClothingItem[] = [];
+  const groups = new Set<string>();
   for (const r of rules) {
-    if (!r.vehicles.includes(vehicle)) continue;
+    if (!r.vehicles.includes(vehicle) || (r.group && groups.has(r.group))) continue;
     const why: string[] = [];
     if (r.feltAtMostC !== undefined) {
       if (c.minFeltC > r.feltAtMostC) continue;
@@ -95,6 +98,7 @@ export function clothingFor<V extends string>(c: RouteConditions, vehicle: V, ru
     if (r.dark) why.push(tx.dark);
     if (r.snowOrIce && !(c.snow || c.ice)) continue;
     if (r.snowOrIce) why.push(c.snow ? tx.snow : tx.ice);
+    if (r.group) groups.add(r.group);
     // The same item from two rules shows once, with both reasons.
     const seen = out.find((o) => o.item === r.item);
     if (seen) seen.why = [seen.why, ...why].filter(Boolean).join(", ");

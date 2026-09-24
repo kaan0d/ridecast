@@ -50,6 +50,20 @@ describe("clothingFor", () => {
     expect(clothingFor({ ...calm, maxPrecipMm: 1, minFeltC: 2 }, "moto", twice, TX)).toEqual([{ item: "visor", why: "yağış 1.0 mm/sa, hissedilen en düşük 2°" }]);
   });
 
+  test("only the first matching step of a group shows", () => {
+    const steps: ClothingRule<"moto">[] = [
+      { item: "freezing", group: "cold", vehicles: ["moto"], feltAtMostC: 0 },
+      { item: "cold", group: "cold", vehicles: ["moto"], feltAtMostC: 5 },
+      { item: "cool", group: "cold", vehicles: ["moto"], feltAtMostC: 15 },
+      { item: "rain", vehicles: ["moto"], precipAtLeastMm: 0.1 },
+    ];
+    const items = (o: Partial<RouteConditions>) => clothingFor({ ...calm, ...o }, "moto", steps, TX).map((i) => i.item);
+    expect(items({ minFeltC: -3, maxPrecipMm: 1 })).toEqual(["freezing", "rain"]);
+    expect(items({ minFeltC: 3 })).toEqual(["cold"]);
+    expect(items({ minFeltC: 12 })).toEqual(["cool"]);
+    expect(items({})).toEqual([]);
+  });
+
   test("rules only apply to their vehicles", () => {
     const cold = { ...calm, minFeltC: 0, snow: true };
     expect(clothingFor(cold, "car", rules, TX).map((i) => i.item)).toEqual(["chains"]);
