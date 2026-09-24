@@ -111,3 +111,17 @@ export function segmentBoxes(line: Line, segM: number, padDeg: number): Box[] {
   }
   return out;
 }
+
+// Where to put a route's label: the point in the middle 60% of the line that is farthest from the
+// other routes, so labels of overlapping alternatives sit on their own stretch. Midpoint when alone.
+export function labelPoint(line: Line, others: Line[], samples = 30): LatLon {
+  const len = lineLength(line);
+  if (!others.length) return pointAtDistance(line, len / 2);
+  let best = { gap: -1, pos: pointAtDistance(line, len / 2) };
+  for (let k = 0; k <= samples; k++) {
+    const pos = pointAtDistance(line, len * (0.2 + (0.6 * k) / samples));
+    const gap = Math.min(...others.map((o) => haversineM(pos, snapToLine(o, pos).pos)));
+    if (gap > best.gap) best = { gap, pos };
+  }
+  return best.pos;
+}

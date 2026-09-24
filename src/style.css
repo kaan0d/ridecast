@@ -509,6 +509,168 @@ button {
   color: var(--ink);
 }
 
+/* Google Maps style trip editing: glyphs are drag handles, swap button for two stops. */
+.trip {
+  position: relative;
+}
+
+button.stop-glyph {
+  align-self: stretch;
+  cursor: grab;
+  touch-action: none;
+  color: inherit;
+}
+
+.stop-row {
+  background: var(--card);
+  border-radius: var(--radius-control);
+}
+
+.reordering .stop-row {
+  transition: transform 0.18s var(--ease-out);
+}
+
+.reordering .stop-row.dragging {
+  transition: none;
+  position: relative;
+  z-index: 2;
+  box-shadow: var(--shadow-small);
+  cursor: grabbing;
+}
+
+.trip-swap {
+  position: absolute;
+  right: 6px;
+  top: 40px;
+}
+
+.trip-swap[hidden] {
+  display: none;
+}
+
+.trip:has(.trip-swap:not([hidden])) .trip-stops {
+  margin-right: 34px;
+}
+
+/* Map context menu (right click / long press). */
+.map-menu {
+  position: fixed;
+  z-index: 4000;
+  min-width: 220px;
+  padding: 6px;
+  background: var(--material);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.map-menu button {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+
+.map-menu button:first-child {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.map-menu button:hover,
+.map-menu button:focus-visible {
+  background: var(--fill);
+  outline: none;
+}
+
+.map-menu-hint {
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+}
+
+/* Dropped pin and its place card. */
+.dropped-pin {
+  fill: var(--route);
+  fill-opacity: 1;
+  stroke: var(--route-casing);
+  stroke-width: 3;
+}
+
+.place-card {
+  display: grid;
+  gap: 2px;
+}
+
+.place-card strong {
+  font-size: 1.0625rem;
+  padding-right: 20px;
+}
+
+.place-addr {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+.place-coord {
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.place-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.place-actions .button-secondary {
+  background: var(--fill);
+  color: var(--ink);
+}
+
+.place-popup .leaflet-popup-close-button {
+  top: 8px !important;
+  right: 8px !important;
+  color: var(--ink-2) !important;
+}
+
+/* Duration bubble on every route; the selected one is inked. */
+.route-label-marker {
+  width: auto !important;
+  height: auto !important;
+}
+
+.route-label {
+  display: inline-block;
+  transform: translate(-50%, -130%);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--shadow-small);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.route-label.selected {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.stop-marker {
+  cursor: grab;
+}
+
 .hint,
 .footnote {
   color: var(--ink-2);

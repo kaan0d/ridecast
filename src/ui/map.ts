@@ -1,27 +1,40 @@
 import L from "leaflet";
 import { fromLatLng, toLatLng, type LatLon } from "../core/geo";
 
-export type StopKind = "start" | "via" | "end";
+import type { StopKind } from "./trip";
 
 // OSM standard tiles, muted (and inverted at night) by CSS filters on the tile pane.
 // Keyless muted basemaps (CARTO) now watermark browser requests without an API key.
 const TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
-export function createMap(el: HTMLElement, onClick: (p: LatLon) => void) {
+interface MapHandlers {
+  onClick(p: LatLon): void;
+  onContext(p: LatLon, x: number, y: number): void; // right click or long press, screen point
+  onMoveStart(): void;
+}
+
+export function createMap(el: HTMLElement, h: MapHandlers) {
   const map = L.map(el, { zoomControl: false }).setView([39, 35], 6);
   L.control.zoom({ position: "topright" }).addTo(map);
   map.attributionControl.setPrefix(false);
 
   L.tileLayer(TILES, { maxZoom: 19, attribution: ATTRIBUTION }).addTo(map);
 
-  map.on("click", (e) => onClick(fromLatLng(e.latlng)));
+  map.on("click", (e) => h.onClick(fromLatLng(e.latlng)));
+  map.on("contextmenu", (e) => {
+    e.originalEvent.preventDefault();
+    h.onContext(fromLatLng(e.latlng), e.originalEvent.clientX, e.originalEvent.clientY);
+  });
+  map.on("movestart zoomstart", () => h.onMoveStart());
 
   const routeLayer = L.layerGroup().addTo(map);
   const riskLayer = L.layerGroup().addTo(map);
   const stopLayer = L.layerGroup().addTo(map);
   const weatherLayer = L.layerGroup().addTo(map);
   const poiLayer = L.layerGroup().addTo(map);
+  const labelLayer = L.layerGroup().addTo(map);
+  let dropped: L.CircleMarker | null = null;
   const breakLayer = L.layerGroup().addTo(map);
   let poiMarkers: L.Marker[] = [];
   let liveDot: L.CircleMarker | null = null;
@@ -44,20 +57,52 @@ export function createMap(el: HTMLElement, onClick: (p: LatLon) => void) {
   map.on("zoomend", thinWeather);
 
   const pin = (kind: StopKind) => {
-    const size = kind === "via" ? 16 : 20;
-    return L.divIcon({ className: "", html: `<span class="pin pin-${kind}" style="width:${size}px;height:${size}px"></span>`, iconSize: [size, size] });
+    const size = kind === "via" ? 18 : 22;
+    return L.divIcon({ className: "stop-marker", html: `<span class="pin pin-${kind}" style="width:${size}px;height:${size}px"></span>`, iconSize: [size, size] });
   };
 
   return {
     leaflet: map,
 
-    setStops(stops: { pos: LatLon; kind: StopKind }[]) {
+    center: () => fromLatLng(map.getCenter()),
+
+    // Stop pins; dragging one moves that stop (index into the trip's stop list).
+    setStops(stops: { pos: LatLon; kind: StopKind; index: number; title: string }[], onDrag: (index: number, p: LatLon) => void) {
       stopLayer.clearLayers();
-      for (const s of stops) L.marker(toLatLng(s.pos), { icon: pin(s.kind), keyboard: false }).addTo(stopLayer);
+      for (const s of stops) {
+        const m = L.marker(toLatLng(s.pos), { icon: pin(s.kind), draggable: true, keyboard: false, title: `${s.title} (sürükleyerek taşı)`, autoPan: true, zIndexOffset: 1000 }).addTo(stopLayer);
+        m.on("dragend", () => onDrag(s.index, fromLatLng(m.getLatLng())));
+      }
     },
 
-    setRoutes(routes: LatLon[][], selected: number, onRouteClick: (i: number, p: LatLon) => void) {
+    // A dropped pin with a place card, like tapping an empty spot in a map app.
+    openPlace(p: LatLon, content: HTMLElement) {
+      dropped?.remove();
+      dropped = L.circleMarker(toLatLng(p), { radius: 7, className: "dropped-pin", interactive: false }).addTo(map);
+      const popup = L.popup({ className: "wx-popup place-popup", closeButton: true, offset: [0, -4], maxWidth: 300, minWidth: 240, autoPanPaddingTopLeft: [16, 16] })
+        .setLatLng(toLatLng(p))
+        .setContent(content)
+        .openOn(map);
+      popup.on("remove", () => {
+        dropped?.remove();
+        dropped = null;
+      });
+    },
+
+    // Routes, alternatives first so the selected one stays on top; each gets a duration bubble
+    // at `labels[i]` that selects it.
+    setRoutes(routes: LatLon[][], selected: number, onRouteClick: (i: number, p: LatLon) => void, labels: { pos: LatLon; text: string }[] = []) {
       routeLayer.clearLayers();
+      labelLayer.clearLayers();
+      labels.forEach((l, i) => {
+        L.marker(toLatLng(l.pos), {
+          icon: L.divIcon({ className: "route-label-marker", html: `<span class="route-label${i === selected ? " selected" : ""}">${l.text}</span>`, iconSize: undefined }),
+          keyboard: false,
+          zIndexOffset: i === selected ? 500 : 0,
+        })
+          .on("click", () => i !== selected && onRouteClick(i, l.pos))
+          .addTo(labelLayer);
+      });
       // Alternatives first so the selected route stays on top; the selected one gets a casing.
       const order = routes.map((_, i) => i).sort((a, b) => Number(a === selected) - Number(b === selected));
       for (const i of order) {

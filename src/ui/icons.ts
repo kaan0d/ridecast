@@ -26,6 +26,7 @@ export const icons = {
   wind: svg('<path d="M3 8h11a2.5 2.5 0 1 0-2.5-2.5M3 12h15a3 3 0 1 1-3 3M3 16h7"/>'),
   fuel: svg('<path d="M5 20V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v14M4 20h12M5 11h10"/><path d="M15 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V9l-3-3"/>'),
   rest: svg('<path d="M4 18h16M6 18v-5h12v5M8 13V9a4 4 0 0 1 8 0v4"/>'),
+  swap: svg('<path d="M8 20V4M4 8l4-4 4 4M16 4v16M12 16l4 4 4-4"/>'),
   arrowUp: svg('<path d="M12 19V5M6 11l6-6 6 6"/>'),
 };
 
