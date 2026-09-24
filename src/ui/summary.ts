@@ -1,9 +1,9 @@
-import { dec1, t } from "../i18n";
-import { SAFEST_MIN_DROP } from "../config/risk";
+import { t } from "../i18n";
+import { RISK_WEIGHTS, SAFEST_MIN_DROP } from "../config/risk";
 import { ROAD_TYPE_RULES } from "../config/vehicles";
 import { totalS, tripDays, type Timeline } from "../core/eta/eta";
 import { roadBreakdown, type Step } from "../core/route/roadType";
-import { chooseSafest, type RouteScore } from "../core/risk/route";
+import { chooseSafest, scoreOf100, type RouteScore } from "../core/risk/route";
 import type { Route } from "../services/osrm";
 import { formatClock, formatDay, formatDuration, formatKm, formatTime } from "./format";
 import { LEVEL_LABEL } from "./weather";
@@ -135,7 +135,7 @@ export function renderRouteList(
         const risk = document.createElement("span");
         risk.className = "route-risk";
         risk.innerHTML = `<span class="risk-dot risk-${score.worst}" aria-hidden="true"></span>`;
-        risk.append(t.summary.risk(dec1(score.score), LEVEL_LABEL[score.worst].toLowerCase()));
+        risk.append(t.summary.risk(scoreOf100(score.score, RISK_WEIGHTS), LEVEL_LABEL[score.worst].toLowerCase()));
         sub.append(" · ", risk);
       }
       text.append(name, sub);

@@ -8,7 +8,6 @@ const pl = (n: number, one: string, many: string) => (n === 1 ? one : many);
 // English UI texts (the default language). tr.ts has the same shape; TypeScript checks that.
 export const en = {
   locale: "en-GB",
-  decimal: ".",
   duration: (h: number, m: number) => (h ? `${h} h ${m} min` : `${m} min`),
   kmh: "km/h",
   km: (km: number) => `km ${km}`,
@@ -112,7 +111,7 @@ export const en = {
     road: { motorway: "Motorway", primary: "Main road", urban: "Town", ferry: "Ferry" },
     suggested: "Suggested route",
     alternative: (i: number) => `Alternative ${i}`,
-    risk: (score: string, worst: string) => `risk ${score} · worst: ${worst}`,
+    risk: (score: number, worst: string) => `risk ${score}/100 · worst: ${worst}`,
     fastestToo: "Also the fastest",
     saferBy: (minutes: string, pct: number) => `${minutes} min, ${pct}% less risk`,
     safest: "Safest route",
@@ -126,7 +125,7 @@ export const en = {
     noteWeek: (days: number, farDays: number) =>
       `The best departure of each of the next ${days} days, every full hour compared. Days more than ${farDays} ahead (dashed) are uncertain.`,
     needRoute: "Plan a route first to compare.",
-    meta: (arrival: string, score: string) => `arrival ${arrival} · risk ${score}`,
+    meta: (arrival: string, score: number) => `arrival ${arrival} · risk ${score}/100`,
     note: (hours: number, n: number) => `The ${n} lowest-risk departures among every full hour in the next ${hours} hours, at least 2 hours apart.`,
   },
 
@@ -220,7 +219,6 @@ export const en = {
   clothing: {
     title: "Clothing and gear",
     nothing: "Nothing special needed on this route.",
-    note: "From a fixed rule table, for the worst conditions on the route.",
     items: {
       freezing: "Dress for freezing weather",
       cold: "Dress for cold weather",

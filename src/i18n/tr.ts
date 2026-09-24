@@ -6,7 +6,6 @@ const r = Math.round;
 // Türkçe arayüz metinleri. Şekli en.ts ile aynı olmak zorunda (Messages tipi).
 export const tr: Messages = {
   locale: "tr-TR",
-  decimal: ",",
   duration: (h, m) => (h ? `${h} sa ${m} dk` : `${m} dk`),
   kmh: "km/sa",
   km: (km) => `km ${km}`,
@@ -110,7 +109,7 @@ export const tr: Messages = {
     road: { motorway: "Otoyol", primary: "Ana yol", urban: "Şehir içi", ferry: "Feribot" },
     suggested: "Önerilen rota",
     alternative: (i) => `Alternatif ${i}`,
-    risk: (score, worst) => `risk ${score} · en yüksek: ${worst}`,
+    risk: (score, worst) => `risk ${score}/100 · en yüksek: ${worst}`,
     fastestToo: "En hızlısı da bu",
     saferBy: (minutes, pct) => `${minutes} dk, risk %${pct} daha düşük`,
     safest: "En güvenli rota",
@@ -123,7 +122,7 @@ export const tr: Messages = {
     windowWeek: "7 gün",
     noteWeek: (days, farDays) => `Önümüzdeki ${days} günün her biri için en iyi çıkış, saat başı adaylar karşılaştırıldı. ${farDays} günden uzak günler (kesik çizgili) belirsiz.`,
     needRoute: "Karşılaştırma için önce bir rota oluşturun.",
-    meta: (arrival, score) => `varış ${arrival} · risk ${score}`,
+    meta: (arrival, score) => `varış ${arrival} · risk ${score}/100`,
     note: (hours, n) => `Önümüzdeki ${hours} saat, saat başı adaylar arasından en düşük riskli ${n} çıkış (en az 2 saat arayla).`,
   },
 
@@ -217,7 +216,6 @@ export const tr: Messages = {
   clothing: {
     title: "Giyim ve ekipman",
     nothing: "Rota boyunca özel bir şey gerekmiyor.",
-    note: "Rota boyunca en kötü koşullara göre, sabit bir kural tablosundan.",
     items: {
       freezing: "Dondurucu soğuğa karşı giyinmelisin",
       cold: "Soğuk havalara dayanıklı giyinmelisin",

@@ -33,14 +33,31 @@ export async function searchPlaces(query: string, near?: LatLon): Promise<Place[
   }
 }
 
-// Address of a point for the place card and stops set on the map. Within 10 km, so a point in the
-// fields still gets its village. Null when there is nothing near or the request fails.
-export async function reverseLabel(pos: LatLon): Promise<string | null> {
+// The place nearest a point, within 10 km so a point in the fields still gets its village. Null
+// when there is nothing near or the request fails.
+async function reverse(pos: LatLon): Promise<Record<string, string | undefined> | null> {
   const url = `${BASE.replace("/api/", "/reverse")}?limit=1&lang=default&radius=10&lat=${pos.lat.toFixed(5)}&lon=${pos.lon.toFixed(5)}`;
   try {
-    const f = (await getJson<PhotonResponse>(url)).features[0];
-    return f ? placeLabel(f.properties) || null : null;
+    return (await getJson<PhotonResponse>(url)).features[0]?.properties ?? null;
   } catch {
     return null;
   }
+}
+
+// Address of a point for the place card and stops set on the map.
+export async function reverseLabel(pos: LatLon): Promise<string | null> {
+  const p = await reverse(pos);
+  return p ? placeLabel(p) || null : null;
+}
+
+// City of a place. In Türkiye Photon's city is the district and its state the province, the city
+// people name.
+export function cityOf(p: Record<string, string | undefined>): string | null {
+  return (p.countrycode === "TR" ? (p.state ?? p.city) : (p.city ?? p.state)) ?? null;
+}
+
+// City of a point, for the ends of the weather strip.
+export async function reverseCity(pos: LatLon): Promise<string | null> {
+  const p = await reverse(pos);
+  return p ? cityOf(p) : null;
 }

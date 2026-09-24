@@ -9,7 +9,7 @@ import { pointRuns, type RouteScore } from "../core/risk/route";
 import { labelPoint, lineLength, makeLine, pointAtDistance, sliceLine, snapToLine, type Line } from "../core/route/line";
 import type { Forecast } from "../core/weather/weather";
 import { encodeState, type TripState } from "../core/share/state";
-import { reverseLabel } from "../services/photon";
+import { reverseCity, reverseLabel } from "../services/photon";
 import type { Route } from "../services/osrm";
 import { routeTrip, routingKey } from "../services/routing";
 import { renderClothing } from "./advice";
@@ -74,6 +74,8 @@ export function startApp() {
   let weatherSeq = 0;
   let weatherTimer: number | undefined;
   let weatherPoints: WeatherPoint[] = [];
+  const cities = new Map<string, string | null>(); // strip end stop city by "lat,lon"
+  let redrawStrip = () => {};
   let stripFor: Route | null = null; // route whose stations already came into the strip
   let bestWindow: BestWindow = "day"; // "Best time" over the next 24 hours or the next 7 days
 
@@ -442,6 +444,7 @@ export function startApp() {
       renderWarnings($("warnings"), [], false, () => {});
       $("clothing").replaceChildren();
       if (bestMode) renderBest({ top: [], loading: false });
+      redrawStrip = () => {};
       return renderStrip($("weather"), { points: [], loading: false, onRetry: () => {}, onOpen: () => {} });
     }
     if (bestMode && !bestEl.querySelector(".best-list")) renderBest({ top: [], loading: true });
@@ -471,7 +474,10 @@ export function startApp() {
         renderClothing($("clothing"), error ? [] : points, vehicle);
         if (!error) live.onWeather(points);
       }
-      renderStrip($("weather"), { points, loading, error, arrive, ends: endNames(), onRetry: () => updateWeather(timelines, settings), onOpen: openPoint });
+      const strip = (arrive: boolean) =>
+        renderStrip($("weather"), { points, loading, error, arrive, ends: stripEnds(), onRetry: () => updateWeather(timelines, settings), onOpen: openPoint });
+      redrawStrip = () => strip(false);
+      strip(arrive);
     };
     // Keep the old capsules (dimmed) while the next forecast loads.
     show(weatherPoints.length === forecast.sampleCount(selected) ? weatherPoints : [], true);
@@ -532,6 +538,24 @@ export function startApp() {
   function endNames(): [string, string] {
     const filled = stops.filter((s) => s.pos);
     return [placeName(filled[0]), placeName(filled[filled.length - 1])];
+  }
+
+  // The weather strip names its ends by city, looked up once per point; the place name stands in
+  // until it arrives or when there is none; a city found later redraws the latest strip.
+  function stripEnds(): [string, string] {
+    const filled = stops.filter((s) => s.pos);
+    const name = (s: TripStop) => {
+      const key = `${s.pos!.lat},${s.pos!.lon}`;
+      if (!cities.has(key)) {
+        cities.set(key, null);
+        void reverseCity(s.pos!).then((c) => {
+          cities.set(key, c);
+          if (c) redrawStrip();
+        });
+      }
+      return cities.get(key) ?? placeName(s);
+    };
+    return [name(filled[0]), name(filled[filled.length - 1])];
   }
 
   // The trip as it is set now, or null while fewer than two stops are set or a setting is invalid.

@@ -31,8 +31,5 @@ export function renderClothing(el: HTMLElement, points: WeatherPoint[], vehicle:
     li.append(item, why);
     list.append(li);
   }
-  const note = document.createElement("p");
-  note.className = "footnote";
-  note.textContent = t.clothing.note;
-  el.replaceChildren(title, list, note);
+  el.replaceChildren(title, list);
 }

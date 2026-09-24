@@ -1,7 +1,9 @@
-import { dec1, t } from "../i18n";
+import { t } from "../i18n";
 import { DEPARTURE } from "../config/departure";
+import { RISK_WEIGHTS } from "../config/risk";
 import { WEATHER_REQUEST } from "../config/weather";
 import type { ScoredDeparture } from "../core/advice/departure";
+import { scoreOf100 } from "../core/risk/route";
 import { formatClock, formatTime } from "./format";
 
 export type BestWindow = "day" | "week";
@@ -47,7 +49,7 @@ export function renderBest(
     b.className = "best-item";
     b.classList.toggle("far", d.departMs > far); // uncertain forecast, drawn dashed
     b.setAttribute("aria-pressed", String(chosenMs === d.departMs));
-    const score = dec1(d.score.score);
+    const score = scoreOf100(d.score.score, RISK_WEIGHTS);
     b.innerHTML = `<span class="best-time">${formatTime(d.departMs)}</span><span class="best-meta"><span class="risk-dot risk-${d.score.worst}" aria-hidden="true"></span>${t.best.meta(formatClock(d.arrivalMs), score)}</span>`;
     b.addEventListener("click", () => onPick(d.departMs));
     li.append(b);

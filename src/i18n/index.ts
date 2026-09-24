@@ -27,9 +27,6 @@ export function setLang(l: Lang) {
   location.reload();
 }
 
-// One decimal in the language's style: "2.4" or "2,4".
-export const dec1 = (v: number) => v.toFixed(1).replace(".", t.decimal);
-
 // Static texts of index.html: English is in the page; other languages replace them by data-t keys.
 export function translatePage(root: ParentNode = document) {
   document.documentElement.lang = lang;
