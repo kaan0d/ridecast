@@ -10,6 +10,7 @@ export interface RiskThresholds {
   rainMm: Triple; // mm in the forecast hour
   rainProbPct: number | null; // low warning from this precipitation probability on, even without forecast rain
   gustKmh: Triple;
+  crossGustKmh: Triple | null; // gust part across the direction of travel
   visibilityM: Triple; // at or below
   coldC: Triple | null; // felt temperature at or below
   windChill: boolean; // rider exposed to the relative wind
@@ -45,6 +46,7 @@ export interface RiskTexts {
   rain(level: Level, mm: number, prob: number | null): string;
   rainProb(pct: number): string;
   gust(kmh: number): string;
+  crosswind(kmh: number, fromRight: boolean): string;
   visibility(km: number, fog: boolean): string;
   ice(tempC: number): string;
   nearFreezing(tempC: number): string;
@@ -56,7 +58,7 @@ export interface RiskTexts {
   glare(elevationDeg: number): string;
 }
 
-export type RiskKind = "storm" | "snow" | "rain" | "gust" | "visibility" | "ice" | "cold" | "road" | "dark" | "glare" | "heat";
+export type RiskKind = "storm" | "snow" | "rain" | "gust" | "crosswind" | "visibility" | "ice" | "cold" | "road" | "dark" | "glare" | "heat";
 export interface RiskEvent {
   kind: RiskKind;
   level: Level;
@@ -88,6 +90,13 @@ export function windChillC(tempC: number, windKmh: number): number {
 // windFromDeg is where the wind comes from; a wind from straight ahead adds fully.
 export function relativeWindKmh(rideKmh: number, windKmh: number, windFromDeg: number, headingDeg: number): number {
   return Math.max(0, rideKmh + windKmh * Math.cos((windFromDeg - headingDeg) * RAD));
+}
+
+// The part of a wind across the direction of travel, and the side it comes from.
+// windFromDeg is where the wind comes from; headingDeg where the rider goes.
+export function crosswind(windKmh: number, windFromDeg: number, headingDeg: number): { kmh: number; fromRight: boolean } {
+  const s = Math.sin((windFromDeg - headingDeg) * RAD);
+  return { kmh: Math.abs(windKmh * s), fromRight: s > 0 };
 }
 
 // Wet road estimate from rain now and in the last hours, and temperature.
@@ -129,7 +138,13 @@ export function assessPoint(p: PointInput, t: RiskThresholds, wet: WetRoadRules,
     if (rain > 0) add("rain", rain, tx.rain(rain, h.precipMm, h.precipProb));
     else if (t.rainProbPct !== null && h.precipProb !== null && h.precipProb >= t.rainProbPct) add("rain", 1, tx.rainProb(h.precipProb));
   }
-  add("gust", above(h.gustKmh, t.gustKmh), tx.gust(h.gustKmh));
+  // A gust from the side pushes a bike across the lane: warned on its own. When it is at least as
+  // serious as the plain gust warning, it replaces it (one wind, one row).
+  const gust = above(h.gustKmh, t.gustKmh);
+  const side = crosswind(h.gustKmh, h.windFromDeg, p.headingDeg);
+  const cross = t.crossGustKmh ? above(side.kmh, t.crossGustKmh) : 0;
+  if (cross > 0 && cross >= gust) add("crosswind", cross, tx.crosswind(side.kmh, side.fromRight));
+  else add("gust", gust, tx.gust(h.gustKmh));
   const fog = h.code === 45 || h.code === 48;
   // The fog code alone is a low warning; the forecast visibility decides anything higher.
   const vis = Math.max(below(h.visibilityM, t.visibilityM), fog ? 1 : 0) as Level;

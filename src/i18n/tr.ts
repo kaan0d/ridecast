@@ -214,6 +214,7 @@ export const tr: Messages = {
       `${level === 3 ? "Şiddetli yağmur" : level === 1 ? "Hafif yağmur" : "Yağmur"} ${mm.toFixed(1)} mm/sa${prob === null ? "" : ` · olasılık %${prob}`}`,
     rainProb: (pct) => `Yağış olasılığı %${pct}`,
     gust: (kmh) => `Rüzgar hamlesi ${r(kmh)} km/s`,
+    crosswind: (kmh, fromRight) => `Yan rüzgar hamlesi ${r(kmh)} km/s, ${fromRight ? "sağdan" : "soldan"}`,
     visibility: (km, fog) => (fog ? `Sis, görüş ${km.toFixed(1)} km` : `Görüş ${km.toFixed(1)} km`),
     ice: (c) => `Buzlanma riski: ${r(c)}° ve ıslak yol (tahmin)`,
     nearFreezing: (c) => `Donma sınırına yakın sıcaklık (${r(c)}°)`,
