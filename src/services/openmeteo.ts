@@ -39,7 +39,11 @@ export async function fetchForecast(points: LatLon[], untilMs: number, fresh = f
     `&hourly=${HOURLY}&timeformat=unixtime&timezone=auto&past_hours=${WEATHER_REQUEST.pastHours}&forecast_days=${Math.max(WEATHER_REQUEST.minForecastDays, days)}`;
   let data: OmLocation | OmLocation[];
   try {
-    data = await getJson<OmLocation | OmLocation[]>(url, 15000, fresh);
+    // One more try after 3 s: a dropped request or a busy moment often passes.
+    data = await getJson<OmLocation | OmLocation[]>(url, 15000, fresh).catch(async () => {
+      await new Promise((r) => setTimeout(r, 3000));
+      return getJson<OmLocation | OmLocation[]>(url, 15000);
+    });
   } catch (e) {
     if (e instanceof HttpError && e.status === 429) throw new Error(t.errors.weatherBusy);
     throw new Error(t.errors.weatherDown);
