@@ -4,8 +4,6 @@ import { searchPlaces, type Place } from "../services/photon";
 
 const DEBOUNCE_MS = 350;
 const MIN_QUERY = 3;
-const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
-const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
 // Address input with Photon suggestions, biased towards `near` (the map centre). Searches after a
 // short pause in typing; arrow keys move through the suggestions, Enter takes the first or focused one.
@@ -24,7 +22,6 @@ export function placeInput(value: string, placeholder: string, label: string, on
 
   let timer: number | undefined;
   let seq = 0;
-  let shown = value; // the text before this input event, for the clear animation
   const note = (text: string, cls = "") => {
     const li = document.createElement("li");
     li.className = `note ${cls}`;
@@ -38,9 +35,6 @@ export function placeInput(value: string, placeholder: string, label: string, on
   };
 
   input.addEventListener("input", () => {
-    if (!input.value && shown.length > 1) dissolve(wrap, input, shown);
-    else if (input.value) wrap.querySelector(".clear-placeholder")?.remove();
-    shown = input.value;
     clearTimeout(timer);
     const q = input.value.trim();
     if (q.length < MIN_QUERY) return close();
@@ -59,7 +53,7 @@ export function placeInput(value: string, placeholder: string, label: string, on
             b.textContent = p.label;
             b.addEventListener("click", () => {
               close();
-              input.value = shown = p.label;
+              input.value = p.label;
               onPick(p);
             });
             li.append(b);
@@ -98,47 +92,4 @@ export function placeInput(value: string, placeholder: string, label: string, on
     if (!wrap.contains(e.relatedTarget as Node | null)) close();
   });
   return wrap;
-}
-
-// A cleared field (the x, Escape, or all text deleted at once): the old words rise and blur away,
-// each over a short streak, while the placeholder rises in. Overlays only; the input is already empty.
-function dissolve(wrap: HTMLElement, input: HTMLInputElement, text: string) {
-  if (reducedMotion.matches) return;
-  wrap.querySelectorAll(".clear-layer").forEach((el) => el.remove());
-  const layer = (cls: string) => {
-    const el = document.createElement("div");
-    el.className = `clear-layer ${cls}`;
-    el.setAttribute("aria-hidden", "true");
-    return el;
-  };
-  const ghost = layer("clear-ghost");
-  ghost.append(
-    ...text.split(/(\s+)/).map((w) => {
-      const span = document.createElement("span");
-      span.textContent = w;
-      return span;
-    }),
-  );
-  const holder = layer("clear-placeholder");
-  holder.textContent = input.placeholder;
-  const glow = layer("clear-glow");
-  wrap.append(ghost, holder, glow);
-  input.classList.add("clearing");
-
-  const box = wrap.getBoundingClientRect();
-  glow.style.backgroundImage = [...ghost.children]
-    .map((w) => w.getBoundingClientRect())
-    .filter((r, i) => ghost.children[i].textContent!.trim() && r.left < box.right)
-    .map((r) => `radial-gradient(${r.width * 0.75}px ${r.height}px at ${r.left - box.left + r.width / 2}px ${r.top - box.top + r.height / 2}px, var(--clear-streak), transparent)`)
-    .join(",");
-
-  const off = { transform: "translateY(-12px)", opacity: 0, filter: "blur(2px)" };
-  ghost.animate([{}, off], { duration: 400, easing: EASE, fill: "forwards" });
-  holder.animate([{ ...off, transform: "translateY(12px)" }, {}], { duration: 400, easing: EASE });
-  glow
-    .animate([{ opacity: 0 }, { opacity: 0.85, offset: 0.15 }, { opacity: 0 }], { duration: 1000, delay: 50 })
-    .finished.then(() => {
-      for (const el of [ghost, holder, glow]) el.remove();
-      if (!wrap.querySelector(".clear-layer")) input.classList.remove("clearing");
-    });
 }
