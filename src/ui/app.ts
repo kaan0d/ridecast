@@ -565,19 +565,30 @@ export function startApp() {
     },
     showPosition: (p, follow, zoom, bottom) => map.setLivePosition(p, follow, zoom, bottom),
   });
-  // With a fuel range set, the tank level is asked first; closing the question cancels the start.
+  // Motor vehicles are asked for the range and the tank level first (the range is kept in the
+  // settings); "skip" starts without the fuel warning, closing the question cancels the start.
   const fuelAsk = $<HTMLDialogElement>("fuel-ask");
+  const askRange = $<HTMLInputElement>("fuel-ask-range");
+  const fuelRange = $<HTMLInputElement>("fuel-range");
   const startLive = (fuel: { leftKm: number; fullKm: number } | null) => {
     sheet.collapse();
     live.start(fuel);
   };
   $("live-start").addEventListener("click", () => {
     const settings = readSettings();
-    const fullKm = typeof settings === "string" ? null : settings.fuelRangeKm;
-    if (fullKm === null) return startLive(null);
+    if (typeof settings === "string" || settings.vehicle === "bicycle" || settings.vehicle === "walking") return startLive(null);
+    askRange.value = settings.fuelRangeKm === null ? "" : String(settings.fuelRangeKm);
     fuelAsk.returnValue = "";
     fuelAsk.onclose = () => {
-      if (fuelAsk.returnValue) startLive({ leftKm: fullKm * Number(fuelAsk.returnValue), fullKm });
+      const level = fuelAsk.returnValue;
+      if (!level) return;
+      if (level === "skip") return startLive(null);
+      const fullKm = askRange.valueAsNumber;
+      if (fuelRange.value !== askRange.value) {
+        fuelRange.value = askRange.value;
+        fuelRange.dispatchEvent(new Event("input", { bubbles: true })); // settings and the link take it
+      }
+      startLive({ leftKm: fullKm * Number(level), fullKm });
     };
     fuelAsk.showModal();
   });

@@ -68,7 +68,7 @@
               ><span data-t="fuelRange">Fuel range</span>
               <span class="row-value"><input type="number" id="fuel-range" min="10" max="3000" step="10" placeholder="–" aria-describedby="fuel-range-note" /> km</span></label
             >
-            <p class="footnote" id="fuel-range-note" data-t="fuelRangeNote">When set, a ride asks how full the tank is and warns when fuel runs low.</p>
+            <p class="footnote" id="fuel-range-note" data-t="fuelRangeNote">Filled in when a ride starts; the ride warns when fuel runs low.</p>
           </div>
 
           <h2 class="group-title" data-t="speed">Speed</h2>
@@ -160,13 +160,18 @@
     <dialog id="fuel-ask" class="fuel-ask" aria-labelledby="fuel-ask-title">
       <form method="dialog">
         <h2 id="fuel-ask-title" data-t="fuelAsk">How full is the tank?</h2>
+        <label class="fuel-ask-range"
+          ><span data-t="fuelAskRange">Range on a full tank</span>
+          <span class="row-value"><input type="number" id="fuel-ask-range" min="10" max="3000" step="10" required /> km</span></label
+        >
         <div class="fuel-ask-levels">
           <button value="1" class="button-secondary" data-t="fuelFull">Full</button>
           <button value="0.75" class="button-secondary">¾</button>
           <button value="0.5" class="button-secondary">½</button>
           <button value="0.25" class="button-secondary">¼</button>
         </div>
-        <button value="" class="fuel-ask-cancel" data-t="cancel">Cancel</button>
+        <button value="skip" class="fuel-ask-skip button-secondary" formnovalidate data-t="fuelSkip">Start without fuel warning</button>
+        <button value="" class="fuel-ask-cancel" formnovalidate data-t="cancel">Cancel</button>
       </form>
     </dialog>
     <script type="module" src="/src/main.ts"></script>
