@@ -1173,8 +1173,11 @@ button.stop-glyph {
   line-height: 0.92;
 }
 
+/* "Arrival · Thu 24 Sep" on one line beside the clock. */
 .eta-time small {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.4em;
   font-size: 1rem;
   font-weight: 550;
   line-height: 1.2;
@@ -1184,6 +1187,10 @@ button.stop-glyph {
 
 .eta-label {
   color: var(--ink);
+}
+
+.eta-day::before {
+  content: "· " / "";
 }
 
 /* The timetable row: departure time and place, the rail with duration and km, the destination.
