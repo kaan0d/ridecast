@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { chooseSafest, pointRuns, routeScore, type RouteScore } from "./route";
+import { chooseSafest, pointRuns, routeScore, scoreOf100, type RouteScore } from "./route";
 
 const W = [0, 1, 3, 9];
 
@@ -87,4 +87,10 @@ test("pointRuns: halfway boundaries, equal neighbours merged", () => {
     { from: 70_000, to: 100_000, v: 0 },
   ]);
   expect(pointRuns([], 100, () => 0)).toEqual([]);
+});
+
+test("score on a 0-100 scale", () => {
+  expect(scoreOf100(0, W)).toBe(0);
+  expect(scoreOf100(9, W)).toBe(100);
+  expect(scoreOf100(1.5, W)).toBe(17);
 });

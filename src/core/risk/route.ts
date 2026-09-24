@@ -30,6 +30,9 @@ export function routeScore(points: { distM: number; level: Level | null; kmh: nu
   return { score: known > 0 ? sum / known : 0, worst, missingShare: Math.max(0, 1 - known) };
 }
 
+// The score on a 0-100 scale: 100 is the top level all the way.
+export const scoreOf100 = (score: number, weights: readonly number[]) => Math.round((score / weights[weights.length - 1]) * 100);
+
 export interface RouteChoice {
   safest: number; // index of the route to recommend on risk
   base: number; // the route it is compared with (the fastest)
