@@ -30,6 +30,7 @@ Live: https://kaandinc.com/ridecast/ (GitHub Pages, deployed by `.github/workflo
 | 20 | Multi-day tours: overnight stops, days, far-forecast mark | done |
 | 21 | Forecast change tracking ("Son bakıştan beri") | done |
 | 22 | Sunlight contrast in live mode (15-minute rain measured, not used) | done |
+| 23 | Split `ui/app.ts` again | done |
 
 ## Setup
 
@@ -78,7 +79,7 @@ The build uses relative asset paths (`base: "./"` in `vite.config.ts`), so `dist
 src/config/    vehicle defaults, road type rules (all tunable numbers)
 src/core/      pure TypeScript, no DOM/fetch: coordinates, route geometry (snap, slice, bearing), road type guess, ETA timeline with breaks, weather sampling, forecast hour matching, WMO codes, risk levels, wind chill, wet road estimate, break advice
 src/services/  Photon, Nominatim, OSRM, Open-Meteo, Overpass clients + in-memory request cache
-src/ui/        Leaflet map, address inputs, panel; app.ts wires state, summary.ts / best.ts / share.ts / stops.ts render their panels
+src/ui/        Leaflet map and panels; app.ts holds the planner state and wiring, forecast.ts the forecast and risk per route, mapActions.ts the map click, menu, locate and shortcuts, gpx.ts the GPX buttons, and summary / best / share / stops / breaks / trip / changes render their panels
 ```
 
 ## Tested
@@ -114,6 +115,7 @@ src/ui/        Leaflet map, address inputs, panel; app.ts wires state, summary.t
 - Stage 20: unit tests: an arrival at 19:30 resumes at 08:00 the next day, one at 01:00 the same morning, one at 06:00 (only 2 h) the day after; a 200 km trip with an overnight stop at km 100 splits into two days with the right times. In Chrome, Kadıköy - Antalya - Fethiye leaving 27 Sep 08:00 with overnight stops near Afyon (08:00) and at Antalya (09:00) gave day 1 08:00-12:51 389 km, day 2 08:00-11:29 279 km, day 3 09:00-11:27 196 km, all 30 weather points marked far, and the link carried both stops.
 - Stage 21: unit tests pair runs of the same kind by overlap (small shifts ignored; rain an hour and 60 km earlier is "moved", a new gust run "new", cold from low to medium "level", fog "gone"; the same kind 180 km apart is new plus gone). In Chrome, the saved snapshot of Kadıköy-Eskişehir was made 2 hours older and edited (darkness removed, cold moved 2 hours later, a made-up rain run added); after a reload the card listed "Yeni: Karanlıkta sürüş", the cold warning "2 sa 0 dk daha erken" and "Artık yok: Yağmur 2.0 mm/sa", with the time of the earlier forecast.
 - Stage 22, measured first: Open-Meteo `minutely_15` precipitation over 7 days had uneven quarters that add up to the hourly value in all 7 wet hours in Vienna (native 15-minute model), while in Istanbul the one wet hour showed the hourly value repeated in all four quarters; Eskişehir and Antalya were dry. So for Turkey the 15-minute series adds nothing to the hourly one and is not used; the rain radar layer (stage 14) covers "is it raining now". Sunlight contrast, WCAG ratios (`development/contrast.mjs`): the normal light theme's low-risk ring is 1.87:1 on white; in sunlight mode text is 21:1 and the three risk colours 6.07-6.86:1 as rings and as alert backgrounds with white text. Checked in Chrome at 390 px: white background, black secondary text, the choice stored.
+- Stage 23 (refactor, no behaviour change): `ui/app.ts` 792 to 617 lines; the route colouring runs became `pointRuns` in `core/risk/route.ts` (tested). Re-checked in Chrome on Kadıköy-Eskişehir: arrival, 2 routes with scores and bubbles, 15 weather points, 7 warnings, 5 risk segments and a dark stretch, the context menu with all 7 items, best departures 09:00 / 11:00 / 14:00, 35 stops, a stop added as a break and turned into an overnight stop (two day rows).
 
 ## Limits
 

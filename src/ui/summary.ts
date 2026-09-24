@@ -1,8 +1,10 @@
 import { SAFEST_MIN_DROP } from "../config/risk";
-import { totalS, type Timeline } from "../core/eta/eta";
+import { ROAD_TYPE_RULES } from "../config/vehicles";
+import { totalS, tripDays, type Timeline } from "../core/eta/eta";
+import { roadBreakdown, type Step } from "../core/route/roadType";
 import { chooseSafest, type RouteScore } from "../core/risk/route";
 import type { Route } from "../services/osrm";
-import { formatClock, formatDay, formatDuration, formatKm } from "./format";
+import { formatClock, formatDay, formatDuration, formatKm, formatTime } from "./format";
 import { LEVEL_LABEL } from "./weather";
 
 // Big arrival time, then the details as a grouped list.
@@ -103,4 +105,32 @@ export function renderRouteList(
       return li;
     }),
   );
+}
+
+// Detail rows under the arrival time: breaks, departure, one row per day of a multi-day trip,
+// the arrival at each stop, and in road-speed mode the km per guessed road type.
+export function summaryRows(t: Timeline, overnight: boolean[], stopTitles: string[], roadSteps: Step[] | null): [string, string][] {
+  const shortBreaks = t.breaks.filter((_, i) => !overnight[i]);
+  const days = tripDays(t, overnight);
+  const rows: [string, string][] = [
+    ...(shortBreaks.length
+      ? [["Molalar", `${shortBreaks.length} mola · ${formatDuration(shortBreaks.reduce((s, b) => s + b.endMs - b.startMs, 0) / 1000)}`] as [string, string]]
+      : []),
+    ["Çıkış", formatTime(t.timeMs[0])],
+    ...(days.length > 1
+      ? days.map((d, k): [string, string] => [`${k + 1}. gün`, `${formatTime(d.startMs)}–${formatClock(d.endMs)} · ${formatKm(d.toM - d.fromM)}`])
+      : []),
+    ...t.legArrivalMs.map((ms, i): [string, string] => [`${stopTitles[i + 1]} varış`, formatTime(ms)]),
+  ];
+  if (roadSteps) {
+    const b = roadBreakdown(roadSteps, ROAD_TYPE_RULES);
+    const parts: [string, number][] = [
+      ["Otoyol", b.motorway],
+      ["Ana yol", b.primary],
+      ["Şehir içi", b.urban],
+      ["Feribot", b.ferry],
+    ];
+    rows.push(["Yol tipi (tahmin)", parts.filter(([, m]) => m > 0).map(([n, m]) => `${n} ${formatKm(m)}`).join(" · ")]);
+  }
+  return rows;
 }
