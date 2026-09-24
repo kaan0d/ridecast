@@ -36,6 +36,7 @@ Live: https://kaandinc.com/ridecast/ (GitHub Pages, deployed by `.github/workflo
 | 26 | Fuel range check | done |
 | 27 | Best day over the next 7 days | done |
 | 28 | Calendar export (.ics) | done |
+| 29 | Final test round | done |
 
 ## Setup
 
@@ -131,6 +132,7 @@ src/ui/        Leaflet map and panels; app.ts holds the planner state and wiring
 - Stage 26: unit tests: stations at 50, 120 and 330 km on a 400 km trip with a 150 km range give one gap (120-330); no stations give the whole trip or nothing; the last stretch to the arrival counts; the range round-trips in the link and a value below 10 km is rejected. In Chrome on Kadıköy-Eskişehir (`fr=40`) the stops were loaded automatically (35 listed) and no gap came up: the longest stretch without fuel is 26 km. With 10 km the list had 3 gaps (22, 14 and 26 km, each with the last station before it), with 400 km none, and the link carried the value.
 - Stage 27: unit test: candidates over three days give one per day, lowest score then earliest, a candidate with too much missing forecast left out. In Chrome, Kadıköy-Eskişehir: "Next 24 h" kept 09:00 / 11:00 / 14:00, "Next 7 days" listed Thu 09:00 to Wed 09:00 with Sun onwards dashed, and picking Saturday planned the trip for Sat 26 Sept 08:00. A first version listed an 8th day made only of the night hours left at the end of the 168-hour window (risk 2.7); the list is now cut to 7 days.
 - Stage 28: unit tests: two events with UTC start and end, only CRLF line ends; commas, semicolons, backslashes and newlines escaped; every physical line at most 75 octets with a 60-letter "ğ" run folded without splitting a character, and unfolding gives the value back. In Chrome, Kadıköy-Eskişehir leaving 25 Sept 07:00 with a break and an overnight stop gave `ridecast-kadikoy-eskisehir.ics` with 2 events (07:00-09:37 and the next morning 08:00-09:02), day 1 with its break and the two warnings of that day, day 2 with its own two; longest line 75 octets. A first version put every warning into every day.
+- Stage 29, final round: dragging a stop pin on the map, never verified before, now checked with a test page (not shipped) that runs animation frames on timers in the hidden automation tab: the destination moved, got its reverse-geocoded address and the route was planned again (263 km). On the live site after the stage 28 deploy: English by default, 2 routes with bubbles, 15 weather points, 3 fuel gaps at a 10 km range, the 7-item context menu, the 7-day list, a 1-event calendar file and a 3,539-point GPX that imported back as the same 273 km route, terrain tiles, the rain radar (66 tiles, latest image 06:40), live mode with a stubbed GPS and the sunlight view, the service worker in control, and the switch to Turkish and back. At 390 px wide nothing overflows.
 
 ## Limits
 
