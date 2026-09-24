@@ -78,8 +78,19 @@
             </div>
           </div>
 
-          <h2 class="group-title" data-t="mapLabels">Map labels</h2>
+          <h2 class="group-title" data-t="mapLabels">Map</h2>
           <div class="group" id="map-labels">
+            <label class="row"
+              ><span data-t="mapStyle">Map style</span>
+              <select name="map-flavor">
+                <option value="auto" data-t="flavorAuto">Follows the theme</option>
+                <option value="light" data-t="themeLight">Light</option>
+                <option value="dark" data-t="themeDark">Dark</option>
+                <option value="white" data-t="flavorWhite">White</option>
+                <option value="grayscale" data-t="flavorGrayscale">Grayscale</option>
+                <option value="black" data-t="flavorBlack">Black</option>
+              </select></label
+            >
             <label class="row"><span data-t="labelRoadNumbers">Road numbers</span> <input type="checkbox" name="map-label" value="roadNumbers" /></label>
             <label class="row"><span data-t="labelRoadNames">Street and road names</span> <input type="checkbox" name="map-label" value="roadNames" /></label>
             <label class="row"><span data-t="labelPlaces">Town, village and neighbourhood names</span> <input type="checkbox" name="map-label" value="places" /></label>
