@@ -53,6 +53,7 @@ The build uses relative asset paths (`base: "./"` in `vite.config.ts`), so `dist
 
 ## Usage
 
+- Theme: follows the device by default; the button next to EN / TR switches system, light and dark in turn and the choice is kept in the browser (`ui/theme.ts`; a small script in `index.html` sets it before the first paint so there is no flash). Both palettes avoid pure black and white: a warm off-white with charcoal text and a slate route line, and a soft dark grey with off-white text and a pale blue route, with slightly softer risk colours and a dimmer map.
 - Language: English by default; the EN / TR switch in the panel header changes every text (warnings, clothing, dates, errors) to Turkish and back. The choice is kept in the browser and the page reloads with the same trip. Texts live in `src/i18n/en.ts` and `tr.ts` (same shape, checked by TypeScript); core code gets its warning and clothing texts passed in. Test notes below from before stage 24 quote the Turkish labels of that time.
 
 - Type an address in Start / Destination and pick a suggestion (Photon, as you type, biased to the map centre); arrow keys move through the suggestions and Enter takes the first or the focused one.

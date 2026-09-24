@@ -295,6 +295,8 @@ export const tr: Messages = {
 
   lang: { label: "Dil", en: "EN", tr: "TR" },
 
+  theme: { system: "Tema: sistem (açık için dokun)", light: "Tema: açık (koyu için dokun)", dark: "Tema: koyu (sistem için dokun)" },
+
   html: {
     map: "Harita",
     layers: "Katmanlar",

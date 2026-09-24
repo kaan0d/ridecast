@@ -3,9 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
-    <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f5f5f3" />
+    <script>
+      // Theme before the first paint: the choice saved by ui/theme.ts, else the system's.
+      (function () {
+        var c;
+        try {
+          c = localStorage.getItem("ridecast.theme");
+        } catch (e) {}
+        var dark = c === "dark" || (c !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        if (dark) document.querySelector('meta[name="theme-color"]').content = "#15171a";
+      })();
+    </script>
     <title>ridecast · Route weather</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
@@ -29,6 +39,7 @@
           <button type="button" id="sheet-back" class="icon-btn sheet-back" aria-label="Back to the map" title="Back to the map" data-t-aria="back" data-t-title="back"></button>
           <span class="wordmark">ridecast</span>
           <span id="lang" class="lang-switch" role="group" aria-label="Language"></span>
+          <button type="button" id="theme" class="icon-btn theme-btn"></button>
           <button type="button" id="settings-open" class="icon-btn settings-btn" aria-label="Settings" title="Settings" aria-expanded="false" data-t-aria="settings" data-t-title="settings"></button>
         </header>
 
