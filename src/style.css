@@ -581,12 +581,13 @@ button {
   cursor: default;
 }
 
-/* Opening the panel or a page of it: the rows rise in; on desktop the card also unrolls from
-   the search bar (phones slide the whole sheet instead). */
+/* Opening the panel or a page of it: the rows rise in, fading and unblurring on the same curve;
+   on desktop the card also unrolls from the search bar (phones slide the whole sheet instead). */
 @keyframes sheet-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(94px);
+    filter: blur(2px);
   }
 }
 
@@ -602,12 +603,12 @@ button {
 .sheet-body > *,
 .trip > :not(.trip-stops),
 #settings > * {
-  animation: sheet-in 0.3s var(--ease-out);
+  animation: sheet-in 0.4s var(--ease-out);
 }
 
 @media (min-width: 721px) {
   .sheet:not(.compact) {
-    animation: sheet-unroll 0.35s var(--ease-out);
+    animation: sheet-unroll 0.4s var(--ease-out);
   }
 }
 
@@ -691,6 +692,41 @@ button {
 
 .place-input input::placeholder {
   color: var(--ink-3);
+}
+
+/* Clear animation overlays (search.ts): the old text, the placeholder, and one streak per word. */
+.place-input input.clearing::placeholder {
+  color: transparent;
+}
+
+.clear-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  font-size: 1.0625rem;
+  white-space: pre;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.clear-ghost {
+  padding-right: 56px; /* the clear button */
+}
+
+.clear-placeholder {
+  color: var(--ink-3);
+}
+
+.clear-glow {
+  opacity: 0;
+  mix-blend-mode: multiply;
+  --clear-streak: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+:root[data-theme="dark"] .clear-glow {
+  mix-blend-mode: screen;
 }
 
 /* Clear button of the address fields: a gap from the text and a thumb-sized target. */
