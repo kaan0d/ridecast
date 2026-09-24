@@ -456,7 +456,9 @@ button {
 .pin {
   display: block;
   transform: scale(var(--pin-scale, 1));
-  transition: transform 0.25s var(--ease-out);
+  transition:
+    transform 0.25s var(--ease-out),
+    opacity 0.25s var(--ease-out);
   border: 2px solid var(--route-casing);
   background: var(--route);
   box-shadow: 0 1px 3px rgb(20 21 23 / 0.3);
@@ -471,6 +473,16 @@ button {
 
 .pin-end {
   border-radius: 3px;
+}
+
+/* Zoomed out beyond about 300 m on the scale bar the start dot hides; its name stays (map.ts). */
+.start-far .pin-start {
+  opacity: 0;
+  transform: scale(0.4);
+}
+
+.start-far .stop-marker:has(.pin-start) {
+  pointer-events: none; /* no invisible drag target */
 }
 
 /* Leaflet places .stop-marker absolutely, so the name positions against it. */
