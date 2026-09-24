@@ -1,3 +1,4 @@
+import { WEATHER_REQUEST } from "../config/weather";
 import type { Assessment, Level, RoadState } from "../core/risk/risk";
 import { compass, conditionOf, type Condition, type WeatherHour } from "../core/weather/weather";
 import type { LatLon } from "../core/geo";
@@ -68,6 +69,7 @@ export function cardHtml(p: WeatherPoint): string {
       ${p.risk ? `<div><dt>Yol (tahmin)</dt><dd>${ROAD_LABEL[p.risk.road]}</dd></div>` : ""}
     </dl>
     ${p.risk?.events.length ? `<ul class="wx-warn">${p.risk.events.map((e) => `<li>${dot(e.level)}${e.text}</li>`).join("")}</ul>` : ""}
+    ${p.etaMs - Date.now() > WEATHER_REQUEST.farDays * 86_400_000 ? `<p class="wx-far">${WEATHER_REQUEST.farDays} günden uzak tahmin: saat ve miktar belirsiz, yaklaşınca tekrar bak.</p>` : ""}
     <p class="wx-source">Tahmin saati ${formatClock(h.timeMs)} · Open-Meteo</p>
   </div>`;
 }
@@ -113,6 +115,7 @@ export function renderStrip(
       b.setAttribute("aria-label", `${formatClock(pt.etaMs)}, ${km(pt.distM)}: ${pt.hour ? deg(pt.hour.tempC) + ", " : ""}${c}`);
       b.innerHTML = `<span class="wx-t">${formatClock(pt.etaMs)}</span>${weatherIcon(pt.hour) || '<span class="wx-dash">–</span>'}<span class="wx-deg">${pt.hour ? deg(pt.hour.tempC) : ""}</span><span class="wx-km">${km(pt.distM)}</span>`;
       b.addEventListener("click", () => state.onOpen(i));
+      b.classList.toggle("far", pt.etaMs - Date.now() > WEATHER_REQUEST.farDays * 86_400_000); // uncertain, drawn dashed
       li.append(b);
       list.append(li);
     });

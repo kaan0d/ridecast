@@ -1,7 +1,7 @@
-import { DEFAULT_BREAK_MIN } from "../config/breaks";
+import { DEFAULT_BREAK_MIN, OVERNIGHT } from "../config/breaks";
 import { WEATHER_REQUEST, WEATHER_SAMPLE } from "../config/weather";
 import { GPX_TRACK_KMH, ROAD_TYPE_RULES } from "../config/vehicles";
-import { autoBreakDistances, buildTimeline, etaAtDistance, speedAtDistance, totalS, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
+import { autoBreakDistances, buildTimeline, etaAtDistance, resumeAtClock, speedAtDistance, totalS, tripDays, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
 import { assessPoint, breakAdvice, type Level } from "../core/risk/risk";
 import { BREAK_ADVICE, GLARE, RISK, RISK_WEIGHTS, WET_ROAD } from "../config/risk";
 import { routeScore, type RouteScore } from "../core/risk/route";
@@ -43,6 +43,7 @@ interface BreakPoint {
   pos: LatLon; // where the user put it; shown snapped to the selected route
   durationMin: number;
   auto: boolean; // made by the automatic rule and not edited since
+  resumeMin?: number; // overnight stop: ride on at this local minute of the day
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -103,6 +104,11 @@ export function startApp() {
     },
     onRemove(i) {
       breaks.splice(i, 1);
+      renderRoutes();
+    },
+    onOvernight(i, resumeMin) {
+      const { resumeMin: _old, ...rest } = breaks[i];
+      breaks[i] = resumeMin === null ? { ...rest, auto: false } : { ...rest, auto: false, resumeMin };
       renderRoutes();
     },
     onAuto: addAutoBreaks,
@@ -226,7 +232,14 @@ export function startApp() {
   };
 
   const breaksOn = (i: number): Break[] =>
-    breaks.map((b) => ({ distM: snapToLine(lines[i], b.pos).distM * scaleOf(i), durationS: b.durationMin * 60 }));
+    breaks.map((b) => ({
+      distM: snapToLine(lines[i], b.pos).distM * scaleOf(i),
+      durationS: b.durationMin * 60,
+      // Overnight: the browser's local clock decides when the next morning is.
+      ...(b.resumeMin !== undefined && {
+        resumeAt: (ms: number) => resumeAtClock(ms, b.resumeMin!, OVERNIGHT.minStayH * 3_600_000, -new Date(ms).getTimezoneOffset()),
+      }),
+    }));
 
   // Orders breaks along the selected route. Positions are kept, so switching back to
   // another route shows them where they were.
@@ -482,7 +495,7 @@ export function startApp() {
     breakRows = routes.length
       ? breaks.map((b, i) => {
           const at = tl?.breaks[i];
-          return { auto: b.auto, durationMin: b.durationMin, distM: at?.distM, startMs: at?.startMs, endMs: at?.endMs };
+          return { auto: b.auto, durationMin: b.durationMin, distM: at?.distM, startMs: at?.startMs, endMs: at?.endMs, resumeMin: b.resumeMin };
         })
       : [];
     renderBreakList(breakRows);
@@ -494,11 +507,18 @@ export function startApp() {
     if (typeof settings === "string") return renderSummary(null, [], settings);
     const t = timelines?.[selected];
     if (!t) return renderSummary(null, []);
+    // Overnight stops split the trip into days; the other breaks are the "Molalar" total.
+    const overnight = breaks.map((b) => b.resumeMin !== undefined);
+    const shortBreaks = t.breaks.filter((_, i) => !overnight[i]);
+    const days = tripDays(t, overnight);
     const rows: [string, string][] = [
-      ...(t.breaks.length
-        ? [["Molalar", `${t.breaks.length} mola · ${formatDuration(t.breaks.reduce((s, b) => s + b.endMs - b.startMs, 0) / 1000)}`] as [string, string]]
+      ...(shortBreaks.length
+        ? [["Molalar", `${shortBreaks.length} mola · ${formatDuration(shortBreaks.reduce((s, b) => s + b.endMs - b.startMs, 0) / 1000)}`] as [string, string]]
         : []),
       ["Çıkış", formatTime(t.timeMs[0])],
+      ...(days.length > 1
+        ? days.map((d, k): [string, string] => [`${k + 1}. gün`, `${formatTime(d.startMs)}–${formatClock(d.endMs)} · ${formatKm(d.toM - d.fromM)}`])
+        : []),
       ...t.legArrivalMs.map((ms, i): [string, string] => [`${routedTitles[i + 1]} varış`, formatTime(ms)]),
     ];
     if (settings.speed.mode === "road") {
@@ -531,7 +551,7 @@ export function startApp() {
     const sp = settings.speed;
     return {
       stops: filled.map((s) => ({ label: shortLabel(s.label), lat: s.pos!.lat, lon: s.pos!.lon })),
-      breaks: breaks.map((b) => ({ lat: b.pos.lat, lon: b.pos.lon, min: b.durationMin, auto: b.auto })),
+      breaks: breaks.map((b) => ({ lat: b.pos.lat, lon: b.pos.lon, min: b.durationMin, auto: b.auto, resumeMin: b.resumeMin })),
       vehicle: settings.vehicle,
       speed: sp.mode === "average" ? { mode: "average", kmh: sp.kmh } : { mode: "road", ...sp.kmh },
       depart: settings.departMode === "at" ? { mode: "at", ms: settings.departMs } : { mode: settings.departMode },
@@ -542,7 +562,7 @@ export function startApp() {
 
   function applyState(s: TripState) {
     stops.splice(0, stops.length, ...s.stops.map((x) => ({ label: x.label, pos: { lat: x.lat, lon: x.lon } })));
-    breaks = s.breaks.map((b) => ({ pos: { lat: b.lat, lon: b.lon }, durationMin: b.min, auto: b.auto }));
+    breaks = s.breaks.map((b) => ({ pos: { lat: b.lat, lon: b.lon }, durationMin: b.min, auto: b.auto, resumeMin: b.resumeMin }));
     settingsCtl.apply(s);
     pendingSelected = s.selected;
     routeScores = [];

@@ -12,6 +12,7 @@ const trip: TripState = {
   breaks: [
     { lat: 40.43, lon: 29.72, min: 15, auto: false },
     { lat: 40.1, lon: 29.9, min: 10, auto: true },
+    { lat: 39.9, lon: 30.2, min: 15, auto: false, resumeMin: 480 },
   ],
   vehicle: "motorcycle",
   speed: { mode: "road", motorway: 110, primary: 80, urban: 40 },
@@ -64,6 +65,8 @@ test("broken or tampered links give null", () => {
   expect(decodeState(swap("spd", "a900"), limits)).toBeNull();
   expect(decodeState(swap("spd", "r110,80"), limits)).toBeNull();
   expect(decodeState(swap("b", "40,29,0"), limits)).toBeNull(); // break shorter than the minimum
+  expect(decodeState(swap("b", "40,29,15n1500"), limits)).toBeNull(); // resume minute past midnight
+  expect(decodeState(swap("b", "40,29,15x"), limits)).toBeNull();
   expect(decodeState(swap("veh", "x"), limits)).toBeNull();
   expect(decodeState(swap("dep", "tomorrow"), limits)).toBeNull();
   expect(decodeState(swap("r", "-1"), limits)?.selected).toBe(0);
