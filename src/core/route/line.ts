@@ -85,33 +85,6 @@ export function bearingAt(line: Line, d: number, windowM = 100): number {
   return ((Math.atan2(y, x) / RAD) + 360) % 360;
 }
 
-export interface Box {
-  south: number;
-  west: number;
-  north: number;
-  east: number;
-}
-
-// Bounding boxes of consecutive pieces of about segM each, grown by padDeg on every side.
-// Neighbouring boxes share their joining vertex, so the corridor has no gaps.
-export function segmentBoxes(line: Line, segM: number, padDeg: number): Box[] {
-  const { coords, cumM } = line;
-  const out: Box[] = [];
-  let start = 0;
-  for (let i = 1; i < coords.length; i++) {
-    if (cumM[i] - cumM[start] < segM && i < coords.length - 1) continue;
-    const seg = coords.slice(start, i + 1);
-    out.push({
-      south: Math.min(...seg.map((p) => p.lat)) - padDeg,
-      west: Math.min(...seg.map((p) => p.lon)) - padDeg,
-      north: Math.max(...seg.map((p) => p.lat)) + padDeg,
-      east: Math.max(...seg.map((p) => p.lon)) + padDeg,
-    });
-    start = i;
-  }
-  return out;
-}
-
 // Where to put a route's label: the point in the middle 60% of the line that is farthest from the
 // other routes, so labels of overlapping alternatives sit on their own stretch. Midpoint when alone.
 export function labelPoint(line: Line, others: Line[], samples = 30): LatLon {

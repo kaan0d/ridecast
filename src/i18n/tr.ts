@@ -142,31 +142,12 @@ export const tr: Messages = {
     rainStops: (extend, total) => `Molanın sonunda yağmur var, ${extend} dk sonra diniyor. Molayı ${total} dk'ya uzatmayı düşün.`,
   },
 
-  fuel: {
-    gap: (lengthKm, rangeKm) => `${lengthKm} km yakıt yok (menzil ${rangeKm} km)`,
-    fillUp: (name) => ` · ${name} noktasında depoyu doldur`,
-    atStart: " · depo dolu çık",
-    loading: "Yakıt menzili kontrolü: yakıt noktaları yükleniyor…",
-  },
-
   share: {
     badLink: "Bu link okunamadı; rota yüklenmedi.",
     copied: "Kopyalandı",
     linkAria: "Paylaşım linki",
     recent: "Son rotalar",
     recentCleared: "Son rotalar temizlendi.",
-  },
-
-  stops: {
-    kind: { fuel: "Akaryakıt", services: "Dinlenme tesisi", rest: "Mola yeri" },
-    show: "Yakıt ve mola noktalarını göster",
-    searching: "Aranıyor…",
-    none: "Rota boyunca 1 km içinde yakıt veya mola noktası bulunamadı.",
-    sheltered: " · barınaklı, yağış/soğukta önerilir",
-    shelteredShort: " · barınaklı, önerilir",
-    addBreak: "Mola ekle",
-    addAria: (name) => `${name}: mola ekle`,
-    note: "OpenStreetMap verisi, rotanın 1 km yakını. Aynı türden noktalar 10 km'de bire seyreltildi; yağış ve soğukta sadece barınaklı olanlar.",
   },
 
   weather: {
@@ -297,6 +278,7 @@ export const tr: Messages = {
     offline: "Çevrimdışı: son alınan hava verisi gösteriliyor, bağlantı gelince yenilenir.",
     soundOn: "Ses açık",
     soundOff: "Ses kapalı",
+    fuelLow: (km) => `Yakıtın epey azalmış görünüyor (~${km} km kaldı). Benzinlik aramak için uygun bir vakit.`,
     noGeo: "Bu tarayıcı konum desteklemiyor; canlı mod açılamadı.",
   },
 
@@ -308,9 +290,6 @@ export const tr: Messages = {
     weatherTooFar: (days) => `Hava tahmini en fazla ${days} gün ilerisi için var.`,
     weatherBusy: "Hava servisi şu an yoğun, biraz sonra tekrar deneyin.",
     weatherDown: "Hava durumu alınamadı.",
-    stopsBusy: "Yakıt/mola sunucusu şu an yoğun, biraz sonra tekrar deneyin.",
-    stopsDown: "Yakıt ve mola noktaları alınamadı.",
-    stopsPartial: "Yakıt/mola sunucusu sorguyu bitiremedi, biraz sonra tekrar deneyin.",
     searchFailed: "Adres araması başarısız oldu.",
   },
 
@@ -368,7 +347,6 @@ export const tr: Messages = {
     autoDuration: "Otomatik mola süresi (dk)",
     minBreak: "dk mola",
     autoAdd: "Otomatik mola ekle",
-    fuelStops: "Yakıt ve mola noktaları",
     live: "Canlı mod",
     liveSun: "Güneş",
     liveSunTitle: "Güneş altında okunur yüksek kontrast",
@@ -378,6 +356,10 @@ export const tr: Messages = {
     reroute: "Rotayı yeniden hesapla",
     liveRefresh: "Havayı şimdi yenile",
     fuelRange: "Yakıt menzili",
-    fuelRangeNote: "Rota boyunca yakıt noktaları bundan daha seyrekse uyarır.",
+    fuelRangeNote: "Ayarlanırsa yolculuk başlarken depo seviyesi sorulur, yakıt azalınca uyarır.",
+    refuel: "Depoyu doldurdum",
+    fuelAsk: "Depo ne kadar dolu?",
+    fuelFull: "Dolu",
+    cancel: "Vazgeç",
   },
 };

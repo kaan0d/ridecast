@@ -3,7 +3,7 @@ import { LIVE } from "../config/live";
 import type { Timeline } from "../core/eta/eta";
 import { etaAtDistance } from "../core/eta/eta";
 import type { LatLon } from "../core/geo";
-import { liveTimeline, newOrWorse, nextWarning, offRouteCount, paceFactor, type Fix } from "../core/live/live";
+import { liveTimeline, newOrWorse, nextWarning, odometerStep, offRouteCount, paceFactor, type Fix } from "../core/live/live";
 import { haversineM, snapToLine, type Line } from "../core/route/line";
 import type { Level } from "../core/risk/risk";
 import { conditionOf } from "../core/weather/weather";
@@ -51,6 +51,11 @@ export function createLive(deps: Deps) {
   let lastPosition: LatLon | null = null;
   let zoomNext = false; // the next position on the ride map sets the default zoom
   let follow = true; // off once the rider drags the ride map, back on with "my location"
+  // Fuel estimate from the range and the tank level asked at start; null when no range is set.
+  let fuel: { fullKm: number; leftKm: number; usedM: number; warned: boolean } | null = null;
+  let odoAnchor: LatLon | null = null;
+  const fuelLeftKm = () => (fuel ? fuel.leftKm - fuel.usedM / 1000 : null);
+  const fuelLow = () => !!fuel && fuelLeftKm()! <= fuel.fullKm * LIVE.fuel.warnFraction;
 
   // Ride screen: the map follows the rider (north up, no heading from the browser) above the live
   // card. The first fix zooms to LIVE.mapZoom; after that the rider's own zoom is kept. Dragging
@@ -111,6 +116,16 @@ export function createLive(deps: Deps) {
     setNote("gps", pos.coords.accuracy > LIVE.poorAccuracyM ? t.live.gpsPoor(Math.round(pos.coords.accuracy)) : null);
     lastPosition = p;
     place(p);
+    if (fuel) {
+      const o = odometerStep(odoAnchor, p, pos.coords.accuracy, LIVE.fuel.minStepM);
+      odoAnchor = o.anchor;
+      fuel.usedM += o.addM;
+      if (!fuel.warned && fuelLow()) {
+        fuel.warned = true;
+        navigator.vibrate?.([200, 100, 200]);
+        if (sound) beep();
+      }
+    }
     // Re-plan (ETAs, weather ETAs) when the pace moved enough, or once a minute.
     const pace = paceFactor(fixes, r.timeline, LIVE.pace);
     if (Math.abs(pace - lastPace) > LIVE.replanPaceDelta || fix.t - lastReplanMs > LIVE.replanEveryMs) {
@@ -223,6 +238,9 @@ export function createLive(deps: Deps) {
     $("live-weather").innerHTML = h ? `${weatherIcon(h)}<b>${Math.round(h.tempC)}°</b><span></span>` : "";
     if (h) $("live-weather").querySelector("span")!.textContent = t.conditions[conditionOf(h.code).name] + (here?.risk ? t.live.feels(Math.round(here.risk.feltC)) : "");
 
+    $("live-fuel").hidden = !fuelLow();
+    if (fuelLow()) $("live-fuel-text").textContent = t.live.fuelLow(Math.max(0, Math.round(fuelLeftKm()!)));
+
     const off = offCount >= LIVE.offRouteFixes;
     $("live-off").hidden = !off;
     $("live-alert").hidden = !alert;
@@ -237,7 +255,8 @@ export function createLive(deps: Deps) {
     root.style.setProperty("--live-inset", `${view.offsetHeight}px`); // map controls sit above the card
   }
 
-  function start() {
+  // fuel: range left and on a full tank (km), or null for no fuel warning.
+  function start(fuelKm: { leftKm: number; fullKm: number } | null) {
     if (active) return;
     if (!("geolocation" in navigator)) {
       $("status").textContent = t.live.noGeo;
@@ -252,6 +271,8 @@ export function createLive(deps: Deps) {
     offCount = 0;
     lastPace = 1;
     lastPosition = null;
+    fuel = fuelKm && { ...fuelKm, usedM: 0, warned: false };
+    odoAnchor = null;
     watchId = navigator.geolocation.watchPosition(onPosition, onError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
     void lockScreen();
     refreshTimer = window.setInterval(() => deps.refreshWeather(), LIVE.weatherRefreshMs);
@@ -303,6 +324,10 @@ export function createLive(deps: Deps) {
   $("live-sun").addEventListener("click", () => setSun(view.dataset.contrast !== "high"));
   $("live-alert-close").addEventListener("click", () => {
     alert = null;
+    render();
+  });
+  $("live-refuel").addEventListener("click", () => {
+    if (fuel) fuel = { ...fuel, leftKm: fuel.fullKm, usedM: 0, warned: false };
     render();
   });
   $("live-reroute").addEventListener("click", () => {
