@@ -207,6 +207,7 @@ export function createLive(deps: Deps) {
       $("live-alert-text").textContent = alert.text;
       $("live-alert").dataset.level = String(alert.level);
     }
+    setNote("net", navigator.onLine ? null : "Çevrimdışı: son alınan hava verisi gösteriliyor, bağlantı gelince yenilenir.");
     $("live-notes").textContent = notes.map((n) => n.slice(n.indexOf(":") + 1)).join(" ");
     $("live-sound").setAttribute("aria-pressed", String(sound));
     $("live-sound").textContent = sound ? "Ses açık" : "Ses kapalı";

@@ -360,7 +360,8 @@ export function startApp() {
         renderRouteList(timelines);
       } catch (e) {
         if (my !== weatherSeq) return;
-        show([], false, (e as Error).message);
+        // While riding, a failed refresh (no signal) keeps the last forecast on screen.
+        show(live.isActive() ? weatherPoints : [], false, (e as Error).message);
         if (bestMode) renderBest({ top: [], loading: false, error: (e as Error).message });
       }
     }, 300);
@@ -653,6 +654,21 @@ export function startApp() {
       { enableHighAccuracy: true, timeout: 15000 },
     );
   }
+
+  // Offline: say so; the service worker serves the last routes and forecasts it saw.
+  const offlineText = "Çevrimdışısın; son alınan rota ve hava verisi gösteriliyor.";
+  const netChanged = () => {
+    if (!navigator.onLine) status(offlineText);
+    else if (statusEl.textContent === offlineText) status("");
+    // Back online while riding: fetch a fresh forecast right away.
+    if (navigator.onLine && live.isActive()) {
+      freshWeather = true;
+      renderRoutes();
+    }
+    live.render();
+  };
+  addEventListener("online", netChanged);
+  addEventListener("offline", netChanged);
 
   // Shortcuts: Escape closes the menu, card and measuring; "/" jumps to the next address field.
   addEventListener("keydown", (e) => {
