@@ -124,7 +124,7 @@ export function renderStrip(
     const n = state.points.length;
     const fit = Math.max(2, Math.floor((el.clientWidth || 360) / LABEL_PX));
     const step = Math.max(1, Math.ceil((n - 1) / (fit - 1)));
-    const labelled = (i: number) => i === n - 1 || (i % step === 0 && n - 1 - i >= step / 2);
+    const labelled = (i: number) => i === n - 1 || (i % step === 0 && n - 1 - i >= step);
     state.points.forEach((pt, i) => {
       const li = document.createElement("li");
       li.style.setProperty("--i", String(i));
