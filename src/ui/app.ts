@@ -19,7 +19,8 @@ import type { TripState } from "../core/share/state";
 import { SHARE } from "../config/share";
 import { createStopsPanel } from "./stops";
 import { reverseLabel } from "../services/nominatim";
-import { getRoutes, type Route } from "../services/osrm";
+import type { Route } from "../services/osrm";
+import { routeTrip, routingKey } from "../services/routing";
 import { bindBreaks } from "./breaks";
 import { formatClock, formatCoord, formatDuration, formatKm, formatTime } from "./format";
 import { icons } from "./icons";
@@ -84,7 +85,13 @@ export function startApp() {
   });
   const measure = createMeasure(map.leaflet, $("measure"));
   bindLayers(map.leaflet, $("layers"), $("layers-panel"));
-  const settingsCtl = bindSettings(renderRoutes);
+  let routedKey = ""; // vehicle profile and avoid options the current routes were made with
+  // Vehicle or avoid options can change the route itself; everything else only re-plans on it.
+  const settingsCtl = bindSettings(() => {
+    const r = settingsCtl.routing();
+    if (routingKey(r.vehicle, r.avoid) !== routedKey) updateRoute();
+    else renderRoutes();
+  });
   const readSettings = settingsCtl.read;
   const bestEl = $("depart-best");
   const renderBreakList = bindBreaks({
@@ -520,6 +527,7 @@ export function startApp() {
       vehicle: settings.vehicle,
       speed: sp.mode === "average" ? { mode: "average", kmh: sp.kmh } : { mode: "road", ...sp.kmh },
       depart: settings.departMode === "at" ? { mode: "at", ms: settings.departMs } : { mode: settings.departMode },
+      avoid: settings.avoid,
       selected,
     };
   }
@@ -602,8 +610,14 @@ export function startApp() {
     }
     status("Rota hesaplanıyor…", "loading");
     const routed = filled.map((pos, k) => ({ pos, title: titleOfStop(k, filled.length) }));
+    const how = settingsCtl.routing();
+    routedKey = routingKey(how.vehicle, how.avoid);
     try {
-      const result = await getRoutes(routed.map((s) => s.pos));
+      const result = await routeTrip(
+        routed.map((s) => s.pos),
+        how.vehicle,
+        how.avoid,
+      );
       if (my !== routeSeq) return;
       routes = result;
       lines = result.map((r) => makeLine(r.coords));

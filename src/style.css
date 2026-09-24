@@ -1755,6 +1755,20 @@ button.stop-glyph {
   border-top: 1px solid var(--separator);
 }
 
+.row[hidden] {
+  display: none;
+}
+
+.row[hidden] + .row {
+  border-top: none;
+}
+
+.row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--ink);
+}
+
 .row-value {
   color: var(--ink-2);
   white-space: nowrap;
