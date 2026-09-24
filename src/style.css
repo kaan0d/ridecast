@@ -517,6 +517,11 @@ button {
   font-size: 0.9375rem;
 }
 
+.sheet-back {
+  align-self: center;
+  margin: -6px -2px -6px -8px;
+}
+
 /* Trip card: pickup dot and destination square joined by a rail. */
 .trip {
   background: var(--card);
@@ -597,6 +602,20 @@ button {
 
 .place-input input::placeholder {
   color: var(--ink-3);
+}
+
+/* Clear button of the address fields: a gap from the text and a thumb-sized target. */
+.place-input input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-left: 8px;
+  background: var(--ink-2);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E") center / 18px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E") center / 18px no-repeat;
+  cursor: pointer;
 }
 
 .stop-row:focus-within .stop-glyph::before {
@@ -2082,6 +2101,37 @@ input:invalid {
 
 .button-secondary:active {
   transform: scale(0.97);
+}
+
+/* Compact search bar: collapsed with no route (sheet.ts). Only the trip card's last row shows,
+   plus the status line when it has a message. */
+.sheet.compact .sheet-body > :not(.trip, #status),
+.sheet.compact .trip > :not(.trip-stops),
+.sheet.compact .stop-row:not(:last-child),
+.sheet.compact .trip-stops::before {
+  display: none;
+}
+
+.sheet.compact .trip .trip-stops {
+  margin-right: 0;
+}
+
+.sheet.compact .stop-row .place-input input {
+  border-top: none;
+}
+
+.sheet.compact .stop-glyph {
+  pointer-events: none;
+}
+
+@media (min-width: 721px) {
+  .sheet.compact {
+    bottom: auto;
+  }
+
+  .sheet.compact .sheet-body {
+    padding: 8px;
+  }
 }
 
 /* ---------- Phone: bottom sheet ---------- */
