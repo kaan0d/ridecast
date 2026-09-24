@@ -16,7 +16,6 @@ export const icons = {
   sun: svg('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/>'),
   partly: svg('<path d="M9 3.5v1.2M3.8 5.8l.9.9M2.5 11h1.2M14.3 5.8l-.9.9"/><path d="M5.6 12.4A3.8 3.8 0 1 1 12.2 8"/><path d="M9 20h8.5a3.2 3.2 0 0 0 .4-6.38 5 5 0 0 0-9.4-.85A3.6 3.6 0 0 0 9 20Z"/>'),
   cloud: svg(cloudPath),
-  auto: svg('<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/>'),
   moon: svg('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/>'),
   partlyNight: svg('<path d="M12.5 7.8A4.6 4.6 0 0 1 7 3.2a4.6 4.6 0 0 0-1.9 8.3"/><path d="M9 20h8.5a3.2 3.2 0 0 0 .4-6.38 5 5 0 0 0-9.4-.85A3.6 3.6 0 0 0 9 20Z"/>'),
   fog: svg('<path d="M4 9h16M3 13h18M5 17h14M8 21h8"/>'),

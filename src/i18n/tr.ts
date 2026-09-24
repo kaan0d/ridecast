@@ -287,9 +287,6 @@ export const tr: Messages = {
     searchFailed: "Adres araması başarısız oldu.",
   },
 
-  lang: { label: "Dil", en: "EN", tr: "TR" },
-
-  theme: { system: "Tema: sistem (açık için dokun)", light: "Tema: açık (koyu için dokun)", dark: "Tema: koyu (sistem için dokun)" },
 
   html: {
     hero1: "Yola çıkmadan önce,",
@@ -301,6 +298,11 @@ export const tr: Messages = {
     sheet: "Rota paneli",
     back: "Haritaya dön",
     settings: "Ayarlar",
+    theme: "Tema",
+    themeSystem: "Sistem",
+    themeLight: "Açık",
+    themeDark: "Koyu",
+    language: "Dil",
     history: "Geçmiş",
     clearRecent: "Son rotaları temizle",
     swap: "Başlangıç ile bitişi değiştir",

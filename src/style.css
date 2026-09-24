@@ -538,34 +538,6 @@ button {
   letter-spacing: -0.03em;
 }
 
-.lang-switch {
-  margin-left: auto;
-  display: flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 8px;
-  background: var(--fill);
-}
-
-.theme-btn {
-  align-self: center;
-  margin: -6px -4px;
-}
-
-.lang-switch button {
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--ink-2);
-}
-
-.lang-switch button[aria-pressed="true"] {
-  background: var(--card);
-  color: var(--ink);
-  box-shadow: var(--shadow-small);
-}
-
 .sheet-back {
   align-self: center;
   margin: -6px -2px -6px -8px;
@@ -573,7 +545,7 @@ button {
 
 .settings-btn {
   align-self: center;
-  margin: -6px -8px -6px 0;
+  margin: -6px -8px -6px auto;
 }
 
 .settings-btn[aria-expanded="true"] {
