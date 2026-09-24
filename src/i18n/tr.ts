@@ -100,6 +100,7 @@ export const tr: Messages = {
 
   summary: {
     arrival: "varış",
+    editStops: (from, to) => `${from} - ${to}. Durakları düzenle`,
     breaks: "Molalar",
     breaksValue: (n, total) => `${n} mola · ${total}`,
     departure: "Çıkış",

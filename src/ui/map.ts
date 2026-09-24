@@ -167,9 +167,13 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     return now < drawEnd() ? Math.max(0, drawAt + easeInOut(Math.min(1, frac)) * DRAW_MS - now) : frac * WAVE_MS;
   };
 
-  const pin = (kind: StopKind) => {
+  // Start and end pins carry their name beside them: they sit on the town's own map label.
+  const pin = (kind: StopKind, name: string) => {
     const size = kind === "via" ? 18 : 22;
-    return L.divIcon({ className: "stop-marker", html: `<span class="pin pin-${kind}" style="width:${size}px;height:${size}px"></span>`, iconSize: [size, size] });
+    const html = document.createElement("span");
+    html.innerHTML = `<span class="pin pin-${kind}" style="width:${size}px;height:${size}px"></span>`;
+    if (kind !== "via") html.append(Object.assign(document.createElement("span"), { className: "pin-name", textContent: name }));
+    return L.divIcon({ className: "stop-marker", html: html.innerHTML, iconSize: [size, size] });
   };
 
   return {
@@ -178,10 +182,10 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     center: () => fromLatLng(map.getCenter()),
 
     // Stop pins; dragging one moves that stop (index into the trip's stop list).
-    setStops(stops: { pos: LatLon; kind: StopKind; index: number; title: string }[], onDrag: (index: number, p: LatLon) => void) {
+    setStops(stops: { pos: LatLon; kind: StopKind; index: number; title: string; name: string }[], onDrag: (index: number, p: LatLon) => void) {
       stopLayer.clearLayers();
       for (const s of stops) {
-        const m = L.marker(toLatLng(s.pos), { icon: pin(s.kind), draggable: true, keyboard: false, title: t.map.dragStop(s.title), autoPan: true, zIndexOffset: 1000 }).addTo(stopLayer);
+        const m = L.marker(toLatLng(s.pos), { icon: pin(s.kind, s.name), draggable: true, keyboard: false, title: t.map.dragStop(s.title), autoPan: true, zIndexOffset: 1000 }).addTo(stopLayer);
         m.on("dragend", () => onDrag(s.index, fromLatLng(m.getLatLng())));
       }
     },

@@ -102,6 +102,7 @@ export const en = {
 
   summary: {
     arrival: "arrival",
+    editStops: (from: string, to: string) => `${from} to ${to}. Edit the stops`,
     breaks: "Breaks",
     breaksValue: (n: number, total: string) => `${n} ${pl(n, "break", "breaks")} · ${total}`,
     departure: "Departure",

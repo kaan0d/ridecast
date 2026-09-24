@@ -77,12 +77,16 @@ export function cardHtml(p: WeatherPoint): string {
   </div>`;
 }
 
-// Line strip in the sheet: stations on one rail with time, risk mark, icon, temperature and km.
-// The rail after a station takes its risk colour, dotted where it is dark. `arrive`: the first
-// render for a route, the stations come in left to right.
+const LABEL_PX = 54; // room one labelled station needs in the strip
+
+// Line strip in the sheet: every station on one rail across the panel's width, no scrolling. Each
+// shows its risk mark on the rail; as many as fit also show time, icon, temperature and km (the
+// ends: the stop names), the rest are marks only, like the minor stops on a line map. The rail
+// after a station takes its risk colour, dotted where it is dark. `arrive`: the first render for a
+// route, the stations come in left to right.
 export function renderStrip(
   el: HTMLElement,
-  state: { points: WeatherPoint[]; loading: boolean; error?: string; arrive?: boolean; onRetry(): void; onOpen(i: number): void },
+  state: { points: WeatherPoint[]; loading: boolean; error?: string; arrive?: boolean; ends?: [string, string]; onRetry(): void; onOpen(i: number): void },
 ) {
   if (!state.points.length && !state.loading && !state.error) return el.replaceChildren();
   const title = document.createElement("h2");
@@ -116,6 +120,11 @@ export function renderStrip(
     list.className = "wx-strip";
     list.classList.toggle("stale", state.loading);
     list.classList.toggle("arrive", !!state.arrive);
+    // ponytail: labels picked for the width at render time; a resize waits for the next render.
+    const n = state.points.length;
+    const fit = Math.max(2, Math.floor((el.clientWidth || 360) / LABEL_PX));
+    const step = Math.max(1, Math.ceil((n - 1) / (fit - 1)));
+    const labelled = (i: number) => i === n - 1 || (i % step === 0 && n - 1 - i >= step / 2);
     state.points.forEach((pt, i) => {
       const li = document.createElement("li");
       li.style.setProperty("--i", String(i));
@@ -127,6 +136,9 @@ export function renderStrip(
       const c = pt.hour ? t.conditions[conditionOf(pt.hour.code).name] : t.weather.noData;
       b.setAttribute("aria-label", `${formatClock(pt.etaMs)}, ${km(pt.distM)}: ${pt.hour ? deg(pt.hour.tempC) + ", " : ""}${c}`);
       b.innerHTML = `<span class="wx-t">${formatClock(pt.etaMs)}</span><span class="station risk-${level}"></span>${weatherIcon(pt.hour) || '<span class="wx-dash">–</span>'}<span class="wx-deg">${pt.hour ? deg(pt.hour.tempC) : ""}</span><span class="wx-km">${km(pt.distM)}</span>`;
+      const end = i === 0 ? state.ends?.[0] : i === n - 1 ? state.ends?.[1] : undefined;
+      if (end) b.querySelector(".wx-km")!.textContent = end;
+      if (!labelled(i)) b.classList.add("minor");
       b.addEventListener("click", () => state.onOpen(i));
       b.classList.toggle("far", pt.etaMs - Date.now() > WEATHER_REQUEST.farDays * 86_400_000); // uncertain, drawn dashed
       li.append(b);

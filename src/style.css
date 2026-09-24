@@ -46,7 +46,7 @@
   line-height: 1.38;
   -webkit-font-smoothing: antialiased;
   accent-color: var(--ink);
-  caret-color: var(--signal);
+  caret-color: var(--focus);
   view-transition-name: none;
 }
 
@@ -94,7 +94,7 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--signal) 22%, transparent);
+  background: color-mix(in srgb, var(--focus) 26%, transparent);
   color: var(--ink);
 }
 
@@ -358,7 +358,7 @@ button {
 }
 
 .measure-line {
-  stroke: var(--signal);
+  stroke: var(--focus);
   stroke-dasharray: 1 7;
   stroke-linecap: round;
 }
@@ -366,7 +366,7 @@ button {
 .measure-point {
   border-radius: 50%;
   background: var(--paper);
-  border: 3px solid var(--signal);
+  border: 3px solid var(--focus);
   cursor: grab;
 }
 
@@ -377,7 +377,7 @@ button {
 .route-drag-ghost {
   fill: var(--paper);
   fill-opacity: 1;
-  stroke: var(--signal);
+  stroke: var(--route);
   stroke-width: 3;
 }
 
@@ -470,6 +470,24 @@ button {
 
 .pin-end {
   border-radius: 4px;
+}
+
+/* Leaflet places .stop-marker absolutely, so the name positions against it. */
+.pin-name {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 50%;
+  translate: 0 -50%;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--ink);
+  text-shadow:
+    0 0 2px var(--paper),
+    0 0 4px var(--paper),
+    0 0 8px var(--paper);
+  pointer-events: none;
 }
 
 .pin-via {
@@ -616,22 +634,10 @@ button {
   margin: 0 2px 18px;
 }
 
-/* Wordmark with the red pivot of the clock hand. */
 .wordmark {
   font-size: 1.3125rem;
   font-weight: 720;
-  letter-spacing: -0.045em;
-}
-
-.wordmark::after {
-  content: "";
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-left: 3px;
-  border-radius: 50%;
-  background: var(--signal);
-  vertical-align: 1px;
+  letter-spacing: -0.04em;
 }
 
 .sheet-back {
@@ -645,6 +651,13 @@ button {
 .settings-btn[aria-expanded="true"] {
   background: var(--ink);
   color: var(--on-ink);
+}
+
+/* With a route the trip card folds into the timetable row; the row opens it (sheet.ts). The hint
+   is for the empty trip only. */
+.sheet.routed:not(.editing) .trip,
+.sheet.routed .hint {
+  display: none;
 }
 
 /* Settings page (sheet.ts): replaces the trip content until back or the gear is tapped. */
@@ -1018,7 +1031,7 @@ button.stop-glyph {
 
 /* Dropped pin and its place card. */
 .dropped-pin {
-  fill: var(--signal);
+  fill: var(--route);
   fill-opacity: 1;
   stroke: var(--route-casing);
   stroke-width: 3;
@@ -1111,7 +1124,7 @@ button.stop-glyph {
   display: none;
 }
 
-/* Loading: the red hand turns round a paper dial. */
+/* Loading: a hand turns round a paper dial. */
 #status[data-kind="loading"]::before {
   content: "";
   display: inline-block;
@@ -1120,7 +1133,7 @@ button.stop-glyph {
   margin-right: 8px;
   vertical-align: -2px;
   border-radius: 50%;
-  background: conic-gradient(from 0deg, var(--signal) 0 10%, transparent 10% 100%);
+  background: conic-gradient(from 0deg, var(--ink) 0 10%, transparent 10% 100%);
   box-shadow: inset 0 0 0 1.5px var(--rule);
   animation: spin 0.9s linear infinite;
 }
@@ -1143,15 +1156,112 @@ button.stop-glyph {
   gap: 10px;
   font-size: clamp(3.5rem, 15vw, 4.75rem);
   font-weight: 700;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.04em;
   line-height: 0.92;
 }
 
 .eta-time small {
-  font-size: 1.0625rem;
+  display: grid;
+  font-size: 1rem;
   font-weight: 550;
+  line-height: 1.2;
   letter-spacing: -0.01em;
   color: var(--ink-2);
+}
+
+.eta-label {
+  color: var(--ink);
+}
+
+/* The timetable row: departure time and place, the rail with duration and km, the destination.
+   A button: it opens the stop editor. */
+.eta-route {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: end;
+  gap: 12px;
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  text-align: left;
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  transition:
+    box-shadow 0.25s var(--ease-out),
+    transform 0.35s var(--ease-spring);
+}
+
+.eta-route:hover {
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+
+.eta-route:active {
+  transform: scale(0.98);
+}
+
+.eta-route[aria-expanded="true"] {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.er-end {
+  display: grid;
+  min-width: 0;
+  max-width: 9.5em;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.er-end span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.er-end b {
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+
+.er-to {
+  text-align: right;
+}
+
+/* Rail from the start ring to the terminus square, the duration above it. */
+.er-rail {
+  position: relative;
+  align-self: stretch;
+  display: grid;
+  align-content: end;
+  justify-items: center;
+  padding-bottom: 14px;
+  min-width: 64px;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.er-rail::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  bottom: 6px;
+  height: 2px;
+  background: var(--ink);
+}
+
+.er-rail::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  height: 10px;
+  background:
+    radial-gradient(circle, var(--raised) 2px, var(--ink) 2.5px 4.5px, transparent 5px) left center / 10px 10px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) right center / 9px 9px no-repeat;
 }
 
 /* Rolling digits (summary.ts): each digit is a column of 0-9 that slides to its value. */
@@ -1176,13 +1286,6 @@ button.stop-glyph {
   display: inline-block;
   line-height: 1;
   margin: 0 0.01em;
-}
-
-.eta-meta {
-  display: block;
-  margin-top: 10px;
-  color: var(--ink-2);
-  font-size: 0.9375rem;
 }
 
 .eta-error {
@@ -1396,7 +1499,7 @@ button.stop-glyph {
 .wx-temp {
   font-size: 2.5rem;
   font-weight: 700;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.04em;
   line-height: 1;
 }
 
@@ -1477,13 +1580,9 @@ button.stop-glyph {
    rail after a station takes that station's risk colour; dark parts get sleepers. */
 .wx-strip {
   display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  padding: 4px 0 10px;
+  padding: 4px 22px 10px;
   margin: 0 -18px;
-  padding-inline: 12px;
   transition: opacity 0.25s var(--ease-out);
-  mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent);
 }
 
 .wx-strip.stale {
@@ -1491,21 +1590,36 @@ button.stop-glyph {
 }
 
 .wx-strip li {
-  flex: none;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .wx-strip button {
   --rail: var(--ink);
   position: relative;
-  scroll-snap-align: start;
   display: grid;
   grid-template-rows: auto 22px auto auto auto;
-  justify-items: center;
+  justify-items: unsafe center;
   gap: 3px;
-  width: 60px;
+  width: 100%;
   padding: 6px 0 8px;
-  border-radius: 12px;
+  border-radius: 10px;
+  white-space: nowrap;
   transition: background 0.2s var(--ease-out);
+}
+
+/* Marks-only stations between the labelled ones. */
+.wx-strip .minor > :not(.station) {
+  visibility: hidden;
+}
+
+.wx-strip li:first-child .wx-km,
+.wx-strip li:last-child .wx-km {
+  max-width: 78px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .wx-strip button:hover {
@@ -1826,19 +1940,6 @@ button.stop-glyph {
   transform: scale(0.95);
 }
 
-/* Start ride: the red hand's pivot before the label. */
-#live-start::before {
-  content: "";
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: 9px;
-  border-radius: 50%;
-  background: var(--signal);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--signal) 30%, transparent);
-  vertical-align: 1px;
-}
-
 .share-row .button-secondary,
 .share-row .share-link {
   background: var(--fill);
@@ -2122,7 +2223,7 @@ button.stop-glyph {
   font-size: clamp(2.5rem, 12vw, 3.5rem);
   white-space: nowrap;
   font-weight: 700;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.04em;
   line-height: 0.95;
 }
 
@@ -2202,7 +2303,7 @@ button.stop-glyph {
 
 /* Ride map not following (dragged away): "my location" lights up as the way back. */
 .live-free #locate {
-  background: var(--signal);
+  background: var(--focus);
   color: #fff;
 }
 
@@ -2849,6 +2950,10 @@ input:invalid {
 
   .wx-strip {
     margin: 0 -16px;
+  }
+
+  .eta {
+    margin-top: 6px;
   }
 
   .brand {
