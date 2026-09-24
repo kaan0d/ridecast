@@ -2,8 +2,6 @@ import { fromLonLat, toLonLatString, type LatLon } from "../core/geo";
 import type { Step } from "../core/route/roadType";
 import { getJson, HttpError } from "./http";
 
-const BASE = "https://router.project-osrm.org/route/v1/driving";
-
 export interface Route {
   coords: LatLon[];
   distanceM: number;
@@ -21,9 +19,10 @@ interface OsrmResponse {
   }[];
 }
 
-// OSRM only returns alternatives for routes with exactly two stops.
-export async function getRoutes(stops: LatLon[]): Promise<Route[]> {
-  const url = `${BASE}/${stops.map(toLonLatString).join(";")}?alternatives=true&overview=full&geometries=geojson&steps=true`;
+// OSRM only returns alternatives for routes with exactly two stops. `base` picks the server and
+// profile (see services/routing.ts).
+export async function getRoutes(stops: LatLon[], base: string): Promise<Route[]> {
+  const url = `${base}/${stops.map(toLonLatString).join(";")}?alternatives=true&overview=full&geometries=geojson&steps=true`;
   let data: OsrmResponse;
   try {
     data = await getJson<OsrmResponse>(url);

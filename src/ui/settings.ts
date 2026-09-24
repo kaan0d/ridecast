@@ -2,6 +2,7 @@ import { DEFAULT_VEHICLE, ROAD_TYPE_RULES, SPEED_LIMITS_KMH, VEHICLES, type Vehi
 import type { SpeedSetting } from "../core/eta/eta";
 import type { RoadType } from "../core/route/roadType";
 import type { TripState } from "../core/share/state";
+import { avoidFor, type Avoid } from "../services/routing";
 
 export type DepartMode = "now" | "at" | "best";
 
@@ -10,6 +11,7 @@ export interface TripSettings {
   speed: SpeedSetting;
   departMs: number;
   departMode: DepartMode;
+  avoid: Avoid;
 }
 
 const ROADS: RoadType[] = ["motorway", "primary", "urban"];
@@ -51,7 +53,17 @@ export function bindSettings(onChange: () => void) {
     avg.value = String(d.avgKmh);
     for (const r of ROADS) road[r].value = String(d.roadKmh[r]);
   };
+  const avoidBoxes = [...form.querySelectorAll<HTMLInputElement>('input[name="avoid"]')];
+  // Only the avoid options that apply to the vehicle, e.g. no motorways for a bicycle.
+  const routing = () => {
+    const vehicle = radio("vehicle") as VehicleType;
+    const allowed = avoidFor(vehicle);
+    const avoid = Object.fromEntries(avoidBoxes.map((b) => [b.value, b.checked && allowed.includes(b.value as keyof Avoid)])) as unknown as Avoid;
+    return { vehicle, avoid };
+  };
   const syncVisibility = () => {
+    const allowed = avoidFor(radio("vehicle") as VehicleType);
+    for (const b of avoidBoxes) b.closest<HTMLElement>(".row")!.hidden = !allowed.includes(b.value as keyof Avoid);
     $("speed-average").hidden = radio("speed-mode") !== "average";
     $("speed-road").hidden = radio("speed-mode") !== "road";
     departAt.hidden = radio("depart") !== "at";
@@ -89,7 +101,7 @@ export function bindSettings(onChange: () => void) {
     const departMs =
       mode === "now" ? Date.now() : mode === "best" ? (best ?? Math.ceil(Date.now() / 3_600_000) * 3_600_000) : new Date(departAt.value).getTime();
     if (Number.isNaN(departMs)) return "Çıkış tarihi ve saati seçin.";
-    return { vehicle: radio("vehicle") as VehicleType, speed, departMs, departMode: mode };
+    return { vehicle: radio("vehicle") as VehicleType, speed, departMs, departMode: mode, avoid: routing().avoid };
   };
 
   // Puts shared settings into the form (no change event: the caller re-plans once).
@@ -97,7 +109,8 @@ export function bindSettings(onChange: () => void) {
     const el = form.querySelector<HTMLInputElement>(`input[name="${name}"][value="${value}"]`);
     if (el) el.checked = true;
   };
-  function apply(s: Pick<TripState, "vehicle" | "speed" | "depart">) {
+  function apply(s: Pick<TripState, "vehicle" | "speed" | "depart" | "avoid">) {
+    for (const b of avoidBoxes) b.checked = s.avoid[b.value as keyof Avoid];
     setRadio("vehicle", s.vehicle);
     fillSpeeds();
     setRadio("speed-mode", s.speed.mode);
@@ -111,6 +124,7 @@ export function bindSettings(onChange: () => void) {
 
   return {
     read,
+    routing,
     apply,
     best: () => best,
     setBest(ms: number) {

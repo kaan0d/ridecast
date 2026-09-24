@@ -16,6 +16,7 @@ const trip: TripState = {
   vehicle: "motorcycle",
   speed: { mode: "road", motorway: 110, primary: 80, urban: 40 },
   depart: { mode: "at", ms: Date.UTC(2026, 8, 24, 5) },
+  avoid: { highways: true, tolls: false, ferries: true },
   selected: 1,
 };
 
@@ -27,7 +28,17 @@ test("round trip keeps every setting (coordinates to 5 decimals, label separator
   expect(back.vehicle).toBe("motorcycle");
   expect(back.speed).toEqual(trip.speed);
   expect(back.depart).toEqual(trip.depart);
+  expect(back.avoid).toEqual(trip.avoid);
+  expect(encodeState(trip)).toContain("av=hf");
   expect(back.selected).toBe(1);
+});
+
+test("links without avoid options (older links) avoid nothing; unknown letters are rejected", () => {
+  const p = new URLSearchParams(encodeState(trip));
+  p.delete("av");
+  expect(decodeState(p.toString(), limits)?.avoid).toEqual({ highways: false, tolls: false, ferries: false });
+  p.set("av", "hx");
+  expect(decodeState(p.toString(), limits)).toBeNull();
 });
 
 test("average speed, now and best departures, no breaks", () => {

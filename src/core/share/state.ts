@@ -9,8 +9,11 @@ export interface TripState {
   vehicle: Vehicle;
   speed: { mode: "average"; kmh: number } | { mode: "road"; motorway: number; primary: number; urban: number };
   depart: { mode: "now" } | { mode: "at"; ms: number } | { mode: "best" };
+  avoid: { highways: boolean; tolls: boolean; ferries: boolean };
   selected: number;
 }
+
+const AVOID_CODE = { highways: "h", tolls: "t", ferries: "f" } as const;
 
 const VEHICLE_CODE: Record<Vehicle, string> = { motorcycle: "m", car: "c", bicycle: "b", walking: "w" };
 const CODE_VEHICLE = Object.fromEntries(Object.entries(VEHICLE_CODE).map(([k, v]) => [v, k])) as Record<string, Vehicle>;
@@ -27,6 +30,8 @@ export function encodeState(s: TripState): string {
   p.set("veh", VEHICLE_CODE[s.vehicle]);
   p.set("spd", s.speed.mode === "average" ? `a${s.speed.kmh}` : `r${s.speed.motorway},${s.speed.primary},${s.speed.urban}`);
   p.set("dep", s.depart.mode === "at" ? `at${s.depart.ms}` : s.depart.mode);
+  const av = (Object.keys(AVOID_CODE) as (keyof typeof AVOID_CODE)[]).filter((k) => s.avoid[k]).map((k) => AVOID_CODE[k]).join("");
+  if (av) p.set("av", av);
   if (s.selected > 0) p.set("r", String(s.selected));
   return p.toString();
 }
@@ -78,6 +83,11 @@ export function decodeState(hash: string, limits: { minKmh: number; maxKmh: numb
   else if (dep.startsWith("at") && num(dep.slice(2)) !== null) depart = { mode: "at", ms: num(dep.slice(2))! };
   else return null;
 
+  // Links from before the avoid options have no "av": nothing avoided.
+  const av = p.get("av") ?? "";
+  if (!/^[htf]*$/.test(av)) return null;
+  const avoid = { highways: av.includes("h"), tolls: av.includes("t"), ferries: av.includes("f") };
+
   const r = num(p.get("r") ?? "0");
-  return { stops, breaks, vehicle, speed, depart, selected: r !== null && r >= 0 && Number.isInteger(r) ? r : 0 };
+  return { stops, breaks, vehicle, speed, depart, avoid, selected: r !== null && r >= 0 && Number.isInteger(r) ? r : 0 };
 }
