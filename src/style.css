@@ -452,33 +452,34 @@ button {
 }
 
 /* Stop pins: start is a station ring, via a small ring, end the terminus square. */
+/* Small and fine like the stations on the line; map.ts sizes the box (14 px, via 11 px). */
 .pin {
   display: block;
   transform: scale(var(--pin-scale, 1));
   transition: transform 0.25s var(--ease-out);
-  border: 3px solid var(--route-casing);
+  border: 2px solid var(--route-casing);
   background: var(--route);
-  box-shadow: var(--shadow-small);
+  box-shadow: 0 1px 3px rgb(20 21 23 / 0.3);
 }
 
 .pin-start {
   border-radius: 50%;
   background: var(--route-casing);
-  border: 6px solid var(--route);
-  outline: 2.5px solid var(--route-casing);
+  border: 3.5px solid var(--route);
+  outline: 2px solid var(--route-casing);
 }
 
 .pin-end {
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 /* Leaflet places .stop-marker absolutely, so the name positions against it. */
 .pin-name {
   position: absolute;
-  left: calc(50% + 11px * var(--pin-scale, 1) + 6px);
+  left: calc(50% + 7px * var(--pin-scale, 1) + 5px);
   top: 50%;
   translate: 0 -50%;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 650;
   letter-spacing: -0.01em;
   white-space: nowrap;
