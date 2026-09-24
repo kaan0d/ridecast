@@ -129,7 +129,7 @@ export function startApp() {
     onRouteDrag,
   });
   const measure = createMeasure(map.leaflet, $("measure"));
-  bindLayers(map.leaflet, $("layers"), $("layers-panel"), $("map-style"));
+  bindLayers(map.leaflet, $("layers"), $("layers-panel"));
   const actions = bindMapActions({
     map,
     measure,

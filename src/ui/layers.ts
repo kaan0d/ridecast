@@ -4,14 +4,6 @@ import { getJson } from "../services/http";
 import { formatClock } from "./format";
 
 export type BaseId = "map" | "satellite" | "terrain";
-type MapStyle = "osm" | "simple";
-
-interface Saved {
-  base: BaseId;
-  radar: boolean;
-  style: MapStyle; // the "map" base: OSM (detailed) or Esri's grey canvas (simple)
-  labels: boolean; // simple: place names
-}
 
 // Keyless tile sources. OSM is muted by the CSS filter on `.base-muted` tiles; imagery and
 // topography keep their colours.
@@ -37,13 +29,6 @@ const BASES: Record<BaseId, { label: string; url: string; maxZoom: number; class
   },
 };
 
-// Simple map: Esri's keyless grey canvas, light or dark by theme, with its place names as a separate
-// layer on top. Tiles go to zoom 16; Leaflet scales them beyond. (CARTO's tiles now need a key.)
-const canvasUrl = (layer: "Base" | "Reference") =>
-  `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_${document.documentElement.dataset.theme === "dark" ? "Dark" : "Light"}_Gray_${layer}/MapServer/tile/{z}/{y}/{x}`;
-const CANVAS_MAX_NATIVE_ZOOM = 16;
-const CANVAS_CREDIT = "&copy; Esri, HERE, Garmin, OpenStreetMap";
-
 // RainViewer serves radar tiles up to zoom 7 ("Zoom Level Not Supported" above); Leaflet scales them.
 const RADAR_INDEX = "https://api.rainviewer.com/public/weather-maps.json";
 const RADAR_MAX_NATIVE_ZOOM = 7;
@@ -55,24 +40,15 @@ interface RadarIndex {
 }
 
 // Google Maps style "Katmanlar" panel: base map (map, satellite, terrain) and a rain radar overlay.
-// `style`: the map style group on the settings page (detailed or simple, and the simple map's names).
-export function bindLayers(map: L.Map, button: HTMLElement, panel: HTMLElement, style: HTMLElement) {
+export function bindLayers(map: L.Map, button: HTMLElement, panel: HTMLElement) {
   const saved = load();
   let base = L.tileLayer("", {});
-  let labels: L.TileLayer | null = null; // simple map: place names
-  let shownUrl = "";
   let radar: L.TileLayer | null = null;
 
   function setBase(id: BaseId) {
-    const simple = id === "map" && saved.style === "simple";
-    const b = simple ? { ...BASES.map, url: canvasUrl("Base"), className: undefined, attribution: CANVAS_CREDIT } : BASES[id];
-    const native = simple ? CANVAS_MAX_NATIVE_ZOOM : b.maxZoom;
+    const b = BASES[id];
     base.remove();
-    labels?.remove();
-    labels = null;
-    shownUrl = b.url;
-    base = L.tileLayer(b.url, { maxZoom: b.maxZoom, maxNativeZoom: native, attribution: b.attribution, className: b.className }).addTo(map);
-    if (simple && saved.labels) labels = L.tileLayer(canvasUrl("Reference"), { maxZoom: b.maxZoom, maxNativeZoom: native }).addTo(map);
+    base = L.tileLayer(b.url, { maxZoom: b.maxZoom, maxNativeZoom: b.maxZoom, attribution: b.attribution, className: b.className }).addTo(map);
     base.bringToBack();
     map.setMaxZoom(b.maxZoom);
     saved.base = id;
@@ -146,40 +122,21 @@ export function bindLayers(map: L.Map, button: HTMLElement, panel: HTMLElement, 
     }
   });
 
-  // Settings page: not trip settings, so the settings form must not plan again.
-  const input = (name: string) => style.querySelector<HTMLInputElement>(`input[name="${name}"]`)!;
-  const options = style.querySelector<HTMLElement>("#simple-options")!;
-  style.querySelector<HTMLInputElement>(`input[value="${saved.style}"]`)!.checked = true;
-  input("map-labels").checked = saved.labels;
-  options.hidden = saved.style !== "simple";
-  style.addEventListener("input", (e) => {
-    e.stopPropagation();
-    saved.style = style.querySelector<HTMLInputElement>('input[name="map-style"]:checked')!.value as MapStyle;
-    saved.labels = input("map-labels").checked;
-    options.hidden = saved.style !== "simple";
-    if (saved.base === "map") setBase("map");
-    else save(saved);
-  });
-  // The simple map follows the theme (also the light theme while riding).
-  new MutationObserver(() => {
-    if (saved.base === "map" && saved.style === "simple" && canvasUrl("Base") !== shownUrl) setBase("map");
-  }).observe(document.documentElement, { attributeFilter: ["data-theme"] });
-
   setBase(saved.base);
   if (saved.radar) void setRadar(true);
 }
 
 // The chosen layers are a per-viewer convenience; storage may be blocked.
-function load(): Saved {
+function load(): { base: BaseId; radar: boolean } {
   try {
     const v = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
-    return { base: v.base in BASES ? v.base : "map", radar: v.radar === true, style: v.style === "simple" ? "simple" : "osm", labels: v.labels !== false };
+    return { base: v.base in BASES ? v.base : "map", radar: v.radar === true };
   } catch {
-    return { base: "map", radar: false, style: "osm", labels: true };
+    return { base: "map", radar: false };
   }
 }
 
-function save(v: Saved) {
+function save(v: { base: BaseId; radar: boolean }) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v));
   } catch {
