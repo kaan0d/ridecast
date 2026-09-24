@@ -101,7 +101,10 @@ export function renderStrip(
   } else if (state.loading && !state.points.length) {
     const p = document.createElement("p");
     p.className = "wx-status loading";
-    p.textContent = t.weather.loading;
+    const text = document.createElement("span");
+    text.className = "shimmer";
+    text.textContent = text.dataset.text = t.weather.loading;
+    p.append(text);
     parts.push(p);
   }
 

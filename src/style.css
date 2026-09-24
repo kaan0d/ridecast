@@ -1299,6 +1299,41 @@ button.stop-glyph {
   color: var(--error);
 }
 
+/* Loading text: a light band sweeps over the glyphs (a copy in ::before, clipped to the text). */
+.shimmer {
+  position: relative;
+  display: inline-block;
+  color: var(--ink-3);
+}
+
+.shimmer::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 40%, var(--ink) 50%, transparent 60%) no-repeat;
+  background-size: 400% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer::before {
+    animation: none;
+  }
+}
+
 .link-button {
   color: var(--focus);
   font-weight: 600;
