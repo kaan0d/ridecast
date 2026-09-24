@@ -34,6 +34,8 @@
           <ol id="stops" class="trip-stops"></ol>
           <button type="button" id="swap" class="icon-btn trip-swap" aria-label="Başlangıç ile bitişi değiştir" title="Başlangıç ile bitişi değiştir" hidden></button>
           <button type="button" id="add-via" class="trip-add">Durak ekle</button>
+          <button type="button" id="gpx-import" class="trip-add">GPX dosyası aç</button>
+          <input type="file" id="gpx-file" accept=".gpx,application/gpx+xml" hidden />
         </div>
         <p class="hint">Adres ara ya da haritaya dokun. Sağ tık veya uzun basış: yol tarifi menüsü. Sırayı değiştirmek için durak işaretini sürükle.</p>
         <p id="status" role="status" aria-live="polite"></p>
@@ -43,6 +45,7 @@
         <div id="share" class="share-row" hidden>
           <button type="button" id="live-start" class="button-primary">Yolculuğu başlat</button>
           <button type="button" id="copy-link" class="button-secondary">Linki kopyala</button>
+          <button type="button" id="gpx-export" class="button-secondary">GPX indir</button>
           <span id="copy-status" role="status"></span>
         </div>
         <section id="weather" aria-label="Yol boyunca hava"></section>
