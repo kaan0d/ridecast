@@ -21,7 +21,6 @@ import { bindChanges } from "./changes";
 import { createForecast } from "./forecast";
 import { formatClock, formatCoord, formatDuration } from "./format";
 import { saveText, slug } from "./download";
-import { bindGpx } from "./gpx";
 import { icons } from "./icons";
 import { bindLayers } from "./layers";
 import { createLive } from "./live";
@@ -60,7 +59,6 @@ export function startApp() {
   let routeLabels: LatLon[] = []; // duration bubble position per route
   let selected = 0;
   let routeSeq = 0;
-  let gpxRoute: Route | null = null; // an imported GPX track used as the route until the stops change
   let routedKey = ""; // vehicle profile and avoid options the current routes were made with
 
   let breakRows: BreakRow[] = [];
@@ -213,7 +211,6 @@ export function startApp() {
   }
 
   function stopsChanged() {
-    gpxRoute = null;
     renderStops();
     updateRoute();
   }
@@ -333,7 +330,7 @@ export function startApp() {
     const how = settingsCtl.routing();
     routedKey = routingKey(how.vehicle, how.avoid);
     try {
-      const result = gpxRoute ? [gpxRoute] : await routeTrip(filled, how.vehicle, how.avoid);
+      const result = await routeTrip(filled, how.vehicle, how.avoid);
       if (my !== routeSeq) return;
       routes = result;
       lines = result.map((r) => makeLine(r.coords));
@@ -635,38 +632,6 @@ export function startApp() {
   };
   addEventListener("online", netChanged);
   addEventListener("offline", netChanged);
-
-  // ---------- GPX ----------
-
-  bindGpx({
-    status,
-    // The track becomes the route itself (no routing server); stops are its two ends.
-    async onImport(route, ends) {
-      gpxRoute = route;
-      const endStops = ends.map((pos) => ({ label: formatCoord(pos), pos }));
-      stops.splice(0, stops.length, ...endStops);
-      breaks = [];
-      renderStops();
-      endStops.forEach(labelLater);
-      await updateRoute();
-    },
-    exportData() {
-      const route = routes[selected];
-      if (!route) return null;
-      const tl = lastTimelines?.[selected];
-      const named = stops.flatMap((s, i) => (s.pos ? [{ pos: s.pos, name: `${titleOf(i)}: ${s.label.split(",")[0]}` }] : []));
-      const breakPts = breaks.map((b, i) => {
-        const at = tl?.breaks[i];
-        return { pos: snapToLine(lines[selected], b.pos).pos, name: t.breaks.gpxName(i + 1, b.durationMin, at ? formatClock(at.startMs) : null) };
-      });
-      return {
-        route,
-        waypoints: [...named, ...breakPts],
-        first: stops.find((s) => s.pos)?.label.split(",")[0] ?? t.app.start,
-        last: [...stops].reverse().find((s) => s.pos)?.label.split(",")[0] ?? t.app.end,
-      };
-    },
-  });
 
   // ---------- calendar ----------
 
