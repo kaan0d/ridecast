@@ -468,6 +468,54 @@ button {
   display: none;
 }
 
+/* Headline on the first look at the bare map (app.ts): large, right of the panel on a desktop,
+   top centre on a phone. It takes no taps, so the map under it still works. */
+.hero {
+  position: fixed;
+  z-index: 500;
+  top: 50%;
+  right: clamp(32px, 6vw, 112px);
+  max-width: calc(100vw - 520px);
+  margin: 0;
+  translate: 0 -60%;
+  font-size: clamp(3rem, 6.4vw, 7.25rem);
+  font-weight: 800;
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+  text-align: right;
+  text-wrap: balance;
+  color: var(--ink);
+  text-shadow: 0 0 36px var(--ground), 0 0 14px var(--ground);
+  pointer-events: none;
+  animation: hero-in 0.9s var(--ease-out) backwards;
+  transition: opacity 0.45s ease, transform 0.45s var(--ease-out), filter 0.45s ease;
+}
+
+.hero span {
+  display: block;
+}
+
+.hero span + span {
+  color: var(--ink-2);
+}
+
+.hero.gone {
+  opacity: 0;
+  transform: translateY(-20px);
+  filter: blur(8px);
+}
+
+.hero[hidden] {
+  display: none;
+}
+
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
 .sheet-body {
   flex: 1;
   overflow-y: auto;
@@ -2212,6 +2260,16 @@ input:invalid {
 /* ---------- Phone: bottom sheet ---------- */
 
 @media (max-width: 720px) {
+  .hero {
+    top: calc(env(safe-area-inset-top) + 80px);
+    left: 16px;
+    right: 16px;
+    max-width: none;
+    translate: none;
+    font-size: clamp(2.25rem, 10.5vw, 3.25rem);
+    text-align: center;
+  }
+
   .sheet {
     left: 0;
     right: 0;
@@ -2285,6 +2343,15 @@ input:invalid {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .hero {
+    animation: none;
+  }
+
+  .hero.gone {
+    transform: none;
+    filter: none;
+  }
+
   .sheet:not(.compact),
   .sheet-body > *,
   .trip > :not(.trip-stops),

@@ -292,6 +292,8 @@ export const tr: Messages = {
   theme: { system: "Tema: sistem (açık için dokun)", light: "Tema: açık (koyu için dokun)", dark: "Tema: koyu (sistem için dokun)" },
 
   html: {
+    hero1: "Yola çıkmadan önce,",
+    hero2: "ileriyi gör.",
     map: "Harita",
     layers: "Katmanlar",
     measureClear: "Temizle",
