@@ -337,6 +337,7 @@ export const tr: Messages = {
     measureClear: "Temizle",
     measureClose: "Ölçümü kapat",
     sheet: "Rota paneli",
+    back: "Haritaya dön",
     tagline: "Rota hava durumu",
     swap: "Başlangıç ile bitişi değiştir",
     addStop: "Durak ekle",

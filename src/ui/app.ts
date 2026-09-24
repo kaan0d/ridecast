@@ -110,7 +110,7 @@ export function startApp() {
 
   // ---------- panels and map ----------
 
-  const sheet = bindSheet();
+  const sheet = bindSheet(resetTrip);
   const map = createMap($("map"), {
     onClick: (pos) => actions.onClick(pos),
     onContext: (pos, x, y) => actions.onContext(pos, x, y),
@@ -195,6 +195,19 @@ export function startApp() {
       stops.flatMap((s, i) => (s.pos ? [{ pos: s.pos, kind: kindOf(i), index: i, title: titleOf(i) }] : [])),
       (i, pos) => placeStop(i, pos),
     );
+  }
+
+  // Back to the bare map: no stops, route, breaks or trip panels. Settings and the map view stay.
+  function resetTrip() {
+    if (live.isActive()) live.stop();
+    stops.splice(0, stops.length, { label: "", pos: null }, { label: "", pos: null });
+    breaks = [];
+    selected = pendingSelected = 0;
+    routeScores = [];
+    stopsPanel.reset();
+    map.closePopup();
+    $("changes").replaceChildren();
+    stopsChanged();
   }
 
   function stopsChanged() {
@@ -342,6 +355,7 @@ export function startApp() {
 
   // Everything that follows from routes, breaks and settings: timelines, map, lists, summary.
   function renderRoutes() {
+    sheet.setRouted(routes.length > 0);
     map.setBreaks(
       routes.length ? breaks.map((b) => snapToLine(lines[selected], b.pos).pos) : [],
       (p) => snapToLine(lines[selected], p).pos,
@@ -697,6 +711,7 @@ export function startApp() {
     stopsEl.querySelectorAll("input")[stops.length - 1]?.focus();
   });
   $("swap").innerHTML = icons.swap;
+  $("sheet-back").innerHTML = icons.back;
   $("swap").addEventListener("click", () => {
     stops.reverse();
     stopsChanged();
