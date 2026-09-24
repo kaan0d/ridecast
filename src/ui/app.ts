@@ -41,6 +41,15 @@ interface BreakPoint {
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
+// The headline over the bare map fades out for good once the rider starts: a search, "my
+// location" or a first stop. Its fade takes 0.45 s (style.css).
+const hero = $("hero");
+function dismissHero() {
+  if (hero.hidden || hero.classList.contains("gone")) return;
+  hero.classList.add("gone");
+  setTimeout(() => (hero.hidden = true), 450);
+}
+
 // Planner state and the wiring between panels, map and services. Rendering lives in the panel
 // modules, forecast maths in forecast.ts, map interactions in mapActions.ts.
 export function startApp() {
@@ -109,7 +118,11 @@ export function startApp() {
     onMoveStart: closeMenu,
     onDrag: () => live.pauseFollow(),
     // While riding, "my location" re-centres the ride map on the rider and follows again.
-    onLocate: () => (live.isActive() ? live.recenter() : actions.locate()),
+    onLocate: () => {
+      dismissHero();
+      if (live.isActive()) live.recenter();
+      else actions.locate();
+    },
     onRouteDrag,
   });
   const measure = createMeasure(map.leaflet, $("measure"));
@@ -193,6 +206,7 @@ export function startApp() {
   }
 
   function stopsChanged() {
+    if (stops.some((s) => s.pos)) dismissHero();
     renderStops();
     updateRoute();
   }
@@ -626,5 +640,9 @@ export function startApp() {
   });
 
   renderStops();
-  if (!share.applyHash()) share.renderRecent();
+  if (!share.applyHash()) {
+    share.renderRecent();
+    hero.hidden = false; // a first look at the bare map; a shared trip goes straight to its route
+  }
+  stopsEl.addEventListener("focusin", dismissHero); // search
 }
