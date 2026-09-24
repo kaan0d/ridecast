@@ -19,6 +19,7 @@ interface MapHandlers {
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const DRAW_MS = 1300; // a new route draws itself in this time
 const WAVE_MS = 700; // stations of a route drawn earlier come in over this time
+const FLOW_MS = 1400; // the first risk colours flow from start to end in this time
 const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2); // --ease-draw
 
 // A map button in a Leaflet corner, styled like the zoom buttons.
@@ -86,7 +87,12 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
   map.on("dragstart", () => h.onDrag());
 
   const routeLayer = L.layerGroup().addTo(map);
-  const riskLayer = L.layerGroup().addTo(map);
+  // Risk colours and the sleepers of dark parts sit in their own pane over the route, so redrawing
+  // the route on an edit never hides them (overlay pane 400, markers 600).
+  map.createPane("risk").style.zIndex = "450";
+  const riskRenderer = L.svg({ pane: "risk" });
+  let riskLayer = L.layerGroup().addTo(map);
+  let riskKey = ""; // what the shown colours are, to skip repaints that change nothing
   const stopLayer = L.layerGroup().addTo(map);
   const weatherLayer = L.layerGroup().addTo(map);
   const labelLayer = L.layerGroup().addTo(map);
@@ -115,12 +121,25 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
   }
   map.on("zoomend", thinWeather);
 
+  // Stop pins shrink as the map zooms out, full size from zoom 12 (style.css reads --pin-scale).
+  const scalePins = () => el.style.setProperty("--pin-scale", String(Math.min(1, Math.max(0.5, 0.5 + (map.getZoom() - 6) * 0.085))));
+  map.on("zoom", scalePins);
+  scalePins();
+
   // The signature moment: a new selected route draws itself from start to end with the red clock
   // hand at its tip; alternatives fade in behind it, labels, risk colours and weather stations
   // arrive in step. Only when the geometry is new, never on re-edits of the same route.
   let drawn: LatLon[] | null = null;
   let drawAt = -Infinity; // performance.now() when the last draw started
   let riskFor: LatLon[] | null = null;
+  // Removal runs on a timer, not on the animation's end: a background tab may never finish it.
+  const fade = (group: L.LayerGroup, from: number, to: number, ms: number, delay = 0) => {
+    for (const l of group.getLayers()) (l as L.Path).getElement()?.animate([{ opacity: from }, { opacity: to }], { duration: ms, delay, easing: "ease-out", fill: "both" });
+  };
+  const fadeOut = (group: L.LayerGroup, ms: number, delay = 0) => {
+    fade(group, 1, 0, ms, delay);
+    setTimeout(() => group.remove(), delay + ms + 20);
+  };
   let weatherFor: LatLon[] | null = null;
   const drawEnd = () => drawAt + DRAW_MS;
 
@@ -149,12 +168,12 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     requestAnimationFrame(frame);
   }
 
-  // A path drawn in from its start, after `delay` ms.
+  // A path drawn in from its start at a steady pace, after `delay` ms.
   function sweep(path: SVGPathElement, delay: number, ms: number) {
     const len = path.getTotalLength();
     path.style.strokeDasharray = `${len} ${len}`;
     path
-      .animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: ms, delay, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" })
+      .animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: ms, delay, easing: "linear", fill: "backwards" })
       .finished.then(
         () => (path.style.strokeDasharray = ""),
         () => {},
@@ -211,7 +230,14 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
       labelLayer.clearLayers();
       const draw = !!routes[selected] && routes[selected] !== drawn && !reducedMotion.matches;
       drawn = routes[selected] ?? null;
-      if (draw) drawAt = performance.now();
+      if (draw) {
+        drawAt = performance.now();
+        // The old route's colours leave before the new line draws.
+        const old = riskLayer;
+        riskLayer = L.layerGroup().addTo(map);
+        riskKey = "";
+        fadeOut(old, 250);
+      }
       // Labels pop in just before the hand arrives, for as long as a draw is running.
       const labelAt = Math.max(0, drawEnd() - performance.now() - 250);
       const arriving = performance.now() < drawEnd();
@@ -267,20 +293,34 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     },
 
     // Risk colours over the selected route and a dotted pattern on dark parts. Not clickable,
-    // so a click still reaches the route below (adds a break).
-    // The first colours of a route seep into the line from each segment's start once the hand has
-    // passed (`frac`: where the segment starts, as a share of the route).
-    setRisk(segments: { coords: LatLon[]; level: number; frac: number }[], night: { coords: LatLon[]; frac: number }[]) {
-      riskLayer.clearLayers();
-      const animate = !!drawn && riskFor !== drawn && (segments.some((s) => s.level > 0) || night.length > 0) && !reducedMotion.matches;
-      if (animate) riskFor = drawn;
+    // so a click still reaches the route below (adds a break). A route's first colours flow into
+    // the line from start to end at one steady pace once the hand has passed; later changes on the
+    // same route fade the new colours in over the old, then the old ones out beneath (`from`, `to`:
+    // where a part starts and ends, as a share of the route).
+    setRisk(segments: { coords: LatLon[]; level: number; from: number; to: number }[], night: { coords: LatLon[]; from: number; to: number }[]) {
+      const key = `${segments.map((x) => `${x.level}:${x.from.toFixed(4)}`).join(",")}|${night.map((n) => n.from.toFixed(4)).join(",")}`;
+      const first = riskFor !== drawn;
+      if (!first && key === riskKey) return;
+      riskFor = drawn;
+      riskKey = key;
+      const old = riskLayer;
+      const layer = (riskLayer = L.layerGroup().addTo(map));
+      const motion = !reducedMotion.matches;
       const wait = Math.max(0, drawEnd() - performance.now());
-      const add = (coords: LatLon[], cls: string, weight: number, frac: number) => {
-        const path = L.polyline(coords.map(toLatLng), { weight, interactive: false, className: `route ${cls}` }).addTo(riskLayer).getElement() as SVGPathElement | undefined;
-        if (animate && path) sweep(path, wait + frac * WAVE_MS, 650);
+      const add = (coords: LatLon[], cls: string, weight: number, from: number, to: number) => {
+        const line = L.polyline(coords.map(toLatLng), { renderer: riskRenderer, weight, interactive: false, className: `route ${cls}` }).addTo(layer);
+        const path = line.getElement() as SVGPathElement | undefined;
+        if (!motion || !first || !path) return;
+        const at = wait + from * FLOW_MS;
+        // Sleepers keep their dash pattern, so they fade in when the flow reaches them.
+        if (cls === "route-night") path.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: at, fill: "backwards" });
+        else sweep(path, at, Math.max(90, (to - from) * FLOW_MS));
       };
-      for (const s of segments) if (s.level > 0) add(s.coords, `route-risk-${s.level}`, 6, s.frac);
-      for (const n of night) add(n.coords, "route-night", 3, n.frac);
+      for (const x of segments) if (x.level > 0) add(x.coords, `route-risk-${x.level}`, 6, x.from, x.to);
+      for (const n of night) add(n.coords, "route-night", 3, n.from, n.to);
+      if (!motion || first) return void old.remove();
+      fade(layer, 0, 1, 450);
+      fadeOut(old, 300, 450);
     },
 
     // Weather tags with a card popup each, over the stop pins (the first and last sit on them).
