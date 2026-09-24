@@ -245,8 +245,9 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
       map.flyTo(toLatLng(p), Math.max(map.getZoom(), 14));
     },
 
-    // The rider's position in live mode; follow pans the map to it (at `zoom` when given).
-    setLivePosition(p: LatLon | null, follow: boolean, zoom?: number) {
+    // The rider's position in live mode; follow pans the map to it (at `zoom` when given), centred
+    // in the part above `bottomPx`.
+    setLivePosition(p: LatLon | null, follow: boolean, zoom?: number, bottomPx = 0) {
       if (!p) {
         liveDot?.remove();
         liveDot = null;
@@ -254,8 +255,11 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
       }
       if (!liveDot) liveDot = L.circleMarker(toLatLng(p), { radius: 9, className: "live-dot", interactive: false }).addTo(map);
       else liveDot.setLatLng(toLatLng(p));
-      if (follow && zoom !== undefined) map.setView(toLatLng(p), zoom);
-      else if (follow) map.panTo(toLatLng(p));
+      if (!follow) return;
+      const z = Math.min(zoom ?? map.getZoom(), map.getMaxZoom());
+      const centre = map.unproject(map.project(toLatLng(p), z).add([0, bottomPx / 2]), z);
+      if (zoom !== undefined) map.setView(centre, z);
+      else map.panTo(centre);
     },
 
     // Fits the points into the part of the map the sheet does not cover.

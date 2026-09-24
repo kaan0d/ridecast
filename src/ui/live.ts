@@ -25,14 +25,14 @@ interface Deps {
   replan(): void; // re-render with the live timeline (new ETAs, weather from cache)
   refreshWeather(): void; // same, but asks for a fresh forecast
   reroute(from: LatLon, aheadOfM: number): void;
-  showPosition(p: LatLon | null, follow: boolean, zoom?: number): void; // zoom: jump to this zoom once
+  // zoom: jump to this zoom once; bottomPx: map height covered by the live card, kept out of the centre
+  showPosition(p: LatLon | null, follow: boolean, zoom?: number, bottomPx?: number): void;
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 export function createLive(deps: Deps) {
   const view = $("live");
-  const pill = $("live-pill");
   let active = false;
   let watchId: number | null = null;
   let wakeLock: WakeLockSentinel | null = null;
@@ -52,30 +52,20 @@ export function createLive(deps: Deps) {
   let zoomNext = false; // the next position on the ride map sets the default zoom
   let follow = true; // off once the rider drags the ride map, back on with "my location"
 
-  // Ride map: the map follows the rider (north up, no heading from the browser). Entering it
-  // zooms to LIVE.mapZoom; after that the rider's own zoom is kept. Dragging the map stops the
-  // following (Google Maps style) until "my location" is tapped.
-  const onMap = () => view.dataset.min === "1";
+  // Ride screen: the map follows the rider (north up, no heading from the browser) above the live
+  // card. The first fix zooms to LIVE.mapZoom; after that the rider's own zoom is kept. Dragging
+  // the map stops the following (Google Maps style) until "my location" is tapped.
   function place(p: LatLon) {
-    const track = onMap() && follow;
-    deps.showPosition(p, track, track && zoomNext ? LIVE.mapZoom : undefined);
-    if (track) zoomNext = false;
-  }
-  function showMap() {
-    view.dataset.min = "1";
-    zoomNext = true;
-    follow = true;
-    if (lastPosition) place(lastPosition);
-    render();
+    deps.showPosition(p, follow, follow && zoomNext ? LIVE.mapZoom : undefined, view.offsetHeight);
+    if (follow) zoomNext = false;
   }
   function recenter() {
-    if (!onMap()) return showMap();
     follow = true;
     if (lastPosition) place(lastPosition);
     render();
   }
   function pauseFollow() {
-    if (!active || !onMap() || !follow) return;
+    if (!active || !follow) return;
     follow = false;
     render();
   }
@@ -194,10 +184,10 @@ export function createLive(deps: Deps) {
   }
 
   function render() {
-    view.hidden = !active || onMap();
-    pill.hidden = !active || !onMap();
-    document.documentElement.classList.toggle("live-map", active && onMap());
-    document.documentElement.classList.toggle("live-free", active && onMap() && !follow);
+    view.hidden = !active;
+    const root = document.documentElement;
+    root.classList.toggle("live-map", active);
+    root.classList.toggle("live-free", active && !follow);
     if (!active) return;
     const r = deps.route();
     const f = current();
@@ -244,7 +234,7 @@ export function createLive(deps: Deps) {
     $("live-notes").textContent = notes.map((n) => n.slice(n.indexOf(":") + 1)).join(" ");
     $("live-sound").setAttribute("aria-pressed", String(sound));
     $("live-sound").textContent = sound ? t.live.soundOn : t.live.soundOff;
-    pill.textContent = t.live.pill(leftS !== null ? formatDuration(leftS) : "–", warn ? t.live.pillWarn(warn.event.text, formatKm(warn.aheadM)) : "");
+    root.style.setProperty("--live-inset", `${view.offsetHeight}px`); // map controls sit above the card
   }
 
   function start() {
@@ -265,7 +255,9 @@ export function createLive(deps: Deps) {
     watchId = navigator.geolocation.watchPosition(onPosition, onError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
     void lockScreen();
     refreshTimer = window.setInterval(() => deps.refreshWeather(), LIVE.weatherRefreshMs);
-    showMap();
+    zoomNext = true;
+    follow = true;
+    render();
   }
 
   function stop() {
@@ -283,11 +275,6 @@ export function createLive(deps: Deps) {
   }
 
   $("live-end").addEventListener("click", stop);
-  $("live-min").addEventListener("click", showMap);
-  pill.addEventListener("click", () => {
-    view.dataset.min = "0";
-    render();
-  });
   $("live-sound").addEventListener("click", () => {
     sound = !sound;
     if (sound) beep(); // also unlocks audio, which needs a tap

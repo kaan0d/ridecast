@@ -311,8 +311,6 @@ export const tr: Messages = {
     offline: "Çevrimdışı: son alınan hava verisi gösteriliyor, bağlantı gelince yenilenir.",
     soundOn: "Ses açık",
     soundOff: "Ses kapalı",
-    pill: (left, warn) => `Canlı · ${left}${warn}`,
-    pillWarn: (text, dist) => ` · ${text} ${dist} sonra`,
     noGeo: "Bu tarayıcı konum desteklemiyor; canlı mod açılamadı.",
   },
 
@@ -388,7 +386,6 @@ export const tr: Messages = {
     autoAdd: "Otomatik mola ekle",
     fuelStops: "Yakıt ve mola noktaları",
     live: "Canlı mod",
-    liveMap: "Harita",
     liveSun: "Güneş",
     liveSunTitle: "Güneş altında okunur yüksek kontrast",
     liveEnd: "Bitir",

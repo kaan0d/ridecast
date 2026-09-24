@@ -315,8 +315,6 @@ export const en = {
     offline: "Offline: showing the last weather loaded; it refreshes when the connection is back.",
     soundOn: "Sound on",
     soundOff: "Sound off",
-    pill: (left: string, warn: string) => `Live · ${left}${warn}`,
-    pillWarn: (text: string, dist: string) => ` · ${text} in ${dist}`,
     noGeo: "This browser has no location support; live mode could not start.",
   },
 
