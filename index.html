@@ -64,6 +64,11 @@
             <label class="row" data-avoid="highways"><span data-t="avoidHighways">Avoid motorways</span> <input type="checkbox" name="avoid" value="highways" /></label>
             <label class="row" data-avoid="tolls"><span data-t="avoidTolls">Avoid tolls</span> <input type="checkbox" name="avoid" value="tolls" /></label>
             <label class="row" data-avoid="ferries"><span data-t="avoidFerries">Avoid ferries</span> <input type="checkbox" name="avoid" value="ferries" /></label>
+            <label class="row"
+              ><span data-t="fuelRange">Fuel range</span>
+              <span class="row-value"><input type="number" id="fuel-range" min="10" max="3000" step="10" placeholder="–" aria-describedby="fuel-range-note" /> km</span></label
+            >
+            <p class="footnote" id="fuel-range-note" data-t="fuelRangeNote">Warns where fuel stops along the route are further apart than this.</p>
           </div>
 
           <h2 class="group-title" data-t="speed">Speed</h2>

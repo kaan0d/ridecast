@@ -141,6 +141,13 @@ export const en = {
     gpxName: (i: number, min: number, at: string | null) => `Break ${i} · ${min} min${at ? " · " + at : ""}`,
   },
 
+  fuel: {
+    gap: (lengthKm: number, rangeKm: number) => `No fuel for ${lengthKm} km (range ${rangeKm} km)`,
+    fillUp: (name: string) => ` · fill up at ${name}`,
+    atStart: " · start with a full tank",
+    loading: "Checking the fuel range: loading fuel stops…",
+  },
+
   gpx: {
     noPoints: "The GPX file has fewer than two track or route points.",
     loaded: (name: string, km: string, points: number) =>

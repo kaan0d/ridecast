@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { classifyPoi, pickStops } from "./stops";
+import { classifyPoi, fuelGaps, pickStops } from "./stops";
 
 const at = { lat: 40, lon: 29 };
 
@@ -25,4 +25,14 @@ test("pickStops orders and thins per kind; in bad weather only sheltered stops, 
     ["f3", false],
     ["f4", true], // sheltered in the rain
   ]); // r2: no shelter in the rain; f5: 2 km after f4
+});
+
+test("fuel gaps: stretches between fill-ups longer than the range", () => {
+  // 400 km trip, stations at 50, 120 and 330 km, 150 km range: 120 -> 330 is too long.
+  expect(fuelGaps([120_000, 50_000, 330_000], 400_000, 150_000)).toEqual([{ fromM: 120_000, toM: 330_000 }]);
+  // No stations: the whole trip if it is longer than the range, nothing if it is not.
+  expect(fuelGaps([], 400_000, 150_000)).toEqual([{ fromM: 0, toM: 400_000 }]);
+  expect(fuelGaps([], 100_000, 150_000)).toEqual([]);
+  // The last stretch to the arrival counts too.
+  expect(fuelGaps([100_000], 300_000, 150_000)).toEqual([{ fromM: 100_000, toM: 300_000 }]);
 });

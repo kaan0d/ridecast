@@ -13,6 +13,7 @@ export interface TripSettings {
   departMs: number;
   departMode: DepartMode;
   avoid: Avoid;
+  fuelRangeKm: number | null; // empty field: no fuel gap check
 }
 
 const ROADS: RoadType[] = ["motorway", "primary", "urban"];
@@ -28,6 +29,11 @@ export function bindSettings(onChange: () => void) {
   const avg = $<HTMLInputElement>("kmh-average");
   const road = Object.fromEntries(ROADS.map((r) => [r, $<HTMLInputElement>(`kmh-${r}`)])) as Record<RoadType, HTMLInputElement>;
   const departAt = $<HTMLInputElement>("depart-at");
+  const fuelRange = $<HTMLInputElement>("fuel-range");
+  const readFuelRange = () => {
+    const v = fuelRange.valueAsNumber;
+    return Number.isFinite(v) && v >= Number(fuelRange.min) && v <= Number(fuelRange.max) ? v : null;
+  };
 
   vehicleGroup.replaceChildren(
     ...Object.keys(VEHICLES).map((k) => {
@@ -102,7 +108,7 @@ export function bindSettings(onChange: () => void) {
     const departMs =
       mode === "now" ? Date.now() : mode === "best" ? (best ?? Math.ceil(Date.now() / 3_600_000) * 3_600_000) : new Date(departAt.value).getTime();
     if (Number.isNaN(departMs)) return t.settings.pickDeparture;
-    return { vehicle: radio("vehicle") as VehicleType, speed, departMs, departMode: mode, avoid: routing().avoid };
+    return { vehicle: radio("vehicle") as VehicleType, speed, departMs, departMode: mode, avoid: routing().avoid, fuelRangeKm: readFuelRange() };
   };
 
   // Puts shared settings into the form (no change event: the caller re-plans once).
@@ -110,7 +116,8 @@ export function bindSettings(onChange: () => void) {
     const el = form.querySelector<HTMLInputElement>(`input[name="${name}"][value="${value}"]`);
     if (el) el.checked = true;
   };
-  function apply(s: Pick<TripState, "vehicle" | "speed" | "depart" | "avoid">) {
+  function apply(s: Pick<TripState, "vehicle" | "speed" | "depart" | "avoid" | "fuelRangeKm">) {
+    fuelRange.value = s.fuelRangeKm === null ? "" : String(s.fuelRangeKm);
     for (const b of avoidBoxes) b.checked = s.avoid[b.value as keyof Avoid];
     setRadio("vehicle", s.vehicle);
     fillSpeeds();

@@ -10,8 +10,11 @@ export interface TripState {
   speed: { mode: "average"; kmh: number } | { mode: "road"; motorway: number; primary: number; urban: number };
   depart: { mode: "now" } | { mode: "at"; ms: number } | { mode: "best" };
   avoid: { highways: boolean; tolls: boolean; ferries: boolean };
+  fuelRangeKm: number | null; // tank range for the fuel gap warning, null when not set
   selected: number;
 }
+
+const FUEL_RANGE_KM = { min: 10, max: 3000 };
 
 const AVOID_CODE = { highways: "h", tolls: "t", ferries: "f" } as const;
 
@@ -32,6 +35,7 @@ export function encodeState(s: TripState): string {
   p.set("dep", s.depart.mode === "at" ? `at${s.depart.ms}` : s.depart.mode);
   const av = (Object.keys(AVOID_CODE) as (keyof typeof AVOID_CODE)[]).filter((k) => s.avoid[k]).map((k) => AVOID_CODE[k]).join("");
   if (av) p.set("av", av);
+  if (s.fuelRangeKm !== null) p.set("fr", String(s.fuelRangeKm));
   if (s.selected > 0) p.set("r", String(s.selected));
   return p.toString();
 }
@@ -91,6 +95,10 @@ export function decodeState(hash: string, limits: { minKmh: number; maxKmh: numb
   if (!/^[htf]*$/.test(av)) return null;
   const avoid = { highways: av.includes("h"), tolls: av.includes("t"), ferries: av.includes("f") };
 
+  const fr = p.get("fr");
+  const fuelRangeKm = fr === null ? null : num(fr);
+  if (fr !== null && (fuelRangeKm === null || fuelRangeKm < FUEL_RANGE_KM.min || fuelRangeKm > FUEL_RANGE_KM.max)) return null;
+
   const r = num(p.get("r") ?? "0");
-  return { stops, breaks, vehicle, speed, depart, avoid, selected: r !== null && r >= 0 && Number.isInteger(r) ? r : 0 };
+  return { stops, breaks, vehicle, speed, depart, avoid, fuelRangeKm, selected: r !== null && r >= 0 && Number.isInteger(r) ? r : 0 };
 }
