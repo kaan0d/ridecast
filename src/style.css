@@ -1594,6 +1594,22 @@ button.stop-glyph {
   font-size: 1.125rem;
 }
 
+.fuel-ask-range {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.fuel-ask-skip {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  background: var(--fill);
+  color: var(--ink);
+}
+
 .fuel-ask-levels {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
