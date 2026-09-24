@@ -41,11 +41,12 @@ export function weatherIcon(h: WeatherHour | null): string {
   return icons[icon];
 }
 
-// Capsule shown on the map.
+// Tag shown on the map above its station: arrival time, icon, temperature and the risk mark.
 export function pinHtml(p: WeatherPoint): string {
+  const level = p.risk?.level ?? 0;
   return p.hour
-    ? `<span class="wx-pin risk-${p.risk?.level ?? 0}">${weatherIcon(p.hour)}<b>${deg(p.hour.tempC)}</b></span>`
-    : `<span class="wx-pin wx-none">–</span>`;
+    ? `<span class="wx-pin risk-${level}"><span class="wx-tag"><i>${formatClock(p.etaMs)}</i>${weatherIcon(p.hour)}<b>${deg(p.hour.tempC)}</b>${level ? dot(level) : ""}</span></span>`
+    : `<span class="wx-pin wx-none"><span class="wx-tag">–</span></span>`;
 }
 
 // Card shown when a capsule is opened.
@@ -76,10 +77,12 @@ export function cardHtml(p: WeatherPoint): string {
   </div>`;
 }
 
-// Horizontal strip in the sheet: time, icon, temperature per point.
+// Line strip in the sheet: stations on one rail with time, risk mark, icon, temperature and km.
+// The rail after a station takes its risk colour, dotted where it is dark. `arrive`: the first
+// render for a route, the stations come in left to right.
 export function renderStrip(
   el: HTMLElement,
-  state: { points: WeatherPoint[]; loading: boolean; error?: string; onRetry(): void; onOpen(i: number): void },
+  state: { points: WeatherPoint[]; loading: boolean; error?: string; arrive?: boolean; onRetry(): void; onOpen(i: number): void },
 ) {
   if (!state.points.length && !state.loading && !state.error) return el.replaceChildren();
   const title = document.createElement("h2");
@@ -112,13 +115,18 @@ export function renderStrip(
     const list = document.createElement("ol");
     list.className = "wx-strip";
     list.classList.toggle("stale", state.loading);
+    list.classList.toggle("arrive", !!state.arrive);
     state.points.forEach((pt, i) => {
       const li = document.createElement("li");
+      li.style.setProperty("--i", String(i));
       const b = document.createElement("button");
       b.type = "button";
+      const level = pt.risk?.level ?? 0;
+      if (level) b.classList.add(`rail-${level}`);
+      if (pt.risk?.dark) b.classList.add("rail-dark");
       const c = pt.hour ? t.conditions[conditionOf(pt.hour.code).name] : t.weather.noData;
       b.setAttribute("aria-label", `${formatClock(pt.etaMs)}, ${km(pt.distM)}: ${pt.hour ? deg(pt.hour.tempC) + ", " : ""}${c}`);
-      b.innerHTML = `<span class="wx-t">${formatClock(pt.etaMs)}</span>${weatherIcon(pt.hour) || '<span class="wx-dash">–</span>'}<span class="wx-deg">${pt.hour ? deg(pt.hour.tempC) : ""}</span><span class="wx-km">${km(pt.distM)}</span>`;
+      b.innerHTML = `<span class="wx-t">${formatClock(pt.etaMs)}</span><span class="station risk-${level}"></span>${weatherIcon(pt.hour) || '<span class="wx-dash">–</span>'}<span class="wx-deg">${pt.hour ? deg(pt.hour.tempC) : ""}</span><span class="wx-km">${km(pt.distM)}</span>`;
       b.addEventListener("click", () => state.onOpen(i));
       b.classList.toggle("far", pt.etaMs - Date.now() > WEATHER_REQUEST.farDays * 86_400_000); // uncertain, drawn dashed
       li.append(b);

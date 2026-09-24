@@ -8,6 +8,7 @@ import { haversineM, snapToLine, type Line } from "../core/route/line";
 import type { Level } from "../core/risk/risk";
 import { conditionOf } from "../core/weather/weather";
 import { formatClock, formatDuration, formatKm } from "./format";
+import { roll } from "./summary";
 import { forceLight } from "./theme";
 import { weatherIcon, type WeatherPoint } from "./weather";
 
@@ -236,7 +237,7 @@ export function createLive(deps: Deps) {
     }
     $("live-next").append(nextText, nextMeta);
 
-    $("live-left").textContent = leftS !== null ? formatDuration(leftS) : "–";
+    roll($("live-left"), leftS !== null ? formatDuration(leftS) : "–");
     $("live-meta").textContent = remainingM !== null && arrival ? t.live.meta(formatKm(remainingM), formatClock(arrival)) : "";
 
     const h = here?.hour;

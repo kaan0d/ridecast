@@ -1,70 +1,77 @@
-/* ridecast: ride-app sheet over a muted map. Soft tones instead of pure black and white, so long
-   looks do not tire the eyes. The theme is data-theme on <html>: set before the first paint in
-   index.html, switched by the header button (ui/theme.ts), following the system by default. */
+/* ridecast: the ride as a timetable. Every weather point is a station with its own arrival time;
+   the panel is a printed sheet over a muted map, not a stack of cards. One ink, one signal red
+   (disruption, the clock hand), amber and orange below it. Risk is a mark and a hue: ring, dot,
+   diamond. Soft grounds, no pure black or white. data-theme on <html> is set before the first
+   paint (index.html) and switched on the settings page (ui/theme.ts). */
 
 :root {
-  --ground: #f5f5f3;
-  --grouped: #eeeeeb;
-  --card: #fbfbfa;
-  --ink: #25282d;
-  --ink-2: #5e636b;
-  --ink-3: #858a92;
-  --on-ink: #fbfbfa;
-  --separator: #d9d9d5;
-  --fill: #e6e6e2;
-  --material: rgb(249 249 247 / 0.88);
-  --shadow: 0 10px 40px rgb(30 34 40 / 0.14), 0 2px 8px rgb(30 34 40 / 0.07);
-  --shadow-small: 0 2px 10px rgb(30 34 40 / 0.12), 0 1px 2px rgb(30 34 40 / 0.08);
-  --route: #2f3d58;
-  --route-casing: #fbfbfa;
-  --alt: #9aa0a9;
-  --break: #5b5bd6;
-  --on-break: #ffffff;
-  --risk-1: #d6a70f;
-  --risk-2: #ea8a22;
-  --risk-3: #dc4a40;
-  --error: #c2362d;
-  --focus: #2f7ddf;
-  --map-filter: grayscale(0.8) contrast(0.88) brightness(0.98);
+  --ground: #e9e9e5;
+  --paper: #fafaf8;
+  --raised: #ffffff;
+  --ink: #141517;
+  --ink-2: #5a5e64;
+  --ink-3: #6f7379;
+  --on-ink: #fafaf8;
+  --rule: #deded9;
+  --fill: #ececE8;
+  --fill-2: #e2e2dd;
+  --material: rgb(250 250 248 / 0.94);
+  --shadow: 0 24px 60px -12px rgb(20 21 23 / 0.22), 0 4px 14px -4px rgb(20 21 23 / 0.12);
+  --shadow-small: 0 6px 18px -6px rgb(20 21 23 / 0.28), 0 1px 3px rgb(20 21 23 / 0.1);
+  --route: #141517;
+  --route-casing: #fafaf8;
+  --alt: #a4a7a3;
+  --signal: #dc2a1f;
+  --risk-1: #c99400;
+  --risk-2: #e2650f;
+  --risk-3: var(--signal);
+  --error: #c4271d;
+  --focus: #1f6feb;
+  --map-filter: grayscale(0.94) contrast(0.86) brightness(1.03);
 
-  --radius-sheet: 22px;
-  --radius-card: 14px;
-  --radius-control: 10px;
+  --radius-sheet: 24px;
+  --radius-card: 16px;
+  --radius-control: 11px;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --ease-draw: cubic-bezier(0.65, 0, 0.35, 1);
   --sheet-inset: 0px; /* map area covered by the sheet, set by sheet.ts */
 
   color-scheme: light;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  font-family: "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   font-size: 100%;
-  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "ss01", "tnum";
+  line-height: 1.38;
   -webkit-font-smoothing: antialiased;
   accent-color: var(--ink);
-  caret-color: var(--focus);
+  caret-color: var(--signal);
+  view-transition-name: none;
 }
 
 :root[data-theme="dark"] {
-  --ground: #15171a;
-  --grouped: #1b1e22;
-  --card: #23272c;
-  --ink: #e3e5e8;
-  --ink-2: #a2a8b0;
-  --ink-3: #7e848c;
-  --on-ink: #15171a;
-  --separator: #343940;
-  --fill: #2f343b;
-  --material: rgb(27 30 34 / 0.86);
-  --shadow: 0 10px 40px rgb(0 0 0 / 0.45), 0 2px 8px rgb(0 0 0 / 0.3);
-  --shadow-small: 0 2px 10px rgb(0 0 0 / 0.4), 0 1px 2px rgb(0 0 0 / 0.3);
-  --route: #c6d3ea;
-  --route-casing: #15171a;
-  --alt: #6e757f;
-  --error: #ef7a71;
-  --break: #8a87ef;
-  --risk-1: #e2c04c;
-  --risk-2: #eea04c;
-  --risk-3: #ec6a5f;
-  --focus: #5b9ff0;
-  --map-filter: invert(1) hue-rotate(180deg) grayscale(0.9) brightness(0.76) contrast(0.9);
+  --ground: #0e0f11;
+  --paper: #17181b;
+  --raised: #1f2024;
+  --ink: #ecece9;
+  --ink-2: #a4a8ae;
+  --ink-3: #8b9096;
+  --on-ink: #141517;
+  --rule: #2b2d31;
+  --fill: #242629;
+  --fill-2: #2e3034;
+  --material: rgb(23 24 27 / 0.94);
+  --shadow: 0 24px 60px -12px rgb(0 0 0 / 0.6), 0 4px 14px -4px rgb(0 0 0 / 0.45);
+  --shadow-small: 0 6px 18px -6px rgb(0 0 0 / 0.7), 0 1px 3px rgb(0 0 0 / 0.4);
+  --route: #ecece9;
+  --route-casing: #0e0f11;
+  --alt: #5c6066;
+  --signal: #ff4a3d;
+  --risk-1: #f2b632;
+  --risk-2: #ff8a3a;
+  --error: #ff6b61;
+  --focus: #5a9dff;
+  --map-filter: invert(1) hue-rotate(180deg) grayscale(1) brightness(0.7) contrast(0.92);
   color-scheme: dark;
 }
 
@@ -85,7 +92,8 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--focus) 30%, transparent);
+  background: color-mix(in srgb, var(--signal) 22%, transparent);
+  color: var(--ink);
 }
 
 :focus-visible {
@@ -120,6 +128,7 @@ input,
 select {
   font: inherit;
   color: inherit;
+  font-feature-settings: inherit;
 }
 
 button {
@@ -134,17 +143,23 @@ button {
   white-space: nowrap;
 }
 
+/* Scrollbars and native pickers carry the palette too. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fill-2) transparent;
+}
+
 /* ---------- Map ---------- */
 
 #map {
   position: fixed;
   inset: 0;
-  background: var(--grouped);
+  background: var(--ground);
 }
 
 .leaflet-container {
   font: inherit;
-  background: var(--grouped);
+  background: var(--ground);
 }
 
 /* Per tile: a filter on the whole tile pane stops painting past ~1750 px on wide screens.
@@ -162,17 +177,18 @@ button {
 
 .leaflet-control-zoom a {
   background: var(--material) !important;
-  backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(160%);
   color: var(--ink) !important;
-  border-color: var(--separator) !important;
-  width: 40px !important;
-  height: 40px !important;
-  line-height: 40px !important;
+  border-color: var(--rule) !important;
+  width: 42px !important;
+  height: 42px !important;
+  line-height: 42px !important;
+  font-weight: 400;
 }
 
 .leaflet-control-attribution {
   background: var(--material) !important;
-  color: var(--ink-2);
+  color: var(--ink-3);
   border-radius: 8px 0 0 0;
   font-size: 0.6875rem;
 }
@@ -182,25 +198,21 @@ button {
 }
 
 .map-btn {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   display: grid;
   place-items: center;
   border-radius: var(--radius-control);
   background: var(--material);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
   box-shadow: var(--shadow-small);
   color: var(--ink);
-}
-
-.map-btn .icon {
-  width: 20px;
-  height: 20px;
+  transition: transform 0.35s var(--ease-spring);
 }
 
 .map-btn:active {
-  transform: scale(0.94);
+  transform: scale(0.9);
 }
 
 .leaflet-control-scale-line {
@@ -210,24 +222,35 @@ button {
   font-size: 0.6875rem;
 }
 
-/* Layers panel under the layers button (top right). */
+/* Floating surfaces grow from the control that opened them. */
+@keyframes grow-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+    filter: blur(4px);
+  }
+}
+
 .layers-panel {
   position: fixed;
   z-index: 1100;
-  top: 60px;
+  top: 62px;
   right: 10px;
-  width: 260px;
-  padding: 12px;
+  width: 272px;
+  padding: 14px;
   background: var(--material);
-  backdrop-filter: blur(30px) saturate(180%);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow);
+  transform-origin: top right;
+  animation: grow-in 0.32s var(--ease-out);
 }
 
 .layers-title {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 0.9375rem;
+  font-weight: 650;
 }
 
 .layers-bases {
@@ -238,7 +261,7 @@ button {
 
 .layers-base {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   justify-items: center;
   font-size: 0.8125rem;
   color: var(--ink-2);
@@ -248,12 +271,13 @@ button {
   width: 100%;
   aspect-ratio: 1;
   border-radius: var(--radius-control);
-  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px var(--rule);
   background: var(--fill) center / cover;
+  transition: box-shadow 0.25s var(--ease-out);
 }
 
 .layers-map .layers-thumb {
-  background-image: linear-gradient(135deg, var(--grouped) 45%, var(--separator) 45% 55%, var(--grouped) 55%);
+  background-image: linear-gradient(135deg, var(--fill) 45%, var(--fill-2) 45% 55%, var(--fill) 55%);
 }
 
 .layers-satellite .layers-thumb {
@@ -266,21 +290,21 @@ button {
 
 .layers-base[aria-pressed="true"] {
   color: var(--ink);
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .layers-base[aria-pressed="true"] .layers-thumb {
-  border-color: var(--focus);
+  box-shadow: inset 0 0 0 2.5px var(--ink);
 }
 
 .layers-toggle {
   display: grid;
   grid-template-columns: auto 1fr;
-  column-gap: 8px;
+  column-gap: 10px;
   align-items: center;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--separator);
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
   font-size: 0.9375rem;
 }
 
@@ -300,11 +324,11 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 10px 10px 16px;
+  padding: 10px 10px 10px 18px;
   background: var(--material);
-  backdrop-filter: blur(30px) saturate(180%);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
-  border-radius: var(--radius-card);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border-radius: 999px;
   box-shadow: var(--shadow);
 }
 
@@ -317,8 +341,9 @@ button {
 }
 
 .measure-total {
-  font-size: 1.0625rem;
-  font-variant-numeric: tabular-nums;
+  font-size: 1.125rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
 }
 
 .measure-count {
@@ -331,15 +356,15 @@ button {
 }
 
 .measure-line {
-  stroke: var(--focus);
-  stroke-dasharray: 2 8;
+  stroke: var(--signal);
+  stroke-dasharray: 1 7;
   stroke-linecap: round;
 }
 
 .measure-point {
   border-radius: 50%;
-  background: var(--card);
-  border: 3px solid var(--focus);
+  background: var(--paper);
+  border: 3px solid var(--signal);
   cursor: grab;
 }
 
@@ -348,12 +373,13 @@ button {
 }
 
 .route-drag-ghost {
-  fill: var(--card);
+  fill: var(--paper);
   fill-opacity: 1;
-  stroke: var(--route);
+  stroke: var(--signal);
   stroke-width: 3;
 }
 
+/* The line on the map: ink with a paper casing, like a rail line on a strip map. */
 .route {
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -369,7 +395,7 @@ button {
 
 .route-alt {
   stroke: var(--alt);
-  stroke-opacity: 0.85;
+  stroke-opacity: 0.9;
 }
 
 .route-risk-1 {
@@ -384,34 +410,48 @@ button {
   stroke: var(--risk-3);
 }
 
-/* Dark parts of the ride: a dotted pattern over the line. */
+/* Dark parts of the ride: sleepers across the line. */
 .route-night {
   stroke: var(--route-casing);
-  stroke-dasharray: 0.1 9;
+  stroke-dasharray: 0.1 8;
   stroke-linecap: round;
 }
 
+/* The clock hand that draws a new route (map.ts). */
+.route-hand {
+  fill: var(--signal);
+  stroke: var(--route-casing);
+  stroke-width: 3;
+}
+
+/* Risk marks: the level is a shape as well as a hue. Low a ring, medium a dot, high a diamond. */
 .risk-dot {
   display: inline-block;
   flex-shrink: 0;
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--separator);
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--ink-3);
 }
 
 .risk-dot.risk-1 {
-  background: var(--risk-1);
+  box-shadow: inset 0 0 0 2.5px var(--risk-1);
 }
 
 .risk-dot.risk-2 {
   background: var(--risk-2);
+  box-shadow: none;
 }
 
 .risk-dot.risk-3 {
+  border-radius: 1.5px;
   background: var(--risk-3);
+  box-shadow: none;
+  transform: rotate(45deg) scale(0.86);
 }
 
+/* Stop pins: start is a station ring, via a small ring, end the terminus square. */
 .pin {
   display: block;
   border: 3px solid var(--route-casing);
@@ -421,10 +461,13 @@ button {
 
 .pin-start {
   border-radius: 50%;
+  background: var(--route-casing);
+  border: 6px solid var(--route);
+  outline: 2.5px solid var(--route-casing);
 }
 
 .pin-end {
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 .pin-via {
@@ -433,12 +476,13 @@ button {
   border-color: var(--route);
 }
 
+/* Breaks: a platform number. */
 .break-marker {
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  background: var(--break);
-  color: var(--on-break);
+  border-radius: 7px;
+  background: var(--ink);
+  color: var(--on-ink);
   border: 2px solid var(--route-casing);
   box-shadow: var(--shadow-small);
   font-size: 12px;
@@ -451,106 +495,154 @@ button {
 .sheet {
   position: fixed;
   z-index: 1000;
-  left: 16px;
-  top: 16px;
-  bottom: 16px;
-  width: 400px;
+  left: 14px;
+  top: 14px;
+  bottom: 14px;
+  width: 412px;
   display: flex;
   flex-direction: column;
   background: var(--material);
-  backdrop-filter: blur(30px) saturate(180%);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
   border-radius: var(--radius-sheet);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), inset 0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent);
+  view-transition-name: sheet;
 }
 
 .sheet-grabber {
   display: none;
 }
 
-/* Headline on the first look at the bare map (app.ts): large, right of the panel on a desktop,
-   top centre on a phone. It takes no taps, so the map under it still works. */
+/* First look at the bare map: the headline is written left to right by a red hairline, the way
+   a clock hand sweeps (app.ts shows it, style here). It takes no taps, so the map still works. */
 .hero {
   position: fixed;
   z-index: 500;
   top: 50%;
-  right: clamp(32px, 6vw, 112px);
-  max-width: calc(100vw - 520px);
+  right: clamp(32px, 6vw, 120px);
+  max-width: calc(100vw - 540px);
   margin: 0;
-  translate: 0 -60%;
-  font-size: clamp(3rem, 6.4vw, 7.25rem);
-  font-weight: 800;
-  line-height: 0.96;
-  letter-spacing: -0.045em;
+  translate: 0 -58%;
+  font-size: clamp(3rem, 6.2vw, 6rem);
+  font-weight: 720;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
   text-align: right;
   text-wrap: balance;
   color: var(--ink);
-  text-shadow: 0 0 36px var(--ground), 0 0 14px var(--ground);
   pointer-events: none;
-  animation: hero-in 0.9s var(--ease-out) backwards;
-  transition: opacity 0.45s ease, transform 0.45s var(--ease-out), filter 0.45s ease;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s var(--ease-out),
+    filter 0.5s ease;
 }
 
 .hero span {
+  position: relative;
   display: block;
+  width: fit-content;
+  margin-left: auto;
+  padding: 0 0.04em 0.06em;
+  text-shadow: 0 0 40px var(--ground), 0 0 16px var(--ground);
+  animation: hero-write 1.1s var(--ease-draw) backwards;
 }
 
 .hero span + span {
   color: var(--ink-2);
+  animation-delay: 0.42s;
+}
+
+.hero span::after {
+  content: "";
+  position: absolute;
+  top: 0.08em;
+  bottom: 0.1em;
+  left: 100%;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--signal);
+  opacity: 0;
+  animation: hero-hand 1.1s var(--ease-draw) backwards;
+  animation-delay: inherit;
+}
+
+@keyframes hero-write {
+  from {
+    clip-path: inset(-10% 100% -10% 0);
+  }
+  to {
+    clip-path: inset(-10% -2% -10% 0);
+  }
+}
+
+@keyframes hero-hand {
+  0% {
+    left: 0;
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
 }
 
 .hero.gone {
   opacity: 0;
-  transform: translateY(-20px);
-  filter: blur(8px);
+  transform: translateY(-24px);
+  filter: blur(10px);
 }
 
 .hero[hidden] {
   display: none;
 }
 
-@keyframes hero-in {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-}
-
 .sheet-body {
   flex: 1;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 20px 16px 28px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--separator) transparent;
+  padding: 18px 18px 32px;
+  view-transition-name: sheet-page;
 }
 
 .brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
-  margin: 0 4px 16px;
+  margin: 0 2px 18px;
 }
 
+/* Wordmark with the red pivot of the clock hand. */
 .wordmark {
-  font-size: 1.375rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: 1.3125rem;
+  font-weight: 720;
+  letter-spacing: -0.045em;
+}
+
+.wordmark::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 3px;
+  border-radius: 50%;
+  background: var(--signal);
+  vertical-align: 1px;
 }
 
 .sheet-back {
-  align-self: center;
-  margin: -6px -2px -6px -8px;
+  margin: -6px 0 -6px -8px;
 }
 
 .settings-btn {
-  align-self: center;
   margin: -6px -8px -6px auto;
 }
 
 .settings-btn[aria-expanded="true"] {
-  background: var(--fill);
-  color: var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
 }
 
 /* Settings page (sheet.ts): replaces the trip content until back or the gear is tapped. */
@@ -560,14 +652,15 @@ button {
 }
 
 .settings-title {
-  font-size: 1.75rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  margin: 4px 4px 0;
+  font-size: 2rem;
+  font-weight: 720;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  margin: 2px 2px 0;
 }
 
 .settings-title + .group-title {
-  margin-top: 16px;
+  margin-top: 22px;
 }
 
 .row-action {
@@ -581,67 +674,97 @@ button {
   cursor: default;
 }
 
-/* Opening the panel or a page of it: the rows rise in; on desktop the card also unrolls from
-   the search bar (phones slide the whole sheet instead). */
-@keyframes sheet-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
+/* Page push inside the sheet (settings, back): the old page slides left and dims, the new one
+   comes in from the right; a view transition started by sheet.ts. Back reverses it. */
+::view-transition-group(sheet),
+::view-transition-group(sheet-page) {
+  animation-duration: 0.42s;
+  animation-timing-function: var(--ease-out);
 }
 
-@keyframes sheet-unroll {
-  from {
-    clip-path: inset(0 0 calc(100% - 72px) 0 round var(--radius-sheet));
-  }
+::view-transition-old(sheet-page),
+::view-transition-new(sheet-page) {
+  height: 100%;
+  object-fit: none;
+  object-position: top;
+}
+
+:root.vt-push::view-transition-old(sheet-page) {
+  animation: page-out 0.42s var(--ease-out) both;
+}
+
+:root.vt-push::view-transition-new(sheet-page) {
+  animation: page-in 0.42s var(--ease-out) both;
+}
+
+:root.vt-pop::view-transition-old(sheet-page) {
+  animation: page-in 0.42s var(--ease-out) reverse both;
+}
+
+:root.vt-pop::view-transition-new(sheet-page) {
+  animation: page-out 0.42s var(--ease-out) reverse both;
+}
+
+@keyframes page-out {
   to {
-    clip-path: inset(0 round var(--radius-sheet));
+    transform: translateX(-28%);
+    opacity: 0;
+    filter: blur(2px);
   }
 }
 
-.sheet-body > *,
-.trip > :not(.trip-stops),
-#settings > * {
-  animation: sheet-in 0.3s var(--ease-out);
-}
-
-@media (min-width: 721px) {
-  .sheet:not(.compact) {
-    animation: sheet-unroll 0.35s var(--ease-out);
+@keyframes page-in {
+  from {
+    transform: translateX(42%);
+    opacity: 0;
   }
 }
 
-/* Trip card: pickup dot and destination square joined by a rail. */
+/* Compact bar to full panel (desktop): the sheet box itself morphs; its content fades through. */
+::view-transition-old(sheet),
+::view-transition-new(sheet) {
+  height: 100%;
+  object-fit: none;
+  object-position: top left;
+}
+
+/* ---------- Trip: the line of stations ---------- */
+
 .trip {
-  background: var(--card);
+  position: relative;
+  background: var(--raised);
   border-radius: var(--radius-card);
-  box-shadow: var(--shadow-small);
-  padding: 6px 12px 6px 0;
+  box-shadow: 0 1px 2px rgb(20 21 23 / 0.06), inset 0 0 0 1px var(--rule);
+  padding: 4px 12px 4px 0;
 }
 
 .trip-stops {
   position: relative;
 }
 
+/* The rail between the stations. */
 .trip-stops::before {
   content: "";
   position: absolute;
   left: 21px;
-  top: 26px;
-  bottom: 26px;
+  top: 27px;
+  bottom: 27px;
   width: 2px;
-  background: var(--separator);
+  border-radius: 1px;
+  background: var(--ink);
 }
 
 .stop-row {
   display: flex;
   align-items: center;
   gap: 4px;
-  min-height: 52px;
+  min-height: 54px;
+  background: var(--raised);
+  border-radius: var(--radius-control);
 }
 
 .stop-row + .stop-row .place-input input {
-  border-top: 1px solid var(--separator);
+  border-top: 1px solid var(--rule);
 }
 
 .stop-glyph {
@@ -652,21 +775,39 @@ button {
   place-items: center;
 }
 
+button.stop-glyph {
+  align-self: stretch;
+  cursor: grab;
+  touch-action: none;
+  color: inherit;
+}
+
 .stop-glyph::before {
   content: "";
-  width: 10px;
-  height: 10px;
-  background: var(--ink);
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
+  background: var(--raised);
+  box-shadow: inset 0 0 0 4px var(--ink);
+  transition: transform 0.3s var(--ease-spring);
 }
 
 .stop-via .stop-glyph::before {
-  background: var(--card);
-  box-shadow: inset 0 0 0 2px var(--ink);
+  width: 10px;
+  height: 10px;
+  box-shadow: inset 0 0 0 2.5px var(--ink);
 }
 
 .stop-end .stop-glyph::before {
-  border-radius: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--ink);
+  box-shadow: none;
+}
+
+.stop-row:focus-within .stop-glyph::before {
+  transform: scale(1.25);
 }
 
 .place-input {
@@ -677,10 +818,11 @@ button {
 
 .place-input input {
   width: 100%;
-  height: 52px;
+  height: 54px;
   border: none;
   background: transparent;
   font-size: 1.0625rem;
+  letter-spacing: -0.01em;
   padding: 0 4px;
   text-overflow: ellipsis;
 }
@@ -701,23 +843,23 @@ button {
   width: 44px;
   height: 44px;
   margin-left: 8px;
-  background: var(--ink-2);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E") center / 18px no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E") center / 18px no-repeat;
+  background: var(--ink-3);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E") center / 16px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E") center / 16px no-repeat;
   cursor: pointer;
 }
 
-.stop-row:focus-within .stop-glyph::before {
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--focus) 35%, transparent);
-}
-
 .icon-btn {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
   border-radius: 50%;
   color: var(--ink-2);
+  transition:
+    background 0.2s var(--ease-out),
+    color 0.2s var(--ease-out),
+    transform 0.35s var(--ease-spring);
 }
 
 .icon-btn:hover {
@@ -725,16 +867,22 @@ button {
   color: var(--ink);
 }
 
+.icon-btn:active {
+  transform: scale(0.88);
+}
+
 .suggestions {
   position: absolute;
   z-index: 10;
   left: -44px;
   right: -40px;
-  top: calc(100% + 4px);
-  background: var(--card);
+  top: calc(100% + 6px);
+  background: var(--raised);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow);
   overflow: hidden;
+  transform-origin: top center;
+  animation: grow-in 0.26s var(--ease-out);
 }
 
 .suggestions:empty {
@@ -745,9 +893,9 @@ button {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 12px 16px;
+  padding: 13px 16px;
   font-size: 0.9375rem;
-  border-bottom: 1px solid var(--separator);
+  border-bottom: 1px solid var(--rule);
 }
 
 .suggestions li:last-child button {
@@ -761,7 +909,7 @@ button {
 }
 
 .suggestions .note {
-  padding: 12px 16px;
+  padding: 13px 16px;
   font-size: 0.9375rem;
   color: var(--ink-2);
 }
@@ -771,15 +919,15 @@ button {
   color: var(--error);
 }
 
-/* Text lines up with the address fields; the plus sits in the glyph column. */
+/* Text lines up with the address fields; the plus sits in the rail column. */
 .trip-add {
   position: relative;
   display: flex;
   align-items: center;
-  min-height: 44px;
+  min-height: 46px;
   color: var(--ink-2);
-  font-size: 1.0625rem;
-  border-top: 1px solid var(--separator);
+  font-size: 1rem;
+  border-top: 1px solid var(--rule);
   margin-left: 48px;
   padding-left: 4px;
   width: calc(100% - 48px);
@@ -797,25 +945,8 @@ button {
   color: var(--ink);
 }
 
-/* Google Maps style trip editing: glyphs are drag handles, swap button for two stops. */
-.trip {
-  position: relative;
-}
-
-button.stop-glyph {
-  align-self: stretch;
-  cursor: grab;
-  touch-action: none;
-  color: inherit;
-}
-
-.stop-row {
-  background: var(--card);
-  border-radius: var(--radius-control);
-}
-
 .reordering .stop-row {
-  transition: transform 0.18s var(--ease-out);
+  transition: transform 0.2s var(--ease-out);
 }
 
 .reordering .stop-row.dragging {
@@ -844,13 +975,15 @@ button.stop-glyph {
 .map-menu {
   position: fixed;
   z-index: 4000;
-  min-width: 220px;
+  min-width: 232px;
   padding: 6px;
   background: var(--material);
-  backdrop-filter: blur(30px) saturate(180%);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow);
+  transform-origin: top left;
+  animation: grow-in 0.24s var(--ease-out);
 }
 
 .map-menu button {
@@ -858,15 +991,14 @@ button.stop-glyph {
   justify-content: space-between;
   gap: 16px;
   width: 100%;
-  padding: 9px 12px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border-radius: 9px;
   text-align: left;
   font-size: 0.9375rem;
   color: var(--ink);
 }
 
 .map-menu button:first-child {
-  font-variant-numeric: tabular-nums;
   font-size: 0.875rem;
   color: var(--ink-2);
 }
@@ -884,7 +1016,7 @@ button.stop-glyph {
 
 /* Dropped pin and its place card. */
 .dropped-pin {
-  fill: var(--route);
+  fill: var(--signal);
   fill-opacity: 1;
   stroke: var(--route-casing);
   stroke-width: 3;
@@ -892,11 +1024,13 @@ button.stop-glyph {
 
 .place-card {
   display: grid;
-  gap: 2px;
+  gap: 3px;
 }
 
 .place-card strong {
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
   padding-right: 20px;
 }
 
@@ -908,14 +1042,13 @@ button.stop-glyph {
 .place-coord {
   color: var(--ink-3);
   font-size: 0.8125rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .place-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .place-actions .button-secondary {
@@ -938,14 +1071,13 @@ button.stop-glyph {
 .route-label {
   display: inline-block;
   transform: translate(-50%, -130%);
-  padding: 4px 10px;
+  padding: 5px 11px;
   border-radius: 999px;
-  background: var(--card);
+  background: var(--raised);
   color: var(--ink);
   box-shadow: var(--shadow-small);
   font-size: 0.8125rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  font-weight: 650;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -963,7 +1095,8 @@ button.stop-glyph {
 .footnote {
   color: var(--ink-2);
   font-size: 0.8125rem;
-  margin: 8px 4px 0;
+  margin: 10px 4px 0;
+  text-wrap: pretty;
 }
 
 #status {
@@ -976,17 +1109,18 @@ button.stop-glyph {
   display: none;
 }
 
+/* Loading: the red hand turns round a paper dial. */
 #status[data-kind="loading"]::before {
   content: "";
   display: inline-block;
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   margin-right: 8px;
-  vertical-align: -1px;
-  border: 2px solid var(--separator);
-  border-top-color: var(--ink);
+  vertical-align: -2px;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  background: conic-gradient(from 0deg, var(--signal) 0 10%, transparent 10% 100%);
+  box-shadow: inset 0 0 0 1.5px var(--rule);
+  animation: spin 0.9s linear infinite;
 }
 
 @keyframes spin {
@@ -995,34 +1129,58 @@ button.stop-glyph {
   }
 }
 
-/* ---------- Arrival ---------- */
+/* ---------- Arrival: the departure board line ---------- */
 
 .eta {
-  margin: 20px 4px 4px;
+  margin: 24px 2px 4px;
 }
 
 .eta-time {
-  display: block;
-  font-size: 3.25rem;
-  font-weight: 800;
-  letter-spacing: -0.035em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: clamp(3.5rem, 15vw, 4.75rem);
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 0.92;
 }
 
 .eta-time small {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.0625rem;
+  font-weight: 550;
   letter-spacing: -0.01em;
-  margin-left: 6px;
+  color: var(--ink-2);
+}
+
+/* Rolling digits (summary.ts): each digit is a column of 0-9 that slides to its value. */
+.roll {
+  display: inline-flex;
+}
+
+.roll-col {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  line-height: 1;
+}
+
+.roll-col > span {
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.9s cubic-bezier(0.2, 0.85, 0.15, 1);
+}
+
+.roll-sep {
+  display: inline-block;
+  line-height: 1;
+  margin: 0 0.01em;
 }
 
 .eta-meta {
   display: block;
-  margin-top: 6px;
+  margin-top: 10px;
   color: var(--ink-2);
   font-size: 0.9375rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .eta-error {
@@ -1031,8 +1189,9 @@ button.stop-glyph {
   font-size: 0.9375rem;
 }
 
+/* Detail rows read like a timetable: label left, value right, hairlines between. */
 .details {
-  margin: 14px 0 0;
+  margin: 16px 0 0;
 }
 
 .details div {
@@ -1044,7 +1203,7 @@ button.stop-glyph {
 }
 
 .details div + div {
-  border-top: 1px solid var(--separator);
+  border-top: 1px solid var(--rule);
 }
 
 .details dt {
@@ -1054,7 +1213,7 @@ button.stop-glyph {
 .details dd {
   margin: 0;
   text-align: right;
-  font-variant-numeric: tabular-nums;
+  font-weight: 550;
 }
 
 /* ---------- Weather ---------- */
@@ -1064,31 +1223,76 @@ button.stop-glyph {
   border: none;
 }
 
+/* Map tag: time, icon and temperature above the route, joined to its station by a leader. */
 .wx-pin {
+  position: relative;
+  display: inline-grid;
+  justify-items: center;
+  transform: translate(-50%, calc(-100% - 14px));
+  cursor: pointer;
+}
+
+.wx-tag {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  transform: translate(-50%, -50%);
   padding: 3px 9px 3px 5px;
-  border-radius: 999px;
-  background: var(--card);
+  border-radius: 10px;
+  background: var(--raised);
   color: var(--ink);
   box-shadow: var(--shadow-small);
   font-size: 13px;
   white-space: nowrap;
-  cursor: pointer;
 }
 
-.wx-pin.risk-1 {
+.wx-tag i {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 550;
+  color: var(--ink-2);
+  margin-right: 3px;
+}
+
+.wx-pin::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 1.5px;
+  height: 11px;
+  translate: -50% 0;
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+.wx-pin::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 10px);
+  width: 7px;
+  height: 7px;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: var(--raised);
+  box-shadow: 0 0 0 1.5px var(--ink);
+}
+
+.wx-pin.risk-1 .wx-tag {
   box-shadow: 0 0 0 2px var(--risk-1), var(--shadow-small);
 }
 
-.wx-pin.risk-2 {
+.wx-pin.risk-2 .wx-tag {
   box-shadow: 0 0 0 2px var(--risk-2), var(--shadow-small);
 }
 
-.wx-pin.risk-3 {
-  box-shadow: 0 0 0 2px var(--risk-3), var(--shadow-small);
+.wx-pin.risk-3 .wx-tag {
+  box-shadow: 0 0 0 2.5px var(--risk-3), var(--shadow-small);
+}
+
+.wx-pin .risk-dot {
+  width: 8px;
+  height: 8px;
+  margin-left: 2px;
 }
 
 .wx-pin .icon {
@@ -1098,53 +1302,89 @@ button.stop-glyph {
 
 .wx-pin b {
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
 }
 
-.wx-none {
+.wx-none .wx-tag {
   padding: 3px 10px;
   color: var(--ink-3);
 }
 
+/* A station arriving with the hand (map.ts sets the delay). */
+.wx-marker.arrive .wx-pin {
+  animation: station-in 0.5s var(--ease-spring) backwards;
+  animation-delay: var(--at, 0ms);
+}
+
+@keyframes station-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 2px)) scale(0.6);
+    filter: blur(3px);
+  }
+}
+
+.route-label-marker.arrive .route-label {
+  animation: label-in 0.5s var(--ease-spring) backwards;
+  animation-delay: var(--at, 0ms);
+}
+
+@keyframes label-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -90%) scale(0.7);
+  }
+}
+
 .wx-popup .leaflet-popup-content-wrapper {
   background: var(--material);
-  backdrop-filter: blur(30px) saturate(180%);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
   color: var(--ink);
-  border-radius: 18px;
+  border-radius: 20px;
   box-shadow: var(--shadow);
 }
 
 .wx-popup .leaflet-popup-content {
-  margin: 14px 16px;
+  margin: 16px 18px;
   font: inherit;
-  line-height: 1.35;
+  line-height: 1.38;
 }
 
 .wx-popup .leaflet-popup-tip {
   background: var(--material);
 }
 
+.wx-popup {
+  animation: grow-in 0.3s var(--ease-out);
+  transform-origin: bottom center;
+}
+
 .wx-head {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   color: var(--ink-2);
   font-size: 0.8125rem;
-  font-variant-numeric: tabular-nums;
+}
+
+.wx-head span:first-child {
+  color: var(--ink);
+  font-weight: 650;
+  font-size: 0.9375rem;
 }
 
 .wx-main {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  column-gap: 10px;
-  margin: 6px 0 10px;
+  column-gap: 12px;
+  margin: 8px 0 12px;
 }
 
 .wx-big .icon {
-  width: 44px;
-  height: 44px;
-  stroke-width: 1.5;
+  width: 46px;
+  height: 46px;
+  stroke-width: 1.4;
 }
 
 .wx-big {
@@ -1152,9 +1392,9 @@ button.stop-glyph {
 }
 
 .wx-temp {
-  font-size: 2.25rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.05em;
   line-height: 1;
 }
 
@@ -1165,7 +1405,7 @@ button.stop-glyph {
 
 .wx-rows {
   margin: 0;
-  border-top: 1px solid var(--separator);
+  border-top: 1px solid var(--rule);
 }
 
 .wx-rows div {
@@ -1174,7 +1414,7 @@ button.stop-glyph {
   gap: 10px;
   padding: 7px 0;
   font-size: 0.875rem;
-  border-bottom: 1px solid var(--separator);
+  border-bottom: 1px solid var(--rule);
 }
 
 .wx-rows dt {
@@ -1187,7 +1427,7 @@ button.stop-glyph {
   align-items: center;
   gap: 4px;
   text-align: right;
-  font-variant-numeric: tabular-nums;
+  font-weight: 550;
 }
 
 .wx-arrow {
@@ -1201,21 +1441,21 @@ button.stop-glyph {
 }
 
 .wx-warn {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   display: grid;
-  gap: 6px;
+  gap: 7px;
   font-size: 0.875rem;
 }
 
 .wx-warn li {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 
 .wx-source,
 .wx-empty {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   color: var(--ink-2);
   font-size: 0.75rem;
 }
@@ -1224,16 +1464,110 @@ button.stop-glyph {
   font-size: 0.9375rem;
 }
 
+.wx-far {
+  margin: 8px 0 0;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+/* The line strip: stations along one rail, like the map above a train door. Time on top, the
+   station mark on the rail (ring, dot, diamond by risk), then icon, temperature and km. The
+   rail after a station takes that station's risk colour; dark parts get sleepers. */
 .wx-strip {
   display: flex;
-  gap: 6px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
-  padding: 2px 2px 8px;
-  margin: 0 -2px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--separator) transparent;
-  transition: opacity 0.2s var(--ease-out);
+  padding: 4px 0 10px;
+  margin: 0 -18px;
+  padding-inline: 12px;
+  transition: opacity 0.25s var(--ease-out);
+  mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+}
+
+.wx-strip.stale {
+  opacity: 0.5;
+}
+
+.wx-strip li {
+  flex: none;
+}
+
+.wx-strip button {
+  --rail: var(--ink);
+  position: relative;
+  scroll-snap-align: start;
+  display: grid;
+  grid-template-rows: auto 22px auto auto auto;
+  justify-items: center;
+  gap: 3px;
+  width: 60px;
+  padding: 6px 0 8px;
+  border-radius: 12px;
+  transition: background 0.2s var(--ease-out);
+}
+
+.wx-strip button:hover {
+  background: var(--fill);
+}
+
+/* Rail: from this station's centre to the next one's. */
+.wx-strip button::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  right: -50%;
+  top: 36.5px; /* padding 6 + time 18 + gap 3 + half the station row 11, minus half the rail */
+  height: 3px;
+  border-radius: 2px;
+  background: var(--rail);
+  z-index: 0;
+}
+
+.wx-strip li:last-child button::before {
+  display: none;
+}
+
+.wx-strip button.rail-1 {
+  --rail: var(--risk-1);
+}
+
+.wx-strip button.rail-2 {
+  --rail: var(--risk-2);
+}
+
+.wx-strip button.rail-3 {
+  --rail: var(--risk-3);
+}
+
+.wx-strip button.rail-dark::before {
+  background: repeating-linear-gradient(90deg, var(--rail) 0 5px, transparent 5px 8px);
+}
+
+.wx-strip .station {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 2.5px var(--ink);
+}
+
+.wx-strip .station.risk-1 {
+  box-shadow: inset 0 0 0 3.5px var(--risk-1);
+}
+
+.wx-strip .station.risk-2 {
+  background: var(--risk-2);
+  box-shadow: 0 0 0 2.5px var(--paper);
+}
+
+.wx-strip .station.risk-3 {
+  border-radius: 2px;
+  background: var(--risk-3);
+  box-shadow: 0 0 0 2.5px var(--paper);
+  transform: rotate(45deg) scale(0.9);
 }
 
 .wx-strip button.far {
@@ -1241,41 +1575,16 @@ button.stop-glyph {
   outline-offset: -3px;
 }
 
-.wx-far {
-  margin: 8px 0 0;
-  color: var(--ink-2);
-  font-size: 0.8125rem;
-}
-
-.wx-strip.stale {
-  opacity: 0.55;
-}
-
-.wx-strip button {
-  scroll-snap-align: start;
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  width: 62px;
-  padding: 10px 0 8px;
-  border-radius: var(--radius-card);
-  background: var(--card);
-  box-shadow: inset 0 0 0 1px var(--separator);
-  font-variant-numeric: tabular-nums;
-}
-
-.wx-strip button:hover {
-  box-shadow: inset 0 0 0 1.5px var(--ink);
-}
-
 .wx-t {
   font-size: 0.8125rem;
-  font-weight: 600;
+  line-height: 18px;
+  font-weight: 650;
 }
 
 .wx-deg {
   font-size: 1.0625rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
   min-height: 1.3em;
 }
 
@@ -1287,6 +1596,20 @@ button.stop-glyph {
 .wx-dash {
   color: var(--ink-3);
   height: 20px;
+}
+
+/* Stations of a new route appear in order, left to right. */
+.wx-strip.arrive li {
+  animation: strip-in 0.46s var(--ease-out) backwards;
+  animation-delay: calc(var(--i) * 32ms);
+}
+
+@keyframes strip-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+    filter: blur(2px);
+  }
 }
 
 .wx-status {
@@ -1328,34 +1651,33 @@ button.stop-glyph {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .shimmer::before {
-    animation: none;
-  }
-}
-
 .link-button {
-  color: var(--focus);
-  font-weight: 600;
+  color: var(--ink);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
 }
 
-/* ---------- Warnings ---------- */
+/* ---------- Warnings, advice, changes ---------- */
 
 .change-list li {
-  padding: 10px 16px;
+  padding: 11px 16px;
   font-size: 0.9375rem;
 }
 
 .change-list li + li {
-  border-top: 1px solid var(--separator);
+  border-top: 1px solid var(--rule);
 }
 
 .change-list li[data-type="new"] {
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .change-list li[data-type="gone"] {
   color: var(--ink-2);
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-3);
 }
 
 .warn-list {
@@ -1363,17 +1685,18 @@ button.stop-glyph {
 }
 
 .warn-list li + li {
-  border-top: 1px solid var(--separator);
+  border-top: 1px solid var(--rule);
 }
 
 .warn {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 14px 1fr;
   align-items: center;
   column-gap: 12px;
   width: 100%;
-  padding: 11px 16px;
+  padding: 12px 16px;
   text-align: left;
+  transition: background 0.2s var(--ease-out);
 }
 
 .warn:disabled {
@@ -1386,20 +1709,21 @@ button.stop-glyph {
 
 .warn .risk-dot {
   grid-row: span 2;
+  justify-self: center;
 }
 
 .warn-text {
   font-size: 0.9375rem;
+  font-weight: 550;
 }
 
 .warn-meta {
   color: var(--ink-2);
   font-size: 0.8125rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .warn-list .empty {
-  padding: 12px 16px;
+  padding: 13px 16px;
   color: var(--ink-2);
   font-size: 0.9375rem;
 }
@@ -1407,15 +1731,16 @@ button.stop-glyph {
 .advice-list li {
   display: grid;
   gap: 2px;
-  padding: 11px 16px;
+  padding: 12px 16px;
 }
 
 .advice-list li + li {
-  border-top: 1px solid var(--separator);
+  border-top: 1px solid var(--rule);
 }
 
 .advice-item {
   font-size: 0.9375rem;
+  font-weight: 550;
 }
 
 .advice-why {
@@ -1435,8 +1760,8 @@ button.stop-glyph {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
-  margin: 14px 4px 0;
+  gap: 8px 10px;
+  margin: 18px 2px 0;
 }
 
 .share-row[hidden] {
@@ -1446,9 +1771,9 @@ button.stop-glyph {
 .copy-field {
   width: 100%;
   font-size: 0.8125rem;
-  padding: 6px 8px;
-  border: 1px solid var(--separator);
-  border-radius: 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--rule);
+  border-radius: 9px;
   background: var(--fill);
 }
 
@@ -1460,7 +1785,7 @@ button.stop-glyph {
 }
 
 .recent-list li + li {
-  border-top: 1px solid var(--separator);
+  border-top: 1px solid var(--rule);
 }
 
 .recent-item {
@@ -1468,7 +1793,7 @@ button.stop-glyph {
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  padding: 12px 16px;
+  padding: 13px 16px;
   text-align: left;
   font-size: 0.9375rem;
 }
@@ -1484,12 +1809,32 @@ button.stop-glyph {
 }
 
 .button-primary {
-  padding: 8px 16px;
+  padding: 11px 20px;
   border-radius: 999px;
   background: var(--ink);
   color: var(--on-ink);
-  font-weight: 700;
+  font-weight: 650;
   font-size: 0.9375rem;
+  letter-spacing: -0.01em;
+  transition: transform 0.35s var(--ease-spring);
+}
+
+.button-primary:active,
+.button-secondary:active {
+  transform: scale(0.95);
+}
+
+/* Start ride: the red hand's pivot before the label. */
+#live-start::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 9px;
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--signal) 30%, transparent);
+  vertical-align: 1px;
 }
 
 .share-row .button-secondary,
@@ -1498,7 +1843,12 @@ button.stop-glyph {
   color: var(--ink);
 }
 
-/* ---------- Live mode: glance view ---------- */
+.share-row .share-link {
+  width: 42px;
+  height: 42px;
+}
+
+/* ---------- Live mode: the ride screen ---------- */
 
 /* Live card: the ride screen is the map with this card at the bottom (live.ts). Buttons, alert
    and next warning span the card; time left and the weather here share a row. */
@@ -1508,19 +1858,27 @@ button.stop-glyph {
   left: 0;
   right: 0;
   bottom: 0;
-  width: min(100%, 520px);
-  max-height: 60dvh;
+  width: min(100%, 540px);
+  max-height: 62dvh;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 10px 12px;
-  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
-  background: var(--ground);
+  gap: 12px 14px;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+  background: var(--paper);
   color: var(--ink);
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   box-shadow: var(--shadow);
   overflow-y: auto;
+  animation: live-in 0.55s var(--ease-out);
+}
+
+@keyframes live-in {
+  from {
+    transform: translateY(40%);
+    opacity: 0;
+  }
 }
 
 .live > * {
@@ -1540,9 +1898,9 @@ button.stop-glyph {
 }
 
 /* Sunlight: pure black on white, risk colours dark enough for text contrast, thicker rings.
-   On by the "Güneş" button; starts on when the system asks for more contrast (ui/live.ts).
-   The rest of the screen switches to the light theme (ui/theme.ts) with a white, sharper map
-   and a black route. */
+   On by the "Sun" button; starts on when the system asks for more contrast (ui/live.ts). The rest
+   of the screen switches to the light theme (ui/theme.ts) with a white, sharper map and a black
+   route. The one place pure black and white are allowed: glare, not comfort. */
 :root.live-sun {
   --map-filter: grayscale(1) contrast(1.1) brightness(1.08);
   --route: #000000;
@@ -1550,13 +1908,13 @@ button.stop-glyph {
 }
 
 .live[data-contrast="high"] {
-  --ground: #ffffff;
-  --card: #ffffff;
+  --paper: #ffffff;
+  --raised: #ffffff;
   --ink: #000000;
   --ink-2: #000000;
   --on-ink: #ffffff;
-  --separator: #000000;
-  --fill: #e5e5ea;
+  --rule: #000000;
+  --fill: #e5e5e5;
   --risk-1: #735600;
   --risk-2: #a34700;
   --risk-3: #c00012;
@@ -1598,11 +1956,18 @@ button.stop-glyph {
 }
 
 .live-btn {
-  padding: 8px 14px;
+  padding: 10px 16px;
   border-radius: 999px;
   background: var(--fill);
-  font-weight: 600;
+  font-weight: 650;
   font-size: 0.9375rem;
+  transition:
+    background 0.2s var(--ease-out),
+    transform 0.35s var(--ease-spring);
+}
+
+.live-btn:active {
+  transform: scale(0.94);
 }
 
 .live-btn[aria-pressed="true"] {
@@ -1620,12 +1985,20 @@ button.stop-glyph {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 12px 14px 12px 16px;
   border-radius: var(--radius-card);
   background: var(--risk-2);
-  color: #25282d;
+  color: #141517;
   font-size: 1.0625rem;
   font-weight: 700;
+  animation: alert-in 0.5s var(--ease-spring);
+}
+
+@keyframes alert-in {
+  from {
+    transform: translateY(-12px) scale(0.96);
+    opacity: 0;
+  }
 }
 
 .live-alert[data-level="3"] {
@@ -1639,28 +2012,35 @@ button.stop-glyph {
 
 #live-refuel {
   flex-shrink: 0;
-  background: #25282d;
+  background: #141517;
   color: #fff;
 }
 
 /* Tank level question before a ride; big targets for gloves. */
 .fuel-ask {
-  width: min(360px, calc(100vw - 32px));
-  padding: 20px;
+  width: min(372px, calc(100vw - 32px));
+  padding: 22px;
   border: none;
-  border-radius: var(--radius-card);
-  background: var(--card);
+  border-radius: 22px;
+  background: var(--paper);
   color: var(--ink);
   box-shadow: var(--shadow);
 }
 
+.fuel-ask[open] {
+  animation: grow-in 0.34s var(--ease-out);
+}
+
 .fuel-ask::backdrop {
-  background: rgb(0 0 0 / 0.4);
+  background: rgb(10 10 12 / 0.42);
+  backdrop-filter: blur(3px);
 }
 
 .fuel-ask h2 {
-  margin: 0 0 16px;
-  font-size: 1.125rem;
+  margin: 0 0 18px;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 
 .fuel-ask-range {
@@ -1686,9 +2066,10 @@ button.stop-glyph {
 }
 
 .fuel-ask-levels button {
-  min-height: 56px;
-  font-size: 1.125rem;
-  font-weight: 600;
+  min-height: 58px;
+  font-size: 1.1875rem;
+  font-weight: 650;
+  border-radius: 14px;
 }
 
 .fuel-ask-cancel {
@@ -1699,23 +2080,23 @@ button.stop-glyph {
 
 .live-next {
   display: grid;
-  gap: 2px;
-  padding: 10px 14px;
-  border-radius: 16px;
-  background: var(--card);
-  box-shadow: inset 0 0 0 1px var(--separator);
+  gap: 3px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--rule);
 }
 
 .live-next strong {
-  font-size: 1.375rem;
+  font-size: 1.4375rem;
+  font-weight: 700;
   line-height: 1.1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 .live-next span {
   color: var(--ink-2);
   font-size: 1rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .live-next[data-level="1"] {
@@ -1732,22 +2113,20 @@ button.stop-glyph {
 
 .live-main {
   display: grid;
-  gap: 2px;
+  gap: 4px;
 }
 
 #live-left {
-  font-size: 2.25rem;
+  font-size: clamp(2.5rem, 12vw, 3.5rem);
   white-space: nowrap;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 0.95;
 }
 
 #live-meta {
   color: var(--ink-2);
   font-size: 1.0625rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .live-weather {
@@ -1761,14 +2140,15 @@ button.stop-glyph {
 }
 
 .live-weather .icon {
-  width: 36px;
-  height: 36px;
-  stroke-width: 1.5;
+  width: 38px;
+  height: 38px;
+  stroke-width: 1.4;
 }
 
 .live-weather b {
-  font-size: 1.75rem;
-  font-weight: 800;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
 }
 
 .live-weather span {
@@ -1782,11 +2162,11 @@ button.stop-glyph {
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: var(--radius-card);
   background: var(--fill);
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .live-off[hidden] {
@@ -1805,7 +2185,7 @@ button.stop-glyph {
 
 .live-refresh {
   justify-self: start;
-  padding: 6px 12px;
+  padding: 7px 13px;
   font-size: 0.875rem;
 }
 
@@ -1820,14 +2200,15 @@ button.stop-glyph {
 
 /* Ride map not following (dragged away): "my location" lights up as the way back. */
 .live-free #locate {
-  background: var(--focus);
+  background: var(--signal);
   color: #fff;
 }
 
+/* The rider on the map: a red dot with a paper ring and a slow pulse. */
 .live-dot {
-  fill: var(--focus);
+  fill: var(--signal);
   fill-opacity: 1;
-  stroke: #fff;
+  stroke: var(--route-casing);
   stroke-width: 3;
 }
 
@@ -1843,7 +2224,7 @@ button.stop-glyph {
 .route-options {
   display: grid;
   gap: 8px;
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 .route-options:empty {
@@ -1852,20 +2233,29 @@ button.stop-glyph {
 
 .route-item {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   width: 100%;
   padding: 14px 16px;
   text-align: left;
-  background: var(--card);
+  background: var(--raised);
   border-radius: var(--radius-card);
-  box-shadow: inset 0 0 0 1px var(--separator);
-  transition: box-shadow 0.2s var(--ease-out);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  transition:
+    box-shadow 0.25s var(--ease-out),
+    transform 0.35s var(--ease-spring);
+}
+
+.route-item:active {
+  transform: scale(0.98);
 }
 
 .route-item strong {
   display: block;
   font-size: 1.0625rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
 }
 
 .route-item .sub {
@@ -1874,13 +2264,9 @@ button.stop-glyph {
 }
 
 .route-item .dur {
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.route-item {
-  flex-wrap: wrap;
+  letter-spacing: -0.02em;
 }
 
 .route-risk {
@@ -1888,10 +2274,10 @@ button.stop-glyph {
 }
 
 .route-risk .risk-dot {
-  width: 8px;
-  height: 8px;
-  margin-right: 5px;
-  vertical-align: 0;
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  vertical-align: -0.5px;
 }
 
 .safest {
@@ -1899,9 +2285,9 @@ button.stop-glyph {
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  margin-top: 10px;
+  margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid var(--separator);
+  border-top: 1px solid var(--rule);
   font-size: 0.875rem;
 }
 
@@ -1911,7 +2297,6 @@ button.stop-glyph {
 
 .safest span {
   color: var(--ink-2);
-  font-variant-numeric: tabular-nums;
 }
 
 .route-item[aria-pressed="true"] {
@@ -1920,34 +2305,78 @@ button.stop-glyph {
 
 /* ---------- Grouped settings ---------- */
 
+/* Section heads of the sheet: the heading carries itself, a hairline above sets the rhythm. */
 .group-title {
-  font-size: 1.25rem;
+  font-size: 1.1875rem;
   font-weight: 700;
-  letter-spacing: -0.015em;
-  margin: 26px 4px 8px;
+  letter-spacing: -0.025em;
+  margin: 30px 2px 10px;
 }
 
 .group {
-  background: var(--card);
+  background: var(--raised);
   border-radius: var(--radius-card);
-  padding: 4px 0;
-  box-shadow: inset 0 0 0 1px var(--separator);
+  padding: 2px 0;
+  box-shadow: 0 1px 2px rgb(20 21 23 / 0.05), inset 0 0 0 1px var(--rule);
 }
 
 .group .segmented {
-  margin: 8px 12px;
+  margin: 10px 12px;
 }
 
+/* Segmented control with a sliding thumb (iOS): the thumb is ::before, moved by :has(). */
 .segmented {
+  --n: 2;
+  --k: 0;
+  position: relative;
   display: flex;
-  padding: 2px;
-  border-radius: 9px;
+  padding: 3px;
+  border-radius: 11px;
   background: var(--fill);
+}
+
+.segmented:has(> label:nth-child(3)) {
+  --n: 3;
+}
+
+.segmented:has(> label:nth-child(4)) {
+  --n: 4;
+}
+
+.segmented:has(> label:nth-child(2) input:checked) {
+  --k: 1;
+}
+
+.segmented:has(> label:nth-child(3) input:checked) {
+  --k: 2;
+}
+
+.segmented:has(> label:nth-child(4) input:checked) {
+  --k: 3;
+}
+
+.segmented::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / var(--n));
+  border-radius: 8px;
+  background: var(--raised);
+  box-shadow: 0 3px 8px -2px rgb(0 0 0 / 0.16), 0 0 0 0.5px rgb(0 0 0 / 0.05);
+  transform: translateX(calc(var(--k) * 100%));
+  transition: transform 0.42s var(--ease-spring);
+}
+
+.segmented:not(:has(input:checked))::before {
+  opacity: 0;
 }
 
 .segmented label {
   flex: 1;
   position: relative;
+  z-index: 1;
 }
 
 .segmented input {
@@ -1960,22 +2389,18 @@ button.stop-glyph {
 
 .segmented span {
   display: block;
-  padding: 7px 6px;
-  border-radius: 7px;
+  padding: 8px 6px;
+  border-radius: 8px;
   text-align: center;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 550;
   color: var(--ink-2);
-  transition:
-    background 0.2s var(--ease-out),
-    color 0.2s var(--ease-out);
+  transition: color 0.25s var(--ease-out);
 }
 
 .segmented input:checked + span {
-  background: var(--card);
   color: var(--ink);
-  font-weight: 600;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.14);
+  font-weight: 650;
 }
 
 .segmented input:focus-visible + span {
@@ -1988,13 +2413,13 @@ button.stop-glyph {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 46px;
+  min-height: 48px;
   padding: 0 16px;
-  font-size: 1.0625rem;
+  font-size: 1rem;
 }
 
 .row + .row {
-  border-top: 1px solid var(--separator);
+  border-top: 1px solid var(--rule);
 }
 
 .row[hidden] {
@@ -2005,10 +2430,62 @@ button.stop-glyph {
   border-top: none;
 }
 
-.row input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  accent-color: var(--ink);
+/* Checkboxes as iOS switches. */
+.row input[type="checkbox"],
+.layers-toggle input[type="checkbox"],
+.break-night input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 26px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--fill-2);
+  cursor: pointer;
+  transition: background 0.25s var(--ease-out);
+}
+
+.row input[type="checkbox"]::after,
+.layers-toggle input[type="checkbox"]::after,
+.break-night input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 0.22);
+  transition: transform 0.38s var(--ease-spring);
+}
+
+.row input[type="checkbox"]:checked,
+.layers-toggle input[type="checkbox"]:checked,
+.break-night input[type="checkbox"]:checked {
+  background: var(--ink);
+}
+
+.row input[type="checkbox"]:checked::after,
+.layers-toggle input[type="checkbox"]:checked::after,
+.break-night input[type="checkbox"]:checked::after {
+  transform: translateX(18px);
+}
+
+.break-night input[type="checkbox"] {
+  width: 36px;
+  height: 22px;
+}
+
+.break-night input[type="checkbox"]::after {
+  width: 18px;
+  height: 18px;
+}
+
+.break-night input[type="checkbox"]:checked::after {
+  transform: translateX(14px);
 }
 
 .row-value {
@@ -2018,12 +2495,24 @@ button.stop-glyph {
 
 input[type="number"],
 input[type="datetime-local"],
+input[type="time"],
 select {
   background: var(--fill);
   border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 6px 8px;
-  font-variant-numeric: tabular-nums;
+  border-radius: 9px;
+  padding: 7px 9px;
+  transition:
+    border-color 0.2s var(--ease-out),
+    background 0.2s var(--ease-out);
+}
+
+input[type="number"]:focus,
+input[type="datetime-local"]:focus,
+input[type="time"]:focus,
+select:focus {
+  outline: none;
+  border-color: var(--ink);
+  background: var(--raised);
 }
 
 .row-value input[type="number"] {
@@ -2036,7 +2525,7 @@ select {
 input[type="datetime-local"] {
   display: block;
   width: calc(100% - 24px);
-  margin: 0 12px 8px;
+  margin: 0 12px 10px;
 }
 
 input[type="datetime-local"][hidden] {
@@ -2048,31 +2537,34 @@ input:invalid {
 }
 
 #depart-best {
-  padding: 0 12px 4px;
+  padding: 0 12px 6px;
 }
 
 .best-window {
   display: flex;
   gap: 2px;
-  padding: 2px;
-  margin: 10px 0 4px;
-  border-radius: 9px;
+  padding: 3px;
+  margin: 10px 0 6px;
+  border-radius: 11px;
   background: var(--fill);
 }
 
 .best-window button {
   flex: 1;
-  padding: 5px 8px;
-  border-radius: 7px;
+  padding: 6px 8px;
+  border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--ink-2);
+  transition:
+    background 0.25s var(--ease-out),
+    color 0.25s var(--ease-out);
 }
 
 .best-window button[aria-pressed="true"] {
-  background: var(--card);
+  background: var(--raised);
   color: var(--ink);
-  box-shadow: var(--shadow-small);
+  box-shadow: 0 3px 8px -2px rgb(0 0 0 / 0.16);
 }
 
 .best-item.far {
@@ -2091,11 +2583,18 @@ input:invalid {
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 11px 13px;
   border-radius: var(--radius-control);
   background: var(--fill);
   text-align: left;
-  font-variant-numeric: tabular-nums;
+  transition:
+    background 0.25s var(--ease-out),
+    color 0.25s var(--ease-out),
+    transform 0.35s var(--ease-spring);
+}
+
+.best-item:active {
+  transform: scale(0.98);
 }
 
 .best-item[aria-pressed="true"] {
@@ -2108,8 +2607,12 @@ input:invalid {
   opacity: 0.8;
 }
 
+.best-item[aria-pressed="true"] .risk-dot:not(.risk-2, .risk-3) {
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+
 .best-time {
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .best-meta {
@@ -2125,7 +2628,7 @@ input:invalid {
 }
 
 .group .footnote {
-  margin: 8px 16px;
+  margin: 8px 16px 10px;
 }
 
 /* ---------- Breaks ---------- */
@@ -2135,32 +2638,33 @@ input:invalid {
   grid-template-columns: 1fr auto auto;
   align-items: center;
   gap: 0 8px;
-  padding: 10px 8px 10px 16px;
+  padding: 11px 8px 11px 16px;
 }
 
 .break-row + .break-row {
-  border-top: 1px solid var(--separator);
+  border-top: 1px solid var(--rule);
 }
 
 .break-title {
-  font-size: 1.0625rem;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
+/* The same platform-number square as the map marker. */
 .break-title::before {
   content: "";
   display: inline-block;
   width: 10px;
   height: 10px;
-  border-radius: 50%;
-  margin-right: 8px;
-  background: var(--break);
+  border-radius: 3px;
+  margin-right: 9px;
+  background: var(--ink);
 }
 
 .break-info {
   grid-column: 1;
   color: var(--ink-2);
   font-size: 0.8125rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .break-duration {
@@ -2185,23 +2689,18 @@ input:invalid {
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 6px;
+  gap: 8px;
+  margin-top: 8px;
   color: var(--ink-2);
   font-size: 0.8125rem;
 }
 
 .break-duration input[type="time"] {
   width: auto;
-  background: var(--fill);
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 6px 8px;
-  font-variant-numeric: tabular-nums;
 }
 
 .break-list .empty {
-  padding: 12px 16px;
+  padding: 13px 16px;
   color: var(--ink-2);
   font-size: 0.9375rem;
 }
@@ -2211,8 +2710,8 @@ input:invalid {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px 12px;
-  border-top: 1px solid var(--separator);
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--rule);
   font-size: 0.9375rem;
 }
 
@@ -2221,16 +2720,13 @@ input:invalid {
 }
 
 .button-secondary {
-  padding: 8px 14px;
+  padding: 9px 15px;
   border-radius: 999px;
   background: var(--ink);
   color: var(--on-ink);
-  font-weight: 600;
+  font-weight: 650;
   font-size: 0.9375rem;
-}
-
-.button-secondary:active {
-  transform: scale(0.97);
+  transition: transform 0.35s var(--ease-spring);
 }
 
 /* Compact search bar: collapsed with no route (sheet.ts). Only the trip card's last row shows,
@@ -2262,19 +2758,45 @@ input:invalid {
   .sheet.compact .sheet-body {
     padding: 8px;
   }
+
+  .sheet.compact .trip {
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .sheet.compact .stop-row {
+    background: transparent;
+  }
+}
+
+/* First arrival of the search bar on the bare map. */
+.sheet.compact {
+  animation: bar-in 0.7s var(--ease-out) 0.25s backwards;
+}
+
+@keyframes bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.97);
+    filter: blur(6px);
+  }
 }
 
 /* ---------- Phone: bottom sheet ---------- */
 
 @media (max-width: 720px) {
   .hero {
-    top: calc(env(safe-area-inset-top) + 80px);
+    top: calc(env(safe-area-inset-top) + 76px);
     left: 16px;
     right: 16px;
     max-width: none;
     translate: none;
     font-size: clamp(2.25rem, 10.5vw, 3.25rem);
     text-align: center;
+  }
+
+  .hero span {
+    margin: 0 auto;
   }
 
   .sheet {
@@ -2286,7 +2808,12 @@ input:invalid {
     height: calc(100dvh - 56px);
     border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
     transform: translateY(var(--sheet-offset, 60%));
-    transition: transform 0.45s var(--ease-out);
+    transition: transform 0.5s cubic-bezier(0.2, 0.9, 0.2, 1);
+    view-transition-name: none;
+  }
+
+  .sheet.compact {
+    animation: none;
   }
 
   .sheet.dragging,
@@ -2305,22 +2832,25 @@ input:invalid {
   .sheet-grabber::before {
     content: "";
     display: block;
-    width: 38px;
+    width: 36px;
     height: 5px;
     margin: 8px auto 0;
     border-radius: 3px;
     background: var(--ink-3);
-    opacity: 0.6;
+    opacity: 0.5;
   }
 
   /* Top padding clears the header buttons' circles, which reach 6px above the header row. */
   .sheet-body {
-    padding: 8px 14px calc(28px + env(safe-area-inset-bottom));
+    padding: 8px 16px calc(28px + env(safe-area-inset-bottom));
   }
 
-  /* Phone: no wordmark (the sheet is short), only the language switch. */
+  .wx-strip {
+    margin: 0 -16px;
+  }
+
   .brand {
-    margin: 0 4px 8px;
+    margin: 0 2px 10px;
   }
 
   .brand .wordmark {
@@ -2336,7 +2866,7 @@ input:invalid {
   }
 
   .layers-panel {
-    top: calc(60px + env(safe-area-inset-top));
+    top: calc(62px + env(safe-area-inset-top));
   }
 
   .leaflet-bottom {
@@ -2350,25 +2880,21 @@ input:invalid {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+
+  .shimmer::before {
     animation: none;
   }
 
-  .hero.gone {
-    transform: none;
-    filter: none;
-  }
-
-  .sheet:not(.compact),
-  .sheet-body > *,
-  .trip > :not(.trip-stops),
-  #settings > * {
-    animation: none;
-  }
-
-  .sheet,
-  .segmented span,
-  .route-item {
-    transition: none;
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

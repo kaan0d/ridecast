@@ -25,6 +25,16 @@ export function bindSheet(onBack: () => void) {
   const maxOffset = () => Math.max(0, sheet.offsetHeight - peekPx());
   const setOffset = (px: number) => sheet.style.setProperty("--sheet-offset", `${px}px`);
 
+  // Page push and the bar-to-panel morph run as view transitions where the browser has them
+  // (style.css owns the motion); elsewhere, and with reduced motion, the change is instant.
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  const transition = (kind: "push" | "pop" | "morph", update: () => void) => {
+    if (!document.startViewTransition || reduced.matches || (kind === "morph" && phone.matches)) return update();
+    const root = document.documentElement;
+    root.classList.add(`vt-${kind}`);
+    document.startViewTransition(update).finished.finally(() => root.classList.remove(`vt-${kind}`));
+  };
+
   const page = document.getElementById("settings-page")!;
   const gear = document.getElementById("settings-open")!;
   const showSettings = (on: boolean) => {
@@ -95,6 +105,7 @@ export function bindSheet(onBack: () => void) {
   // and a field still low on the screen mid-slide would push the whole sheet past the top.
   sheet.addEventListener("focusin", (e) => {
     if (expanded || !(e.target as HTMLElement).closest(".place-input")) return;
+    if (!phone.matches) return transition("morph", () => snap(true)); // the bar grows into the panel
     sheet.classList.add("jump");
     snap(true);
     getComputedStyle(sheet).transform; // settle at the top before the transition comes back
@@ -104,7 +115,7 @@ export function bindSheet(onBack: () => void) {
   // Back: clear the trip (the caller) and go back to the bare map with the compact bar.
   const back = document.getElementById("sheet-back")!;
   back.addEventListener("click", () => {
-    if (!page.hidden) return showSettings(false);
+    if (!page.hidden) return transition("pop", () => showSettings(false));
     onBack();
     (document.activeElement as HTMLElement | null)?.blur();
     body.scrollTop = 0;
@@ -112,8 +123,11 @@ export function bindSheet(onBack: () => void) {
   });
 
   gear.addEventListener("click", () => {
-    showSettings(page.hidden === true);
-    snap(true);
+    const open = page.hidden === true;
+    transition(open ? "push" : "pop", () => {
+      showSettings(open);
+      snap(true);
+    });
   });
 
   // The compact bar grows when the status line gets a message.
