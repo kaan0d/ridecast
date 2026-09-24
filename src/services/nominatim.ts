@@ -4,11 +4,6 @@ import { getJson, isCached } from "./http";
 const BASE = "https://nominatim.openstreetmap.org";
 const MIN_INTERVAL_MS = 1100; // Nominatim policy: max 1 request per second
 
-export interface Place {
-  label: string;
-  pos: LatLon;
-}
-
 let queue: Promise<unknown> = Promise.resolve();
 
 // Runs network requests one after another with a gap; cached URLs skip the queue.
@@ -17,16 +12,6 @@ function throttled<T>(url: string): Promise<T> {
   const run = queue.then(() => getJson<T>(url));
   queue = run.catch(() => {}).then(() => new Promise((r) => setTimeout(r, MIN_INTERVAL_MS)));
   return run;
-}
-
-export async function searchPlaces(query: string): Promise<Place[]> {
-  const url = `${BASE}/search?format=jsonv2&limit=5&accept-language=tr&q=${encodeURIComponent(query)}`;
-  try {
-    const rows = await throttled<{ display_name: string; lat: string; lon: string }[]>(url);
-    return rows.map((r) => ({ label: r.display_name, pos: { lat: +r.lat, lon: +r.lon } }));
-  } catch {
-    throw new Error("Adres araması başarısız oldu.");
-  }
 }
 
 // Returns null when there is no address for the point or the request fails.

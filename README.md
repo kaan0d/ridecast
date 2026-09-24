@@ -2,6 +2,8 @@
 
 Rota hava durumu: a motorcycle-focused web app that shows weather, risks and warnings along a route, based on the time you reach each point. Turkish UI, map-first layout that works like a phone app (bottom sheet on phones, floating card on desktop), system light and dark themes.
 
+Live: https://kaandinc.com/ridecast/ (GitHub Pages, deployed by `.github/workflows/pages.yml` on every push to `main`).
+
 ## Status
 
 | Stage | Content | State |
@@ -16,6 +18,7 @@ Rota hava durumu: a motorcycle-focused web app that shows weather, risks and war
 | 8 | Clothing advice, fuel/rest stops | done |
 | 9 | Share link, saved routes | done |
 | 10 | Live mode (GPS) | done |
+| 11 | Deploy to kaandinc.com/ridecast | done |
 
 ## Setup
 
@@ -28,9 +31,11 @@ npm run build    # type check + production build
 npm run test     # Vitest (src/core)
 ```
 
+The build uses relative asset paths (`base: "./"` in `vite.config.ts`), so `dist` works from any sub-path.
+
 ## Usage
 
-- Type an address in Başlangıç / Bitiş and pick a suggestion, or click the map: a click fills the first empty stop, otherwise adds a via stop before the end.
+- Type an address in Başlangıç / Bitiş and pick a suggestion (Photon, as you type), or click the map: a click fills the first empty stop, otherwise adds a via stop before the end.
 - "+ Ara durak" adds an empty via stop; "×" removes it.
 - "Konumumu kullan" sets the start to the current GPS position.
 - The route is fetched as soon as start and end are set. Alternatives are drawn in grey; click one on the map or in the panel to select it.
@@ -54,7 +59,7 @@ npm run test     # Vitest (src/core)
 ```
 src/config/    vehicle defaults, road type rules (all tunable numbers)
 src/core/      pure TypeScript, no DOM/fetch: coordinates, route geometry (snap, slice, bearing), road type guess, ETA timeline with breaks, weather sampling, forecast hour matching, WMO codes, risk levels, wind chill, wet road estimate, break advice
-src/services/  Nominatim, OSRM, Open-Meteo clients + in-memory request cache
+src/services/  Photon, Nominatim, OSRM, Open-Meteo, Overpass clients + in-memory request cache
 src/ui/        Leaflet map, address inputs, panel
 ```
 
@@ -79,10 +84,11 @@ src/ui/        Leaflet map, address inputs, panel
 - Stage 9 in Chrome: a trip with car, road speeds 115/90/45, departure 24 Sep 08:00, the alternative route selected and 3 automatic 20 min breaks gave a 253 character hash. Opened in a new tab it restored the same arrival (12:18), the same breaks at km 100, 200 and 300 with the same times, the same settings and the alternative route, and loaded the 15 weather points again. "Son rotalar" listed "Kadıköy → Eskişehir" on an empty page, and clicking it restored the trip. A hand-broken hash (latitude 95) showed the error and put the current trip back in the address bar. In the automated browser the clipboard call never answered, which is how the 1.5 s fallback came about; the field appeared with the link selected.
 - Stage 10 in Chrome with a fake GPS (`watchPosition` replaced by a stub fed with points of the real OSRM route and made-up timestamps): 15 km in 10 min (90 km/h against 80 planned, pace 1.125) gave 258 km and 2 h 51 min left (3 h 13 min planned / 1.125) and an arrival 2:51 after the last fix. Three fixes 1.1 km north of the route showed the off-route banner only on the third, a fix with 300 m accuracy did not count, and "Rotayı yeniden hesapla" re-planned from "Konumum" with live mode still running. With every forecast hour made 5 mm/h rain and "Havayı şimdi yenile", a level 3 alert appeared ("Şiddetli yağmur 5.0 mm/sa · 16 km ileride"). The minimise pill, "Bitir" (tracking cleared, dot removed) and a denied permission (message, live mode not opened) worked. In that automated, hidden tab the wake lock was refused and the note showed. Three problems found and fixed on the way: after a reroute the old route's last fix re-anchored the new route; the first forecast of a new route raised alerts for everything on it; and a warning flickering out and back, or a weaker alert, replaced an open one.
 - Manually in Chrome: address search suggestions, pick start, map click for end, reverse-geocoded label, route with one alternative (Kadıköy to Eskişehir area: 359 km / 386 km), switching the selected route, OSRM network failure shows an error message.
+- Stage 11: `dist` served from a `/ridecast/` sub-path locally (python http.server): assets load, the Kadıköy-Eskişehir share link gives route, arrival 08:29 and weather capsules; phone width (390 px iframe) shows the bottom sheet. Photon for "kadıköy moda" returned 5 local-name suggestions (`lang=default`; without it the browser language turned names into "Istanbul, Turkey").
 
 ## Limits
 
-- Services are public demo/free servers, meant for development and light use only: OSRM demo server, Nominatim (max 1 request/s, enforced client side with a queue and 600 ms debounce).
+- Services are public demo/free servers, meant for light use only: OSRM demo server, Photon (address suggestions, 350 ms debounce; Nominatim's policy forbids client-side autocomplete), Nominatim (reverse lookup only, max 1 request/s, enforced client side with a queue), Overpass (on request only), Open-Meteo (free for non-commercial use), OSM tiles (attribution shown, no prefetching). The live copy is a personal portfolio demo; heavy use would need own servers.
 - OSRM demo only has the car profile. Other vehicle types will change speed and thresholds, not the route.
 - OSRM returns alternatives only when there are exactly two stops.
 - OSRM snaps any point to the nearest road (even across ferries), so "route not found" is rare.
