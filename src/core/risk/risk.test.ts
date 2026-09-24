@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { WeatherHour } from "../weather/weather";
-import { assessPoint, breakAdvice, isDark, relativeWindKmh, roadState, windChillC, type RiskThresholds } from "./risk";
+import { assessPoint, breakAdvice, crosswind, isDark, relativeWindKmh, roadState, windChillC, type RiskThresholds } from "./risk";
 import { tr } from "../../i18n/tr";
 
 const H = 3_600_000;
@@ -25,6 +25,7 @@ const moto: RiskThresholds = {
   rainMm: [0.1, 1, 4],
   rainProbPct: 60,
   gustKmh: [35, 50, 65],
+  crossGustKmh: [25, 40, 55],
   visibilityM: [5000, 2000, 800],
   coldC: [10, 5, 0],
   windChill: true,
@@ -92,6 +93,21 @@ describe("assessPoint", () => {
       ["gust", 1],
     ]);
     expect(c.events.map((e) => [e.kind, e.level])).toEqual([["road", 1]]);
+  });
+
+  test("crosswind: side gusts warn earlier and replace the gust row; head or tail wind does not", () => {
+    // 45 km/h gusts from the east. Riding north: all of it across, from the right.
+    expect(crosswind(45, 90, 0)).toEqual({ kmh: 45, fromRight: true });
+    expect(crosswind(45, 270, 0).fromRight).toBe(false);
+    expect(crosswind(45, 0, 0).kmh).toBeCloseTo(0);
+    const side = at([hour(0, { gustKmh: 45, windFromDeg: 90 })], 0, moto, 90, 0).events;
+    expect(side).toEqual([{ kind: "crosswind", level: 2, text: "Yan rüzgar hamlesi 45 km/s, sağdan" }]);
+    // Same gusts from ahead: only the plain gust warning (low).
+    expect(at([hour(0, { gustKmh: 45, windFromDeg: 0 })], 0, moto, 90, 0).events.map((e) => [e.kind, e.level])).toEqual([["gust", 1]]);
+    // 70 km/h at 30° off the nose: 35 km/h across is low, the gust itself is high, so the gust row stays.
+    expect(at([hour(0, { gustKmh: 70, windFromDeg: 30 })], 0, moto, 90, 0).events.map((e) => [e.kind, e.level])).toEqual([["gust", 3]]);
+    // Walking has no crosswind rule.
+    expect(at([hour(0, { gustKmh: 45, windFromDeg: 90 })], 0, { ...moto, crossGustKmh: null }, 5, 0).events.map((e) => e.kind)).toEqual(["gust"]);
   });
 
   test("precipitation probability: shown with rain, a low warning on its own when high", () => {

@@ -8,6 +8,7 @@ export const RISK: Record<VehicleType, RiskThresholds> = {
     rainMm: [0.1, 1, 4],
     rainProbPct: 60,
     gustKmh: [35, 50, 65],
+    crossGustKmh: [25, 40, 55], // a side gust moves a motorcycle well before a head-on one bothers it
     visibilityM: [5000, 2000, 800],
     coldC: [10, 5, 0], // wind chill at riding speed, at or below
     windChill: true,
@@ -24,6 +25,7 @@ export const RISK: Record<VehicleType, RiskThresholds> = {
     rainMm: [0.1, 1, 4],
     rainProbPct: 60,
     gustKmh: [25, 40, 55],
+    crossGustKmh: [20, 30, 45],
     visibilityM: [3000, 1000, 500],
     coldC: [5, 0, -5],
     windChill: true,
@@ -40,6 +42,7 @@ export const RISK: Record<VehicleType, RiskThresholds> = {
     rainMm: [1, 4, 10],
     rainProbPct: null, // enclosed: rain that may not come is not worth a warning
     gustKmh: [50, 70, 90],
+    crossGustKmh: [45, 60, 80], // tall or towing cars feel it; a normal car barely
     visibilityM: [2000, 1000, 300],
     coldC: null, // enclosed: no wind chill warnings
     windChill: false,
@@ -56,6 +59,7 @@ export const RISK: Record<VehicleType, RiskThresholds> = {
     rainMm: [0.5, 2, 6],
     rainProbPct: 70,
     gustKmh: [40, 60, 80],
+    crossGustKmh: null,
     visibilityM: [1000, 500, 200],
     coldC: [5, 0, -5],
     windChill: true,

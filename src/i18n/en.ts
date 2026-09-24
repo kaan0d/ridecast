@@ -217,6 +217,7 @@ export const en = {
       `${level === 3 ? "Heavy rain" : level === 1 ? "Light rain" : "Rain"} ${mm.toFixed(1)} mm/h${prob === null ? "" : ` · ${prob}% likely`}`,
     rainProb: (pct: number) => `${pct}% chance of rain`,
     gust: (kmh: number) => `Wind gusts ${r(kmh)} km/h`,
+    crosswind: (kmh: number, fromRight: boolean) => `Crosswind gusts ${r(kmh)} km/h from the ${fromRight ? "right" : "left"}`,
     visibility: (km: number, fog: boolean) => (fog ? `Fog, visibility ${km.toFixed(1)} km` : `Visibility ${km.toFixed(1)} km`),
     ice: (c: number) => `Ice risk: ${r(c)}° and a wet road (estimate)`,
     nearFreezing: (c: number) => `Near freezing (${r(c)}°)`,
