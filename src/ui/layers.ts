@@ -5,8 +5,9 @@ import { formatClock } from "./format";
 
 export type BaseId = "map" | "satellite" | "terrain";
 
-// Keyless tile sources. OSM is muted by the CSS filter on `.base-muted` tiles; imagery and
-// topography keep their colours.
+// Keyless tile sources. The map is Stadia's Alidade Smooth, light or dark with the theme; OSM
+// (muted by the CSS filter on `.base-muted` tiles) stands in when Stadia refuses the site. Imagery
+// and topography keep their colours.
 const BASES: Record<BaseId, { label: string; url: string; maxZoom: number; className?: string; attribution: string }> = {
   map: {
     label: t.layers.map,
@@ -29,6 +30,13 @@ const BASES: Record<BaseId, { label: string; url: string; maxZoom: number; class
   },
 };
 
+// Stadia serves registered domains and localhost without a key (client.stadiamaps.com); anywhere
+// else its tiles are a "401 Invalid Authentication" image.
+const stadiaUrl = () =>
+  `https://tiles.stadiamaps.com/tiles/alidade_smooth${document.documentElement.dataset.theme === "dark" ? "_dark" : ""}/{z}/{x}/{y}{r}.png`;
+const STADIA_CREDIT =
+  '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
 // RainViewer serves radar tiles up to zoom 7 ("Zoom Level Not Supported" above); Leaflet scales them.
 const RADAR_INDEX = "https://api.rainviewer.com/public/weather-maps.json";
 const RADAR_MAX_NATIVE_ZOOM = 7;
@@ -43,10 +51,13 @@ interface RadarIndex {
 export function bindLayers(map: L.Map, button: HTMLElement, panel: HTMLElement) {
   const saved = load();
   let base = L.tileLayer("", {});
+  let stadia = true; // false once Stadia refused this site: the map is OSM
+  let shownUrl = "";
   let radar: L.TileLayer | null = null;
 
   function setBase(id: BaseId) {
-    const b = BASES[id];
+    const b = id === "map" && stadia ? { ...BASES.map, url: stadiaUrl(), className: undefined, attribution: STADIA_CREDIT } : BASES[id];
+    shownUrl = b.url;
     base.remove();
     base = L.tileLayer(b.url, { maxZoom: b.maxZoom, maxNativeZoom: b.maxZoom, attribution: b.attribution, className: b.className }).addTo(map);
     base.bringToBack();
@@ -122,8 +133,22 @@ export function bindLayers(map: L.Map, button: HTMLElement, panel: HTMLElement) 
     }
   });
 
+  // The dark or light map follows the theme (also the light theme while riding).
+  new MutationObserver(() => {
+    if (saved.base === "map" && stadia && stadiaUrl() !== shownUrl) setBase("map");
+  }).observe(document.documentElement, { attributeFilter: ["data-theme"] });
+
   setBase(saved.base);
   if (saved.radar) void setRadar(true);
+  // One world tile tells whether Stadia serves this site; a refusal falls back to OSM. A failed
+  // request (offline) keeps Stadia, whose tiles may be in the browser cache.
+  fetch(stadiaUrl().replace("{z}/{x}/{y}{r}", "0/0/0"))
+    .then((r) => {
+      if (r.status !== 401 && r.status !== 403) return;
+      stadia = false;
+      if (saved.base === "map") setBase("map");
+    })
+    .catch(() => {});
 }
 
 // The chosen layers are a per-viewer convenience; storage may be blocked.
