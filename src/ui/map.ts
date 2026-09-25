@@ -195,12 +195,12 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
   };
 
   // Start and end pins carry their name beside them: they sit on the town's own map label.
-  const pin = (kind: StopKind, name: string) => {
+  const pin = (kind: StopKind, name: string, me?: boolean) => {
     const size = kind === "via" ? 11 : 14;
     const html = document.createElement("span");
     html.innerHTML = `<span class="pin pin-${kind}" style="width:${size}px;height:${size}px"></span>`;
     if (kind !== "via") html.append(Object.assign(document.createElement("span"), { className: "pin-name", textContent: name }));
-    return L.divIcon({ className: "stop-marker", html: html.innerHTML, iconSize: [size, size] });
+    return L.divIcon({ className: me ? "stop-marker me-stop" : "stop-marker", html: html.innerHTML, iconSize: [size, size] });
   };
 
   return {
@@ -209,10 +209,11 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     center: () => fromLatLng(map.getCenter()),
 
     // Stop pins; dragging one moves that stop (index into the trip's stop list).
-    setStops(stops: { pos: LatLon; kind: StopKind; index: number; title: string; name: string }[], onDrag: (index: number, p: LatLon) => void) {
+    // A stop at "my location" (me) hides while the device dot shows (style.css .has-me).
+    setStops(stops: { pos: LatLon; kind: StopKind; index: number; title: string; name: string; me?: boolean }[], onDrag: (index: number, p: LatLon) => void) {
       stopLayer.clearLayers();
       for (const s of stops) {
-        const m = L.marker(toLatLng(s.pos), { icon: pin(s.kind, s.name), draggable: true, keyboard: false, title: t.map.dragStop(s.title), autoPan: true, zIndexOffset: 1000 }).addTo(stopLayer);
+        const m = L.marker(toLatLng(s.pos), { icon: pin(s.kind, s.name, s.me), draggable: true, keyboard: false, title: t.map.dragStop(s.title), autoPan: true, zIndexOffset: 1000 }).addTo(stopLayer);
         m.on("dragend", () => onDrag(s.index, fromLatLng(m.getLatLng())));
       }
     },
@@ -368,10 +369,11 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
 
     closePopup: () => map.closePopup(),
 
-    // "Konumumu göster": a blue dot at the device position, opening the place card on tap.
+    // "Konumumu göster": a red dot at the device position, opening the place card on tap.
     showMe(p: LatLon, onTap: () => void) {
       meDot?.remove();
       meDot = L.circleMarker(toLatLng(p), { radius: 8, className: "live-dot" }).on("click", onTap).addTo(map);
+      el.classList.add("has-me");
       map.flyTo(toLatLng(p), Math.max(map.getZoom(), 14));
     },
 
@@ -381,8 +383,10 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
       if (!p) {
         liveDot?.remove();
         liveDot = null;
+        el.classList.toggle("has-me", !!meDot);
         return;
       }
+      el.classList.add("has-me");
       if (!liveDot) liveDot = L.circleMarker(toLatLng(p), { radius: 9, className: "live-dot", interactive: false }).addTo(map);
       else liveDot.setLatLng(toLatLng(p));
       if (!follow) return;

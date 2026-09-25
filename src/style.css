@@ -481,6 +481,11 @@ button {
   transform: scale(0.4);
 }
 
+/* The device dot stands for a stop at "my location"; no second pin on it (map.ts). */
+.has-me .me-stop {
+  display: none;
+}
+
 .start-far .stop-marker:has(.pin-start) {
   pointer-events: none; /* no invisible drag target */
 }

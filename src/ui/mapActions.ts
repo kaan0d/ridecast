@@ -16,11 +16,12 @@ interface Deps {
   canAddBreak(): boolean; // only with a route
   addBreak(pos: LatLon): void; // snapped to the selected route
   hasStart(): boolean;
+  isLive(): boolean; // a ride is on: the menu only adds stops
   focusNextAddress(): void;
 }
 
-// What the map does on its own: place card on a click, the right-click menu, "my location" and
-// the keyboard shortcuts, all like Google Maps.
+// What the map does on its own: the right-click (long-press) menu and its place card, "my
+// location" and the keyboard shortcuts, all like Google Maps. A plain click drops no pin.
 export function bindMapActions(deps: Deps) {
   const { map, measure } = deps;
 
@@ -37,6 +38,7 @@ export function bindMapActions(deps: Deps) {
 
   function openContext(pos: LatLon, x: number, y: number) {
     map.closePopup();
+    if (deps.isLive()) return openMenu(x, y, [{ label: t.menu.addStop, action: () => deps.addStop(pos) }], t.menu.label);
     const coord = formatCoord(pos);
     const items: MenuItem[] = [
       { label: coord, hint: t.menu.copy, action: () => void navigator.clipboard?.writeText(coord).then(() => deps.status(t.menu.copied), () => deps.status(coord)) },
@@ -80,7 +82,7 @@ export function bindMapActions(deps: Deps) {
   });
 
   return {
-    onClick: (pos: LatLon) => (measure.isActive() ? measure.add(pos) : openPlace(pos)),
+    onClick: (pos: LatLon) => measure.isActive() && measure.add(pos),
     onContext: openContext,
     locate,
     openPlace,
