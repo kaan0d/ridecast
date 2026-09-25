@@ -140,6 +140,7 @@ export function startApp() {
     canAddBreak: () => routes.length > 0,
     addBreak: (pos) => addBreakAt(snapToLine(lines[selected], pos).pos),
     hasStart: () => !!stops[0].pos,
+    isLive: () => live.isActive(),
     focusNextAddress() {
       const inputs = [...stopsEl.querySelectorAll("input")];
       (inputs.find((x) => !x.value) ?? inputs[inputs.length - 1])?.focus();
@@ -191,7 +192,7 @@ export function startApp() {
       near: map.center,
     });
     map.setStops(
-      stops.flatMap((s, i) => (s.pos ? [{ pos: s.pos, kind: kindOf(i), index: i, title: titleOf(i), name: placeName(s) }] : [])),
+      stops.flatMap((s, i) => (s.pos ? [{ pos: s.pos, kind: kindOf(i), index: i, title: titleOf(i), name: placeName(s), me: s.label === t.app.myLocation }] : [])),
       (i, pos) => placeStop(i, pos),
     );
   }
