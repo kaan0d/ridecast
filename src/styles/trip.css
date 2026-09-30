@@ -1,0 +1,400 @@
+/* ---------- Trip: the line of stations ---------- */
+
+.trip {
+  position: relative;
+  background: var(--raised);
+  border-radius: var(--radius-card);
+  box-shadow: 0 1px 2px rgb(20 21 23 / 0.06), inset 0 0 0 1px var(--rule);
+  padding: 4px 12px 4px 0;
+}
+
+.trip-stops {
+  position: relative;
+}
+
+/* The rail between the stations. */
+.trip-stops::before {
+  content: "";
+  position: absolute;
+  left: 21px;
+  top: 27px;
+  bottom: 27px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--ink);
+}
+
+.stop-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 54px;
+  background: var(--raised);
+  border-radius: var(--radius-control);
+}
+
+.stop-row + .stop-row .place-input input {
+  border-top: 1px solid var(--rule);
+}
+
+.stop-glyph {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
+}
+
+button.stop-glyph {
+  align-self: stretch;
+  cursor: grab;
+  touch-action: none;
+  color: inherit;
+}
+
+.stop-glyph::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--raised);
+  box-shadow: inset 0 0 0 4px var(--ink);
+  transition: transform 0.3s var(--ease-out);
+}
+
+.stop-via .stop-glyph::before {
+  width: 10px;
+  height: 10px;
+  box-shadow: inset 0 0 0 2.5px var(--ink);
+}
+
+.stop-end .stop-glyph::before {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--ink);
+  box-shadow: none;
+}
+
+.stop-row:focus-within .stop-glyph::before {
+  transform: scale(1.25);
+}
+
+.place-input {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.place-input input {
+  width: 100%;
+  height: 54px;
+  border: none;
+  background: transparent;
+  font-size: 1.0625rem;
+  letter-spacing: -0.01em;
+  padding: 0 4px;
+  text-overflow: ellipsis;
+}
+
+.place-input input:focus {
+  outline: none;
+}
+
+.place-input input::placeholder {
+  color: var(--ink-3);
+}
+
+/* Clear button of the address fields: a gap from the text and a thumb-sized target. */
+.place-input input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-left: 8px;
+  background: var(--ink-3);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E") center / 16px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E") center / 16px no-repeat;
+  cursor: pointer;
+}
+
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ink-2);
+  transition:
+    background 0.2s var(--ease-out),
+    color 0.2s var(--ease-out),
+    transform 0.35s var(--ease-spring);
+}
+
+.icon-btn:hover {
+  background: var(--fill);
+  color: var(--ink);
+}
+
+.icon-btn:active {
+  transform: scale(0.88);
+}
+
+.suggestions {
+  position: absolute;
+  z-index: 10;
+  left: -44px;
+  right: -40px;
+  top: calc(100% + 6px);
+  background: var(--raised);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transform-origin: top center;
+  animation: grow-in 0.26s var(--ease-out);
+}
+
+.suggestions:empty {
+  display: none;
+}
+
+.suggestions button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  font-size: 0.9375rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.suggestions li:last-child button {
+  border-bottom: none;
+}
+
+.suggestions button:hover,
+.suggestions button:focus-visible {
+  background: var(--fill);
+  outline: none;
+}
+
+.suggestions .note {
+  padding: 13px 16px;
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+
+.note.error,
+#status[data-kind="error"] {
+  color: var(--error);
+}
+
+/* Text lines up with the address fields; the plus sits in the rail column. */
+.trip-add {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  color: var(--ink-2);
+  font-size: 1rem;
+  border-top: 1px solid var(--rule);
+  margin-left: 48px;
+  padding-left: 4px;
+  width: calc(100% - 48px);
+}
+
+.trip-add .icon {
+  position: absolute;
+  left: -35px;
+  width: 18px;
+  height: 18px;
+  color: var(--ink);
+}
+
+.trip-add:hover {
+  color: var(--ink);
+}
+
+.reordering .stop-row {
+  transition: transform 0.2s var(--ease-out);
+}
+
+.reordering .stop-row.dragging {
+  transition: none;
+  position: relative;
+  z-index: 2;
+  box-shadow: var(--shadow-small);
+  cursor: grabbing;
+}
+
+.trip-swap {
+  position: absolute;
+  right: 6px;
+  top: 40px;
+}
+
+.trip-swap[hidden] {
+  display: none;
+}
+
+.trip:has(.trip-swap:not([hidden])) .trip-stops {
+  margin-right: 34px;
+}
+
+/* Map context menu (right click / long press). */
+.map-menu {
+  position: fixed;
+  z-index: 4000;
+  min-width: 232px;
+  padding: 6px;
+  background: var(--material);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+  transform-origin: top left;
+  animation: grow-in 0.24s var(--ease-out);
+}
+
+.map-menu button {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 9px;
+  text-align: left;
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+
+.map-menu button:first-child {
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.map-menu button:hover,
+.map-menu button:focus-visible {
+  background: var(--fill);
+  outline: none;
+}
+
+.map-menu-hint {
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+}
+
+/* Dropped pin and its place card. */
+.dropped-pin {
+  fill: var(--route);
+  fill-opacity: 1;
+  stroke: var(--route-casing);
+  stroke-width: 3;
+}
+
+.place-card {
+  display: grid;
+  gap: 3px;
+}
+
+.place-card strong {
+  font-size: 1.125rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  padding-right: 20px;
+}
+
+.place-addr {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+.place-coord {
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+}
+
+.place-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.place-actions .button-secondary {
+  background: var(--fill);
+  color: var(--ink);
+}
+
+.place-popup .leaflet-popup-close-button {
+  top: 8px !important;
+  right: 8px !important;
+  color: var(--ink-2) !important;
+}
+
+/* Duration bubble on every route; the selected one is inked. */
+.route-label-marker {
+  width: auto !important;
+  height: auto !important;
+}
+
+.route-label {
+  display: inline-block;
+  transform: translate(-50%, -130%);
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--raised);
+  color: var(--ink);
+  box-shadow: var(--shadow-small);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.route-label.selected {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.stop-marker {
+  cursor: grab;
+}
+
+.hint,
+.footnote {
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  margin: 10px 4px 0;
+  text-wrap: pretty;
+}
+
+#status {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+  margin: 12px 4px 0;
+}
+
+#status:empty {
+  display: none;
+}
+
+/* Loading: a hand turns round a paper dial. */
+#status[data-kind="loading"]::before {
+  content: "";
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  margin-right: 8px;
+  vertical-align: -2px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--ink) 0 10%, transparent 10% 100%);
+  box-shadow: inset 0 0 0 1.5px var(--rule);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,327 @@
+/* ---------- Grouped settings ---------- */
+
+/* Section heads of the sheet: the heading carries itself, a hairline above sets the rhythm. */
+.group-title {
+  font-size: 1.1875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin: 30px 2px 10px;
+}
+
+.group {
+  background: var(--raised);
+  border-radius: var(--radius-card);
+  padding: 2px 0;
+  box-shadow: 0 1px 2px rgb(20 21 23 / 0.05), inset 0 0 0 1px var(--rule);
+}
+
+.group .segmented {
+  margin: 10px 12px;
+}
+
+/* Segmented control with a sliding thumb (iOS): the thumb is ::before, moved by :has(). */
+.segmented {
+  --n: 2;
+  --k: 0;
+  position: relative;
+  display: flex;
+  padding: 3px;
+  border-radius: 11px;
+  background: var(--fill);
+}
+
+.segmented:has(> label:nth-child(3)) {
+  --n: 3;
+}
+
+.segmented:has(> label:nth-child(4)) {
+  --n: 4;
+}
+
+.segmented:has(> label:nth-child(2) input:checked) {
+  --k: 1;
+}
+
+.segmented:has(> label:nth-child(3) input:checked) {
+  --k: 2;
+}
+
+.segmented:has(> label:nth-child(4) input:checked) {
+  --k: 3;
+}
+
+.segmented::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / var(--n));
+  border-radius: 8px;
+  background: var(--thumb);
+  box-shadow: 0 3px 8px -2px rgb(0 0 0 / 0.16), 0 0 0 0.5px rgb(0 0 0 / 0.05);
+  transform: translateX(calc(var(--k) * 100%));
+  transition: transform 0.42s var(--ease-spring);
+}
+
+.segmented:not(:has(input:checked))::before {
+  opacity: 0;
+}
+
+.segmented label {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.segmented span {
+  display: block;
+  padding: 8px 6px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 550;
+  color: var(--ink-2);
+  transition: color 0.25s var(--ease-out);
+}
+
+.segmented input:checked + span {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.segmented input:focus-visible + span {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 16px;
+  font-size: 1rem;
+}
+
+.row + .row {
+  border-top: 1px solid var(--rule);
+}
+
+.row[hidden] {
+  display: none;
+}
+
+.row[hidden] + .row {
+  border-top: none;
+}
+
+/* Checkboxes as iOS switches. */
+.row input[type="checkbox"],
+.layers-toggle input[type="checkbox"],
+.break-night input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 26px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--fill-2);
+  cursor: pointer;
+  transition: background 0.25s var(--ease-out);
+}
+
+.row input[type="checkbox"]::after,
+.layers-toggle input[type="checkbox"]::after,
+.break-night input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 0.22);
+  transition: transform 0.38s var(--ease-spring);
+}
+
+.row input[type="checkbox"]:checked,
+.layers-toggle input[type="checkbox"]:checked,
+.break-night input[type="checkbox"]:checked {
+  background: var(--ink);
+}
+
+.row input[type="checkbox"]:checked::after,
+.layers-toggle input[type="checkbox"]:checked::after,
+.break-night input[type="checkbox"]:checked::after {
+  transform: translateX(18px);
+}
+
+.break-night input[type="checkbox"] {
+  width: 36px;
+  height: 22px;
+}
+
+.break-night input[type="checkbox"]::after {
+  width: 18px;
+  height: 18px;
+}
+
+.break-night input[type="checkbox"]:checked::after {
+  transform: translateX(14px);
+}
+
+.row-value {
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+input[type="number"],
+input[type="datetime-local"],
+input[type="time"],
+select {
+  background: var(--fill);
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 7px 9px;
+  transition:
+    border-color 0.2s var(--ease-out),
+    background 0.2s var(--ease-out);
+}
+
+input[type="number"]:focus,
+input[type="datetime-local"]:focus,
+input[type="time"]:focus,
+select:focus {
+  outline: none;
+  border-color: var(--ink);
+  background: var(--raised);
+}
+
+.row-value input[type="number"] {
+  width: 4.5em;
+  text-align: right;
+  color: var(--ink);
+  margin-right: 2px;
+}
+
+input[type="datetime-local"] {
+  display: block;
+  width: calc(100% - 24px);
+  margin: 0 12px 10px;
+}
+
+input[type="datetime-local"][hidden] {
+  display: none;
+}
+
+input:invalid {
+  border-color: var(--error);
+}
+
+#depart-best {
+  padding: 0 12px 6px;
+}
+
+.best-window {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  margin: 10px 0 6px;
+  border-radius: 11px;
+  background: var(--fill);
+}
+
+.best-window button {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  transition:
+    background 0.25s var(--ease-out),
+    color 0.25s var(--ease-out);
+}
+
+.best-window button[aria-pressed="true"] {
+  background: var(--thumb);
+  color: var(--ink);
+  box-shadow: 0 3px 8px -2px rgb(0 0 0 / 0.16);
+}
+
+.best-item.far {
+  outline: 1px dashed var(--ink-3);
+  outline-offset: -3px;
+}
+
+.best-list {
+  display: grid;
+  gap: 6px;
+}
+
+.best-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: var(--radius-control);
+  background: var(--fill);
+  text-align: left;
+  transition:
+    background 0.25s var(--ease-out),
+    color 0.25s var(--ease-out),
+    transform 0.35s var(--ease-spring);
+}
+
+.best-item:active {
+  transform: scale(0.98);
+}
+
+.best-item[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.best-item[aria-pressed="true"] .best-meta {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.best-item[aria-pressed="true"] .risk-dot:not(.risk-2, .risk-3) {
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+
+.best-time {
+  font-weight: 650;
+}
+
+.best-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+#depart-best .footnote {
+  margin: 8px 0 4px;
+}
+
+.group .footnote {
+  margin: 8px 16px 10px;
+}

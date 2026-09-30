@@ -1,0 +1,376 @@
+/* ---------- Map ---------- */
+
+#map {
+  position: fixed;
+  inset: 0;
+  background: var(--ground);
+}
+
+.leaflet-container {
+  font: inherit;
+  background: var(--ground);
+}
+
+/* Per tile: a filter on the whole tile pane stops painting past ~1750 px on wide screens.
+   Only the OSM base is muted; satellite and terrain keep their colours. */
+.base-muted .leaflet-tile {
+  filter: var(--map-filter);
+}
+
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: var(--shadow-small) !important;
+  border-radius: var(--radius-control) !important;
+  overflow: hidden;
+}
+
+.leaflet-control-zoom a {
+  background: var(--material) !important;
+  backdrop-filter: blur(24px) saturate(160%);
+  color: var(--ink) !important;
+  border-color: var(--rule) !important;
+  width: 42px !important;
+  height: 42px !important;
+  line-height: 42px !important;
+  font-weight: 400;
+}
+
+.leaflet-control-attribution {
+  background: var(--material) !important;
+  color: var(--ink-3);
+  border-radius: 8px 0 0 0;
+  font-size: 0.6875rem;
+}
+
+.leaflet-control-attribution a {
+  color: var(--ink-2);
+}
+
+.map-btn {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-control);
+  background: var(--material);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: var(--shadow-small);
+  color: var(--ink);
+  transition: transform 0.35s var(--ease-spring);
+}
+
+.map-btn:active {
+  transform: scale(0.9);
+}
+
+.leaflet-control-scale-line {
+  background: var(--material);
+  color: var(--ink-2);
+  border-color: var(--ink-2);
+  font-size: 0.6875rem;
+}
+
+/* Floating surfaces grow from the control that opened them. */
+@keyframes grow-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+    filter: blur(4px);
+  }
+}
+
+.layers-panel {
+  position: fixed;
+  z-index: 1100;
+  top: 62px;
+  right: 10px;
+  width: 272px;
+  padding: 14px;
+  background: var(--material);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+  transform-origin: top right;
+  animation: grow-in 0.32s var(--ease-out);
+}
+
+.layers-title {
+  margin: 0 0 10px;
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.layers-bases {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.layers-base {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.layers-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-control);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  background: var(--fill) center / cover;
+  transition: box-shadow 0.25s var(--ease-out);
+}
+
+.layers-map .layers-thumb {
+  background-image: linear-gradient(135deg, var(--fill) 45%, var(--fill-2) 45% 55%, var(--fill) 55%);
+}
+
+.layers-satellite .layers-thumb {
+  background-image: linear-gradient(160deg, #3d5a3a, #6b7a4c 50%, #2f4a5c);
+}
+
+.layers-terrain .layers-thumb {
+  background-image: repeating-radial-gradient(circle at 30% 70%, #e8e0c8 0 6px, #cdd8b0 6px 9px);
+}
+
+.layers-base[aria-pressed="true"] {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.layers-base[aria-pressed="true"] .layers-thumb {
+  box-shadow: inset 0 0 0 2.5px var(--ink);
+}
+
+.layers-toggle {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+  font-size: 0.9375rem;
+}
+
+.layers-toggle small {
+  grid-column: 2;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+/* Distance measuring card and points. */
+.measure-card {
+  position: fixed;
+  z-index: 1200;
+  left: 50%;
+  bottom: calc(var(--sheet-inset) + 24px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 18px;
+  background: var(--material);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+
+.measure-card[hidden] {
+  display: none;
+}
+
+.measure-card div {
+  display: grid;
+}
+
+.measure-total {
+  font-size: 1.125rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.measure-count {
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+
+
+.measure-line {
+  stroke: var(--focus);
+  stroke-dasharray: 1 7;
+  stroke-linecap: round;
+}
+
+.measure-point {
+  border-radius: 50%;
+  background: var(--paper);
+  border: 3px solid var(--focus);
+  cursor: grab;
+}
+
+.measuring {
+  cursor: crosshair;
+}
+
+.route-drag-ghost {
+  fill: var(--paper);
+  fill-opacity: 1;
+  stroke: var(--route);
+  stroke-width: 3;
+}
+
+/* The line on the map: ink with a paper casing, like a rail line on a strip map. */
+.route {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.route-casing {
+  stroke: var(--route-casing);
+}
+
+.route-selected {
+  stroke: var(--route);
+}
+
+.route-alt {
+  stroke: var(--alt);
+  stroke-opacity: 0.9;
+}
+
+.route-risk-1 {
+  stroke: var(--risk-1);
+}
+
+.route-risk-2 {
+  stroke: var(--risk-2);
+}
+
+.route-risk-3 {
+  stroke: var(--risk-3);
+}
+
+/* Dark parts of the ride: sleepers across the line. */
+.route-night {
+  stroke: var(--route-casing);
+  stroke-dasharray: 0.1 8;
+  stroke-linecap: round;
+}
+
+/* The clock hand that draws a new route (map.ts). */
+.route-hand {
+  fill: var(--signal);
+  stroke: var(--route-casing);
+  stroke-width: 3;
+}
+
+/* Risk marks: the level is a shape as well as a hue. Low a ring, medium a dot, high a diamond. */
+.risk-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--ink-3);
+}
+
+.risk-dot.risk-1 {
+  box-shadow: inset 0 0 0 2.5px var(--risk-1);
+}
+
+.risk-dot.risk-2 {
+  background: var(--risk-2);
+  box-shadow: none;
+}
+
+.risk-dot.risk-3 {
+  border-radius: 1.5px;
+  background: var(--risk-3);
+  box-shadow: none;
+  transform: rotate(45deg) scale(0.86);
+}
+
+/* Stop pins: start is a station ring, via a small ring, end the terminus square. */
+/* Small and fine like the stations on the line; map.ts sizes the box (14 px, via 11 px). */
+.pin {
+  display: block;
+  transform: scale(var(--pin-scale, 1));
+  transition:
+    transform 0.25s var(--ease-out),
+    opacity 0.25s var(--ease-out);
+  border: 2px solid var(--route-casing);
+  background: var(--route);
+  box-shadow: 0 1px 3px rgb(20 21 23 / 0.3);
+}
+
+.pin-start {
+  border-radius: 50%;
+  background: var(--route-casing);
+  border: 3.5px solid var(--route);
+  outline: 2px solid var(--route-casing);
+}
+
+.pin-end {
+  border-radius: 3px;
+}
+
+/* Zoomed out beyond about 300 m on the scale bar the start dot hides; its name stays (map.ts). */
+.start-far .pin-start {
+  opacity: 0;
+  transform: scale(0.4);
+}
+
+/* The device dot stands for a stop at "my location"; no second pin on it (map.ts). */
+.has-me .me-stop {
+  display: none;
+}
+
+.start-far .stop-marker:has(.pin-start) {
+  pointer-events: none; /* no invisible drag target */
+}
+
+/* Leaflet places .stop-marker absolutely, so the name positions against it. */
+.pin-name {
+  position: absolute;
+  left: calc(50% + 7px * var(--pin-scale, 1) + 5px);
+  top: 50%;
+  translate: 0 -50%;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--ink);
+  text-shadow:
+    0 0 2px var(--paper),
+    0 0 4px var(--paper),
+    0 0 8px var(--paper);
+  pointer-events: none;
+}
+
+.pin-via {
+  border-radius: 50%;
+  background: var(--route-casing);
+  border-color: var(--route);
+}
+
+/* Breaks: a platform number. */
+.break-marker {
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--ink);
+  color: var(--on-ink);
+  border: 2px solid var(--route-casing);
+  box-shadow: var(--shadow-small);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: grab;
+}

@@ -1,0 +1,459 @@
+/* ---------- Weather ---------- */
+
+.wx-marker {
+  background: none;
+  border: none;
+}
+
+/* Map tag: time, icon and temperature above the route, joined to its station by a leader. */
+.wx-pin {
+  position: relative;
+  display: inline-grid;
+  justify-items: center;
+  transform: translate(-50%, calc(-100% - 14px));
+  cursor: pointer;
+}
+
+.wx-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 9px 3px 5px;
+  border-radius: 10px;
+  background: var(--raised);
+  color: var(--ink);
+  box-shadow: var(--shadow-small);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.wx-tag i {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 550;
+  color: var(--ink-2);
+  margin-right: 3px;
+}
+
+.wx-pin::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 1.5px;
+  height: 11px;
+  translate: -50% 0;
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+.wx-pin::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 10px);
+  width: 7px;
+  height: 7px;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: var(--raised);
+  box-shadow: 0 0 0 1.5px var(--ink);
+}
+
+.wx-pin.risk-1 .wx-tag {
+  box-shadow: 0 0 0 2px var(--risk-1), var(--shadow-small);
+}
+
+.wx-pin.risk-2 .wx-tag {
+  box-shadow: 0 0 0 2px var(--risk-2), var(--shadow-small);
+}
+
+.wx-pin.risk-3 .wx-tag {
+  box-shadow: 0 0 0 2.5px var(--risk-3), var(--shadow-small);
+}
+
+.wx-pin .risk-dot {
+  width: 8px;
+  height: 8px;
+  margin-left: 2px;
+}
+
+.wx-pin .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.wx-pin b {
+  font-weight: 700;
+}
+
+.wx-none .wx-tag {
+  padding: 3px 10px;
+  color: var(--ink-3);
+}
+
+/* A station arriving with the hand (map.ts sets the delay). */
+.wx-marker.arrive .wx-pin {
+  animation: station-in 0.55s var(--ease-out) backwards;
+  animation-delay: var(--at, 0ms);
+}
+
+@keyframes station-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 2px)) scale(0.6);
+    filter: blur(3px);
+  }
+}
+
+.route-label-marker.arrive .route-label {
+  animation: label-in 0.55s var(--ease-out) backwards;
+  animation-delay: var(--at, 0ms);
+}
+
+@keyframes label-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -90%) scale(0.7);
+  }
+}
+
+.wx-popup .leaflet-popup-content-wrapper {
+  background: var(--material);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  color: var(--ink);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.wx-popup .leaflet-popup-content {
+  margin: 16px 18px;
+  font: inherit;
+  line-height: 1.38;
+}
+
+.wx-popup .leaflet-popup-tip {
+  background: var(--material);
+}
+
+.wx-popup {
+  animation: grow-in 0.3s var(--ease-out);
+  transform-origin: bottom center;
+}
+
+.wx-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+.wx-head span:first-child {
+  color: var(--ink);
+  font-weight: 650;
+  font-size: 0.9375rem;
+}
+
+.wx-main {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 12px;
+  margin: 8px 0 12px;
+}
+
+.wx-big .icon {
+  width: 46px;
+  height: 46px;
+  stroke-width: 1.4;
+}
+
+.wx-big {
+  grid-row: span 2;
+}
+
+.wx-temp {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.wx-cond {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+
+.wx-rows {
+  margin: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.wx-rows div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.wx-rows dt {
+  color: var(--ink-2);
+}
+
+.wx-rows dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-align: right;
+  font-weight: 550;
+}
+
+.wx-arrow {
+  display: inline-grid;
+}
+
+.wx-arrow .icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.25;
+}
+
+.wx-warn {
+  margin: 12px 0 0;
+  display: grid;
+  gap: 7px;
+  font-size: 0.875rem;
+}
+
+.wx-warn li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.wx-source,
+.wx-empty {
+  margin: 10px 0 0;
+  color: var(--ink-2);
+  font-size: 0.75rem;
+}
+
+.wx-empty {
+  font-size: 0.9375rem;
+}
+
+.wx-far {
+  margin: 8px 0 0;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+/* The line strip: stations along one rail, like the map above a train door. Every station shows
+   in full (time, station mark on the rail by risk, icon, temperature, km; the stop names at the
+   ends) and the strip scrolls to the right, fading out at the edge while more is to come. The rail
+   after a station takes that station's risk colour; dark parts get sleepers. */
+.wx-strip {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 18px;
+  overscroll-behavior-x: contain;
+  padding: 4px 18px 10px;
+  margin: 0 -18px;
+  transition: opacity 0.25s var(--ease-out);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+}
+
+.wx-strip.stale {
+  opacity: 0.5;
+}
+
+.wx-strip li {
+  flex: none;
+}
+
+.wx-strip button {
+  --rail: var(--ink);
+  position: relative;
+  scroll-snap-align: start;
+  display: grid;
+  grid-template-rows: auto 22px auto auto auto;
+  justify-items: unsafe center;
+  gap: 3px;
+  width: 64px;
+  padding: 6px 0 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  transition: background 0.2s var(--ease-out);
+}
+
+.wx-strip li:first-child .wx-km,
+.wx-strip li:last-child .wx-km {
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* The last station can scroll clear of the fade. */
+.wx-strip li:last-child {
+  margin-right: 28px;
+}
+
+.wx-strip button:hover {
+  background: var(--fill);
+}
+
+/* Rail: from this station's centre to the next one's. */
+.wx-strip button::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  right: -50%;
+  top: 36.5px; /* padding 6 + time 18 + gap 3 + half the station row 11, minus half the rail */
+  height: 3px;
+  border-radius: 2px;
+  background: var(--rail);
+  z-index: 0;
+}
+
+.wx-strip li:last-child button::before {
+  display: none;
+}
+
+.wx-strip button.rail-1 {
+  --rail: var(--risk-1);
+}
+
+.wx-strip button.rail-2 {
+  --rail: var(--risk-2);
+}
+
+.wx-strip button.rail-3 {
+  --rail: var(--risk-3);
+}
+
+.wx-strip button.rail-dark::before {
+  background: repeating-linear-gradient(90deg, var(--rail) 0 5px, transparent 5px 8px);
+}
+
+.wx-strip .station {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 2.5px var(--ink);
+}
+
+.wx-strip .station.risk-1 {
+  box-shadow: inset 0 0 0 3.5px var(--risk-1);
+}
+
+.wx-strip .station.risk-2 {
+  background: var(--risk-2);
+  box-shadow: 0 0 0 2.5px var(--paper);
+}
+
+.wx-strip .station.risk-3 {
+  border-radius: 2px;
+  background: var(--risk-3);
+  box-shadow: 0 0 0 2.5px var(--paper);
+  transform: rotate(45deg) scale(0.9);
+}
+
+.wx-strip button.far {
+  outline: 1px dashed var(--ink-3);
+  outline-offset: -3px;
+}
+
+.wx-t {
+  font-size: 0.8125rem;
+  line-height: 18px;
+  font-weight: 650;
+}
+
+.wx-deg {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  min-height: 1.3em;
+}
+
+.wx-km {
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+}
+
+.wx-dash {
+  color: var(--ink-3);
+  height: 20px;
+}
+
+/* Stations of a new route appear in order, left to right. */
+.wx-strip.arrive li {
+  animation: strip-in 0.46s var(--ease-out) backwards;
+  animation-delay: calc(var(--i) * 32ms);
+}
+
+@keyframes strip-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+    filter: blur(2px);
+  }
+}
+
+.wx-status {
+  margin: 0 4px;
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+
+.wx-status.error {
+  color: var(--error);
+}
+
+/* Loading text: a light band sweeps over the glyphs (a copy in ::before, clipped to the text). */
+.shimmer {
+  position: relative;
+  display: inline-block;
+  color: var(--ink-3);
+}
+
+.shimmer::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 40%, var(--ink) 50%, transparent 60%) no-repeat;
+  background-size: 400% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+
+.link-button {
+  color: var(--ink);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
