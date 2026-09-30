@@ -100,6 +100,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
   const breakLayer = L.layerGroup().addTo(map);
   let liveDot: L.CircleMarker | null = null;
   let meDot: L.CircleMarker | null = null;
+  let probe: L.CircleMarker | null = null;
   let weatherMarkers: L.Marker[] = [];
 
   // Shows only tags that do not overlap the previous shown one or a route's duration label, so
@@ -368,6 +369,13 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     },
 
     closePopup: () => map.closePopup(),
+
+    // The point under the height profile's cursor; null hides it.
+    showProbe(p: LatLon | null) {
+      if (!p) return void probe?.remove();
+      if (!probe) probe = L.circleMarker(toLatLng(p), { radius: 6, className: "profile-probe", interactive: false });
+      probe.setLatLng(toLatLng(p)).addTo(map);
+    },
 
     // "Konumumu göster": a red dot at the device position, opening the place card on tap.
     showMe(p: LatLon, onTap: () => void) {

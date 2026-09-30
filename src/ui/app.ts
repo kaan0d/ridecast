@@ -1,14 +1,17 @@
 import { t } from "../i18n";
 import { DEFAULT_BREAK_MIN, OVERNIGHT } from "../config/breaks";
 import { DEPARTURE } from "../config/departure";
+import { ELEVATION } from "../config/elevation";
 import { SHARE } from "../config/share";
 import { autoBreakDistances, buildTimeline, resumeAtClock, totalS, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
 import type { LatLon } from "../core/geo";
 import { bestPerDay, rankDepartures, type ScoredDeparture } from "../core/advice/departure";
 import { pointRuns, type RouteScore } from "../core/risk/route";
+import { evenDistances } from "../core/route/elevation";
 import { labelPoint, lineLength, makeLine, pointAtDistance, sliceLine, snapToLine, type Line } from "../core/route/line";
 import type { Forecast } from "../core/weather/weather";
 import { encodeState, type TripState } from "../core/share/state";
+import { fetchElevation } from "../services/elevation";
 import { reverseCity, reverseLabel } from "../services/photon";
 import type { Route } from "../services/osrm";
 import { routeTrip, routingKey } from "../services/routing";
@@ -25,6 +28,7 @@ import { createMap } from "./map";
 import { bindMapActions } from "./mapActions";
 import { createMeasure } from "./measure";
 import { closeMenu } from "./menu";
+import { renderProfile, type Profile } from "./profile";
 import { bindSettings, type TripSettings } from "./settings";
 import { bindShare } from "./share";
 import { bindSheet } from "./sheet";
@@ -78,6 +82,7 @@ export function startApp() {
   let redrawStrip = () => {};
   let stripFor: Route | null = null; // route whose stations already came into the strip
   let bestWindow: BestWindow = "day"; // "Best time" over the next 24 hours or the next 7 days
+  let heights: { route: Route; profile: Profile | null; error?: string } | null = null; // of the selected route
 
   const stopsEl = $("stops");
   const statusEl = $("status");
@@ -446,6 +451,7 @@ export function startApp() {
       $("clothing").replaceChildren();
       if (bestMode) renderBest({ top: [], loading: false });
       redrawStrip = () => {};
+      renderHeights();
       return renderStrip($("weather"), { points: [], loading: false, onRetry: () => {}, onOpen: () => {} });
     }
     if (bestMode && !bestEl.querySelector(".best-list")) renderBest({ top: [], loading: true });
@@ -479,6 +485,7 @@ export function startApp() {
         renderStrip($("weather"), { points, loading, error, arrive, ends: stripEnds(), onRetry: () => updateWeather(timelines, settings), onOpen: openPoint });
       redrawStrip = () => strip(false);
       strip(arrive);
+      renderHeights();
     };
     // Keep the old capsules (dimmed) while the next forecast loads.
     show(weatherPoints.length === forecast.sampleCount(selected) ? weatherPoints : [], true);
@@ -516,6 +523,37 @@ export function startApp() {
         if (bestMode) renderBest({ top: [], loading: false, error: (e as Error).message });
       }
     }, 300);
+  }
+
+  // Height profile of the selected route, fetched once per route; temperatures from its stations.
+  function renderHeights() {
+    const route = routes[selected];
+    const el = $("profile");
+    if (!route) {
+      heights = null;
+      map.showProbe(null);
+      return renderProfile(el, { profile: null, loading: false, points: [], onProbe: () => {} });
+    }
+    const line = lines[selected];
+    const scale = scaleOf(selected);
+    if (heights?.route !== route) {
+      map.showProbe(null);
+      const h: NonNullable<typeof heights> = (heights = { route, profile: null });
+      const distsM = evenDistances(route.distanceM, ELEVATION.points);
+      fetchElevation(distsM.map((d) => pointAtDistance(line, d / scale)))
+        .then(
+          (heightsM) => (h.profile = { distsM, heightsM }),
+          (e) => (h.error = (e as Error).message),
+        )
+        .then(() => heights === h && renderHeights());
+    }
+    renderProfile(el, {
+      profile: heights.profile,
+      loading: !heights.profile && !heights.error,
+      error: heights.error,
+      points: weatherPoints,
+      onProbe: (d) => map.showProbe(d === null ? null : pointAtDistance(line, d / scale)),
+    });
   }
 
   // The selected route coloured by risk level, with the dark parts dotted.

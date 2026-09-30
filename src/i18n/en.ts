@@ -177,6 +177,17 @@ export const en = {
     warnAria: (level: string, text: string, when: string, where: string) => `${level} risk: ${text}${when ? ", " + when : ""}, ${where}`,
   },
 
+  profile: {
+    title: "Height along the route",
+    loading: "Getting the heights…",
+    climb: (up: number, down: number) => `Climb ${up} m, descent ${down} m`,
+    highest: (m: number, km: number) => `highest ${m} m at km ${km}`,
+    coldest: (deg: number, km: number, clock: string) => `coldest ${deg}° at km ${km} (${clock})`,
+    at: (km: number, m: number) => `km ${km} · ${m} m`,
+    temp: (deg: number, clock: string) => `${deg}° · ${clock}`,
+    aria: "Height profile. Arrow keys move along the route and show the point on the map.",
+  },
+
   conditions: {
     clear: "Clear",
     mostlyClear: "Mostly clear",
@@ -286,6 +297,7 @@ export const en = {
     weatherTooFar: (days: number) => `The forecast only reaches ${days} days ahead.`,
     weatherBusy: "The weather service is busy, try again in a moment.",
     weatherDown: "Could not get the weather.",
+    elevationDown: "Could not get the heights along the route.",
     searchFailed: "Address search failed.",
   },
 
