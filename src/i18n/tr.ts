@@ -110,6 +110,8 @@ export const tr: Messages = {
     day: (k) => `${k}. gün`,
     arrivalAt: (title) => `${title} varış`,
     roadType: "Yol tipi (tahmin)",
+    bendsRow: "Virajlı yol (tahmin)",
+    bends: (km) => `${km} virajlı`,
     road: { motorway: "Otoyol", primary: "Ana yol", urban: "Şehir içi", ferry: "Feribot" },
     suggested: "Önerilen rota",
     alternative: (i) => `Alternatif ${i}`,

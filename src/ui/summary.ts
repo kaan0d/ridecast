@@ -109,6 +109,7 @@ export function renderRouteList(
   scores: (RouteScore | null)[],
   selected: number,
   onSelect: (i: number) => void,
+  bendsM: number[] | null, // winding road per route, for vehicles that care
 ) {
   const choice =
     timelines && scores.length === routes.length
@@ -138,6 +139,7 @@ export function renderRouteList(
         risk.append(t.summary.risk(scoreOf100(score.score, RISK_WEIGHTS), LEVEL_LABEL[score.worst].toLowerCase()));
         sub.append(" · ", risk);
       }
+      if (bendsM) sub.append(` · ${t.summary.bends(formatKm(bendsM[i]))}`);
       text.append(name, sub);
       const dur = document.createElement("span");
       dur.className = "dur";
@@ -162,7 +164,7 @@ export function renderRouteList(
 
 // Detail rows under the arrival time: breaks, one row per day of a multi-day trip, the arrival at
 // each via stop, and in road-speed mode the km per guessed road type.
-export function summaryRows(tl: Timeline, overnight: boolean[], stopTitles: string[], roadSteps: Step[] | null): [string, string][] {
+export function summaryRows(tl: Timeline, overnight: boolean[], stopTitles: string[], roadSteps: Step[] | null, bendsM: number | null = null): [string, string][] {
   const shortBreaks = tl.breaks.filter((_, i) => !overnight[i]);
   const days = tripDays(tl, overnight);
   const rows: [string, string][] = [
@@ -185,5 +187,6 @@ export function summaryRows(tl: Timeline, overnight: boolean[], stopTitles: stri
     ];
     rows.push([t.summary.roadType, parts.filter(([, m]) => m > 0).map(([n, m]) => `${n} ${formatKm(m)}`).join(" · ")]);
   }
+  if (typeof bendsM === "number") rows.push([t.summary.bendsRow, formatKm(bendsM)]);
   return rows;
 }

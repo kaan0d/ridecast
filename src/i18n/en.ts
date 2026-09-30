@@ -112,6 +112,8 @@ export const en = {
     day: (k: number) => `Day ${k}`,
     arrivalAt: (title: string) => `Arrival: ${title.toLowerCase()}`,
     roadType: "Road type (estimate)",
+    bendsRow: "Winding road (estimate)",
+    bends: (km: string) => `${km} winding`,
     road: { motorway: "Motorway", primary: "Main road", urban: "Town", ferry: "Ferry" },
     suggested: "Suggested route",
     alternative: (i: number) => `Alternative ${i}`,
