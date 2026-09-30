@@ -77,11 +77,11 @@
     display: none;
   }
 
-  .leaflet-control-zoom {
+  .map-zoom {
     display: none;
   }
 
-  .leaflet-top {
+  .maplibregl-ctrl-top-right {
     top: env(safe-area-inset-top);
   }
 
@@ -89,13 +89,14 @@
     top: calc(62px + env(safe-area-inset-top));
   }
 
-  .leaflet-bottom {
+  .maplibregl-ctrl-bottom-right,
+  .maplibregl-ctrl-bottom-left {
     bottom: var(--sheet-inset);
   }
 
   /* Ride screen: zoom buttons for gloved hands. */
-  .live-map .leaflet-control-zoom {
-    display: block;
+  .live-map .map-zoom {
+    display: grid;
   }
 }
 

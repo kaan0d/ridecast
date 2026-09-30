@@ -64,6 +64,7 @@ export const tr: Messages = {
   map: {
     zoomIn: "Yakınlaştır",
     zoomOut: "Uzaklaştır",
+    north: "Kuzeye çevir ve düzle",
     locate: "Konumumu göster",
     layers: "Katmanlar",
     dragStop: (title) => `${title} (sürükleyerek taşı)`,

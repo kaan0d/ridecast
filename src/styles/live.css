@@ -49,10 +49,9 @@
 
 /* Sunlight: pure black on white, risk colours dark enough for text contrast, thicker rings.
    On by the "Sun" button; starts on when the system asks for more contrast (ui/live.ts). The rest
-   of the screen switches to the light theme (ui/theme.ts) with a white, sharper map and a black
+   of the screen switches to the light theme (ui/theme.ts) with the light map and a black
    route. The one place pure black and white are allowed: glare, not comfort. */
 :root.live-sun {
-  --map-filter: grayscale(1) contrast(1.1) brightness(1.08);
   --route: #000000;
   --route-casing: #ffffff;
 }
@@ -344,7 +343,8 @@
   display: none;
 }
 
-.live-map .leaflet-bottom {
+.live-map .maplibregl-ctrl-bottom-right,
+.live-map .maplibregl-ctrl-bottom-left {
   bottom: var(--live-inset, 0px);
 }
 

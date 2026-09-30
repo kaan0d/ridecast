@@ -9,6 +9,9 @@ const smallCloud = '<path d="M8 15h8.5a3 3 0 0 0 .3-5.98A4.8 4.8 0 0 0 7.6 8.3 3
 export const icons = {
   locate: svg('<path d="M20 4 4 10.5l7 2.5 2.5 7L20 4Z"/>'),
   plus: svg('<path d="M12 5v14M5 12h14"/>'),
+  minus: svg('<path d="M5 12h14"/>'),
+  // Needle: the north half filled; map.ts turns it with the map (--bearing).
+  compass: svg('<path d="M12 3 15 12H9l3-9Z" fill="currentColor"/><path d="M9 12h6l-3 9-3-9Z"/>', "icon compass-needle"),
   close: svg('<path d="M6 6l12 12M18 6 6 18"/>'),
   pause: svg('<path d="M9 6v12M15 6v12"/>'),
 

@@ -334,10 +334,14 @@ button.stop-glyph {
   color: var(--ink);
 }
 
-.place-popup .leaflet-popup-close-button {
-  top: 8px !important;
-  right: 8px !important;
-  color: var(--ink-2) !important;
+.place-popup .maplibregl-popup-close-button {
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  color: var(--ink-2);
 }
 
 /* Duration bubble on every route; the selected one is inked. */

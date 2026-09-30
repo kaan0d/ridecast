@@ -66,6 +66,7 @@ export const en = {
   map: {
     zoomIn: "Zoom in",
     zoomOut: "Zoom out",
+    north: "Point north and flatten the map",
     locate: "Show my location",
     layers: "Layers",
     dragStop: (title: string) => `${title} (drag to move)`,

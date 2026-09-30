@@ -6,44 +6,68 @@
   background: var(--ground);
 }
 
-.leaflet-container {
+.maplibregl-map {
   font: inherit;
   background: var(--ground);
 }
 
-/* Per tile: a filter on the whole tile pane stops painting past ~1750 px on wide screens.
-   Only the OSM base is muted; satellite and terrain keep their colours. */
-.base-muted .leaflet-tile {
-  filter: var(--map-filter);
+/* Lines and dots over the map (map.ts): the SVG lets clicks through except on its hit shapes. */
+.map-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
 }
 
-.leaflet-control-zoom {
-  border: none !important;
-  box-shadow: var(--shadow-small) !important;
-  border-radius: var(--radius-control) !important;
+.map-overlay .map-hit {
+  pointer-events: visiblePainted;
+  cursor: pointer;
+}
+
+.map-zoom {
+  display: grid;
+  box-shadow: var(--shadow-small);
+  border-radius: var(--radius-control);
   overflow: hidden;
 }
 
-.leaflet-control-zoom a {
-  background: var(--material) !important;
-  backdrop-filter: blur(24px) saturate(160%);
-  color: var(--ink) !important;
-  border-color: var(--rule) !important;
-  width: 42px !important;
-  height: 42px !important;
-  line-height: 42px !important;
-  font-weight: 400;
+.map-zoom .map-btn {
+  border-radius: 0;
+  box-shadow: none;
 }
 
-.leaflet-control-attribution {
+.map-zoom .map-btn + .map-btn {
+  border-top: 1px solid var(--rule);
+}
+
+/* Compass: the needle turns with the map; shown only while the map is turned or tilted. */
+#compass[hidden] {
+  display: none;
+}
+
+.compass-needle {
+  rotate: var(--bearing, 0deg);
+  color: var(--signal);
+}
+
+.maplibregl-ctrl-attrib {
   background: var(--material) !important;
   color: var(--ink-3);
-  border-radius: 8px 0 0 0;
   font-size: 0.6875rem;
 }
 
-.leaflet-control-attribution a {
+.maplibregl-ctrl-attrib a {
   color: var(--ink-2);
+}
+
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  border-radius: 12px;
+}
+
+.maplibregl-ctrl-attrib-button {
+  filter: var(--attrib-button-filter, none);
 }
 
 .map-btn {
@@ -64,7 +88,7 @@
   transform: scale(0.9);
 }
 
-.leaflet-control-scale-line {
+.maplibregl-ctrl-scale {
   background: var(--material);
   color: var(--ink-2);
   border-color: var(--ink-2);
@@ -337,7 +361,7 @@
   pointer-events: none; /* no invisible drag target */
 }
 
-/* Leaflet places .stop-marker absolutely, so the name positions against it. */
+/* MapLibre places .stop-marker absolutely, so the name positions against it. */
 .pin-name {
   position: absolute;
   left: calc(50% + 7px * var(--pin-scale, 1) + 5px);
