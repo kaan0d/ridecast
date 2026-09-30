@@ -36,6 +36,21 @@ const LOCATE_ZOOM = 13;
 // Draw order of the DOM markers.
 const Z = { break: "1", stop: "2", measure: "3", weather: "4", label: "5", labelSelected: "6" };
 
+// Map markers reachable by keyboard: Tab focuses, Enter or Space does what a click does.
+function keyable(node: HTMLElement, label: string) {
+  node.tabIndex = 0;
+  node.setAttribute("role", "button");
+  node.setAttribute("aria-label", label);
+  node.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    node.click();
+  });
+}
+
+const KEY_STEP_PX = 10; // arrow key nudge of a focused pin; Shift moves 5 times as far
+const KEY_COMMIT_MS = 700; // the move is taken once the keys rest this long
+
 
 // A map button in a MapLibre corner, styled like the zoom buttons.
 function mapControl(el: HTMLElement): IControl {
@@ -184,6 +199,25 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     if (opts.title) node.title = opts.title;
     return new Marker({ element: node, anchor: opts.anchor ?? "center", draggable: opts.draggable ?? false }).setLngLat(lngLat(p));
   };
+  // Arrow keys nudge a focused draggable marker on screen; the move is committed once they rest.
+  const keyDrag = (m: Marker, label: string, move: (p: LatLon) => LatLon, commit: (p: LatLon) => void) => {
+    const node = m.getElement();
+    node.tabIndex = 0;
+    node.setAttribute("role", "button");
+    node.setAttribute("aria-label", label);
+    let timer = 0;
+    node.addEventListener("keydown", (e) => {
+      const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      e.stopPropagation(); // the map would pan
+      const step = e.shiftKey ? KEY_STEP_PX * 5 : KEY_STEP_PX;
+      const at = gl.project(m.getLngLat());
+      m.setLngLat(lngLat(move(latLon(gl.unproject([at.x + d[0] * step, at.y + d[1] * step])))));
+      clearTimeout(timer);
+      timer = setTimeout(() => commit(latLon(m.getLngLat())), KEY_COMMIT_MS);
+    });
+  };
   const ownTarget = (e: MapMouseEvent) => !!(e.originalEvent.target as Element | null)?.closest?.(".maplibregl-marker, .map-hit, .maplibregl-popup");
 
   // One popup at a time, closed by a click on the map (not on a marker, which may open another).
@@ -259,6 +293,9 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
   let probe: ReturnType<OverlayLayer["dot"]> | null = null;
   let weatherMarkers: { m: Marker; pos: LatLon; shown: boolean }[] = [];
   const clearMarkers = (list: Marker[]) => list.splice(0).forEach((m) => m.remove());
+  // Redrawn pins keep the keyboard focus: the one at the same place in the list takes it back.
+  const focusedIn = (list: Marker[]) => list.findIndex((m) => m.getElement() === document.activeElement);
+  const refocus = (list: Marker[], i: number) => i >= 0 && list[i]?.getElement().focus({ preventScroll: true });
 
   // Shows only tags that do not overlap the previous shown one or a route's duration label, so
   // the route stays visible when zoomed out. The arrival point always shows.
@@ -379,12 +416,15 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     // Stop pins; dragging one moves that stop (index into the trip's stop list).
     // A stop at "my location" (me) hides while the device dot shows (style.css .has-me).
     setStops(stops: { pos: LatLon; kind: StopKind; index: number; title: string; name: string; me?: boolean }[], onDrag: (index: number, p: LatLon) => void) {
+      const had = focusedIn(stopMarkers);
       clearMarkers(stopMarkers);
       for (const s of stops) {
         const m = marker(s.pos, pin(s.kind, s.name, s.me), { draggable: true, z: Z.stop, title: t.map.dragStop(s.title) }).addTo(gl);
         m.on("dragend", () => onDrag(s.index, latLon(m.getLngLat())));
+        keyDrag(m, t.map.moveStop(s.title), (p) => p, (p) => onDrag(s.index, p));
         stopMarkers.push(m);
       }
+      refocus(stopMarkers, had);
     },
 
     // A dropped pin with a place card, like tapping an empty spot in a map app.
@@ -421,6 +461,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
         node.className = `route-label-marker${arriving ? " arrive" : ""}`;
         node.innerHTML = `<span class="route-label${i === selected ? " selected" : ""}" style="--at:${Math.round(labelAt)}ms">${l.text}</span>`;
         node.addEventListener("click", () => i !== selected && onRouteClick(i, l.pos));
+        if (i !== selected) keyable(node, t.map.selectRoute(l.text));
         return marker(l.pos, node, { anchor: "top-left", z: i === selected ? Z.labelSelected : Z.label }).addTo(gl);
       });
       // Alternatives first so the selected route stays on top; the selected one gets a casing.
@@ -442,6 +483,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
 
     // Draggable break markers that stay on the route while dragged.
     setBreaks(points: LatLon[], snap: (p: LatLon) => LatLon, onMove: (i: number, p: LatLon) => void) {
+      const had = focusedIn(breakMarkers);
       clearMarkers(breakMarkers);
       points.forEach((p, i) => {
         const node = document.createElement("div");
@@ -451,8 +493,10 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
         const m = marker(p, node, { draggable: true, z: Z.break, title: t.map.break(i + 1) }).addTo(gl);
         m.on("drag", () => m.setLngLat(lngLat(snap(latLon(m.getLngLat())))));
         m.on("dragend", () => onMove(i, latLon(m.getLngLat())));
+        keyDrag(m, t.map.moveBreak(i + 1), snap, (p) => onMove(i, p));
         breakMarkers.push(m);
       });
+      refocus(breakMarkers, had);
     },
 
     // Risk colours over the selected route and a dotted pattern on dark parts. Not clickable,
@@ -488,7 +532,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     // Weather tags with a card popup each, over the stop pins (the first and last sit on them).
     // The first forecast of a route brings its stations in as the hand passes them (`frac`: share
     // of the route); afterwards the plain tag, so tags re-added by zoom thinning do not replay it.
-    setWeather(points: { pos: LatLon; pin: string; card: () => HTMLElement; frac: number }[]) {
+    setWeather(points: { pos: LatLon; pin: string; label: string; card: () => HTMLElement; frac: number }[]) {
       const arrive = points.length > 0 && !!drawn && weatherFor !== drawn && !reducedMotion.matches;
       if (arrive) weatherFor = drawn;
       weatherMarkers.forEach((w) => w.m.remove());
@@ -500,6 +544,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
         node.className = arrive ? "wx-marker arrive" : "wx-marker";
         node.innerHTML = arrive ? `<span style="--at:${Math.round(delay)}ms">${p.pin}</span>` : p.pin;
         node.addEventListener("click", () => openPopup(p.pos, p.card(), { className: "wx-popup", closeButton: false, offset: 44, maxWidth: 280 }));
+        keyable(node, p.label);
         return { m: marker(p.pos, node, { anchor: "top-left", z: Z.weather }), pos: p.pos, shown: false };
       });
       if (arrive) {

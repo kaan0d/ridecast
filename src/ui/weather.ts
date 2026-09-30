@@ -72,6 +72,12 @@ export function cardNode(p: WeatherPoint): HTMLElement {
   return card;
 }
 
+// What a station says to a screen reader: arrival, place, felt and air temperature, condition.
+export function pointLabel(pt: WeatherPoint): string {
+  const c = pt.hour ? t.conditions[conditionOf(pt.hour.code).name] : t.weather.noData;
+  return `${formatClock(pt.etaMs)}, ${km(pt.distM)}: ${pt.hour ? t.weather.feltAria(deg(felt(pt)), deg(pt.hour.tempC)) + ", " : ""}${c}`;
+}
+
 // Card shown when a capsule is opened.
 function cardHtml(p: WeatherPoint): string {
   const head = `<div class="wx-head"><span>${t.weather.arrival(formatClock(p.etaMs))}</span><span>${km(p.distM)}</span></div>`;
@@ -150,8 +156,7 @@ export function renderStrip(
       const level = pt.risk?.level ?? 0;
       if (level) b.classList.add(`rail-${level}`);
       if (pt.risk?.dark) b.classList.add("rail-dark");
-      const c = pt.hour ? t.conditions[conditionOf(pt.hour.code).name] : t.weather.noData;
-      b.setAttribute("aria-label", `${formatClock(pt.etaMs)}, ${km(pt.distM)}: ${pt.hour ? t.weather.feltAria(deg(felt(pt)), deg(pt.hour.tempC)) + ", " : ""}${c}`);
+      b.setAttribute("aria-label", pointLabel(pt));
       b.innerHTML = `<span class="wx-t">${formatClock(pt.etaMs)}</span><span class="station risk-${level}"></span>${weatherIcon(pt.hour) || '<span class="wx-dash">–</span>'}<span class="wx-deg">${pt.hour ? deg(felt(pt)) : ""}</span><span class="wx-km">${km(pt.distM)}</span>`;
       const end = i === 0 ? state.ends?.[0] : i === n - 1 ? state.ends?.[1] : undefined;
       if (end) b.querySelector(".wx-km")!.textContent = end;

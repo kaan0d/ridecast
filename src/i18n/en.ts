@@ -75,6 +75,9 @@ export const en = {
     layers: "Layers",
     dragStop: (title: string) => `${title} (drag to move)`,
     break: (i: number) => `Break ${i}`,
+    moveStop: (title: string) => `${title}. Arrow keys move it`,
+    moveBreak: (i: number) => `Break ${i}. Arrow keys move it along the route`,
+    selectRoute: (time: string) => `Select the ${time} route`,
   },
 
   layers: {

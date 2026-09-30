@@ -72,6 +72,9 @@ export const tr: Messages = {
     layers: "Katmanlar",
     dragStop: (title) => `${title} (sürükleyerek taşı)`,
     break: (i) => `Mola ${i}`,
+    moveStop: (title) => `${title}. Ok tuşlarıyla taşınır`,
+    moveBreak: (i) => `Mola ${i}. Ok tuşlarıyla rota boyunca taşınır`,
+    selectRoute: (time) => `${time} süren rotayı seç`,
   },
 
   layers: {
