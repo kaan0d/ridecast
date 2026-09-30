@@ -10,7 +10,6 @@ const HOURLY =
 const DAY_MS = 86_400_000;
 
 interface OmLocation {
-  elevation: number; // m, the height the temperatures are for
   hourly: {
     time: number[]; // unix seconds (timeformat=unixtime)
     temperature_2m: number[];
@@ -28,10 +27,10 @@ interface OmLocation {
   };
 }
 
-const round = (v: number) => (Math.round(v / WEATHER_REQUEST.coordRoundDeg) * WEATHER_REQUEST.coordRoundDeg).toFixed(2);
+export const round = (v: number) => v.toFixed(WEATHER_REQUEST.coordDecimals);
 
 // Hourly forecast for every point, in one request. Covers from `past_hours` ago until `untilMs`.
-// Coordinates are rounded so small route changes hit the cache.
+// Coordinates keep 3 decimals (~100 m): Open-Meteo gives each point its own terrain height.
 // fresh: skip the cache (live mode refresh).
 export async function fetchForecast(points: LatLon[], untilMs: number, fresh = false): Promise<Forecast[]> {
   const days = Math.ceil((untilMs - Date.now()) / DAY_MS) + 1;
@@ -51,8 +50,7 @@ export async function fetchForecast(points: LatLon[], untilMs: number, fresh = f
     throw new Error(t.errors.weatherDown);
   }
   // One location comes back as an object, several as an array.
-  return (Array.isArray(data) ? data : [data]).map(({ elevation, hourly: h }) => ({
-    heightM: elevation,
+  return (Array.isArray(data) ? data : [data]).map(({ hourly: h }) => ({
     hours: h.time.map((t, i) => ({
       timeMs: t * 1000,
       tempC: h.temperature_2m[i],
