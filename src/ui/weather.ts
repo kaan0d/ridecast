@@ -14,7 +14,6 @@ export interface WeatherPoint {
   etaMs: number;
   hour: WeatherHour | null; // null: no forecast for that time
   risk: Assessment | null;
-  heightM?: number; // road height the temperatures are for
 }
 
 export const LEVEL_LABEL = t.level;
@@ -61,7 +60,7 @@ export function cardNode(p: WeatherPoint): HTMLElement {
   const card = box.firstElementChild as HTMLElement;
   const h = p.hour;
   if (h)
-    fetchModelRange(p.pos, h.timeMs, p.heightM)
+    fetchModelRange(p.pos, h.timeMs)
       .then((r) => {
         if (!r) return;
         const row = document.createElement("div");

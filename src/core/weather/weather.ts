@@ -20,7 +20,6 @@ export type WeatherSeries = WeatherHour[]; // sorted by time
 
 export interface Forecast {
   hours: WeatherSeries;
-  heightM?: number; // height the temperatures are for (the grid point's terrain)
 }
 
 // Low and high percentile (nearest rank) of a set of model runs.
@@ -28,17 +27,6 @@ export function spread(values: number[], lowPct: number, highPct: number): { lo:
   const v = values.filter(Number.isFinite).sort((a, b) => a - b);
   const at = (pct: number) => v[Math.min(v.length - 1, Math.max(0, Math.ceil((pct / 100) * v.length) - 1))];
   return { lo: at(lowPct), hi: at(highPct) };
-}
-
-// Temperatures moved from the forecast's height to the road's: `lapseCPerKm` warmer per km lower.
-export function atHeight(f: Forecast, roadM: number, lapseCPerKm: number): Forecast {
-  if (f.heightM === undefined || !Number.isFinite(roadM)) return f;
-  const d = ((f.heightM - roadM) * lapseCPerKm) / 1000;
-  if (!d) return f;
-  return {
-    heightM: roadM,
-    hours: f.hours.map((h) => ({ ...h, tempC: h.tempC + d, feelsC: h.feelsC + d, groundC: h.groundC == null ? h.groundC : h.groundC + d })),
-  };
 }
 
 // Distances (m) from start to end inclusive, evenly spaced so that there is roughly one point per

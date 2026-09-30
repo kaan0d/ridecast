@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { atHeight, bracketHours, spread, compassIndex, conditionOf, sampleDistances, type WeatherHour } from "./weather";
+import { bracketHours, spread, compassIndex, conditionOf, sampleDistances, type WeatherHour } from "./weather";
 
 describe("sampleDistances", () => {
   test("one point per interval of driving time, start and end included", () => {
@@ -69,25 +69,6 @@ test("compass sectors", () => {
   expect(compassIndex(180)).toBe(4);
   expect(compassIndex(-90)).toBe(6);
   expect(compassIndex(350)).toBe(0);
-});
-
-describe("atHeight", () => {
-  const h: WeatherHour = { timeMs: 0, tempC: 10, feelsC: 8, precipMm: 0, precipProb: 0, snowCm: 0, code: 0, windKmh: 0, gustKmh: 0, windFromDeg: 0, visibilityM: 10_000, isDay: true, groundC: 6 };
-
-  test("a road 1000 m above the grid point is 6.5° colder, ground included", () => {
-    const f = atHeight({ hours: [h], heightM: 500 }, 1500, 6.5);
-    expect(f.hours[0].tempC).toBeCloseTo(3.5, 6);
-    expect(f.hours[0].feelsC).toBeCloseTo(1.5, 6);
-    expect(f.hours[0].groundC).toBeCloseTo(-0.5, 6);
-    expect(f.heightM).toBe(1500);
-  });
-
-  test("lower is warmer; no height or a missing ground value is left alone", () => {
-    expect(atHeight({ hours: [h], heightM: 800 }, 600, 6.5).hours[0].tempC).toBeCloseTo(11.3, 6);
-    expect(atHeight({ hours: [{ ...h, groundC: null }], heightM: 800 }, 600, 6.5).hours[0].groundC).toBeNull();
-    const bare = { hours: [h] };
-    expect(atHeight(bare, 600, 6.5)).toBe(bare);
-  });
 });
 
 describe("spread", () => {
