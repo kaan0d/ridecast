@@ -174,6 +174,17 @@ export const tr: Messages = {
     warnAria: (level, text, when, where) => `${level} risk: ${text}${when ? ", " + when : ""}, ${where}`,
   },
 
+  profile: {
+    title: "Rota boyunca yükseklik",
+    loading: "Yükseklikler alınıyor…",
+    climb: (up, down) => `Tırmanış ${up} m, iniş ${down} m`,
+    highest: (m, km) => `en yüksek ${m} m, km ${km}`,
+    coldest: (deg, km, clock) => `en soğuk ${deg}°, km ${km} (${clock})`,
+    at: (km, m) => `km ${km} · ${m} m`,
+    temp: (deg, clock) => `${deg}° · ${clock}`,
+    aria: "Yükseklik profili. Ok tuşları rota boyunca ilerler ve noktayı haritada gösterir.",
+  },
+
   conditions: {
     clear: "Açık",
     mostlyClear: "Az bulutlu",
@@ -283,6 +294,7 @@ export const tr: Messages = {
     weatherTooFar: (days) => `Hava tahmini en fazla ${days} gün ilerisi için var.`,
     weatherBusy: "Hava servisi şu an yoğun, biraz sonra tekrar deneyin.",
     weatherDown: "Hava durumu alınamadı.",
+    elevationDown: "Rota boyunca yükseklikler alınamadı.",
     searchFailed: "Adres araması başarısız oldu.",
   },
 
@@ -320,6 +332,7 @@ export const tr: Messages = {
     weather: "Yol boyunca hava",
     warnings: "Uyarılar",
     clothing: "Giyim ve ekipman",
+    profile: "Rota boyunca yükseklik",
     routes: "Rotalar",
     vehicle: "Araç",
     routeOptions: "Rota seçenekleri",
