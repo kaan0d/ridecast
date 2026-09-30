@@ -31,6 +31,9 @@ const ICON: Record<Condition, WeatherIcon> = {
 };
 
 const deg = (v: number) => `${Math.round(v)}°`;
+// The temperature the strip and map tags show: felt while riding (wind chill from the riding
+// wind), the air temperature where there is no assessment.
+const felt = (p: WeatherPoint) => p.risk?.feltC ?? p.hour!.tempC;
 const km = (m: number) => t.km(Math.round(m / 1000));
 
 export function weatherIcon(h: WeatherHour | null): string {
@@ -45,7 +48,7 @@ export function weatherIcon(h: WeatherHour | null): string {
 export function pinHtml(p: WeatherPoint): string {
   const level = p.risk?.level ?? 0;
   return p.hour
-    ? `<span class="wx-pin risk-${level}"><span class="wx-tag"><i>${formatClock(p.etaMs)}</i>${weatherIcon(p.hour)}<b>${deg(p.hour.tempC)}</b>${level ? dot(level) : ""}</span></span>`
+    ? `<span class="wx-pin risk-${level}"><span class="wx-tag"><i>${formatClock(p.etaMs)}</i>${weatherIcon(p.hour)}<b>${deg(felt(p))}</b>${level ? dot(level) : ""}</span></span>`
     : `<span class="wx-pin wx-none"><span class="wx-tag">–</span></span>`;
 }
 
@@ -127,8 +130,8 @@ export function renderStrip(
       if (level) b.classList.add(`rail-${level}`);
       if (pt.risk?.dark) b.classList.add("rail-dark");
       const c = pt.hour ? t.conditions[conditionOf(pt.hour.code).name] : t.weather.noData;
-      b.setAttribute("aria-label", `${formatClock(pt.etaMs)}, ${km(pt.distM)}: ${pt.hour ? deg(pt.hour.tempC) + ", " : ""}${c}`);
-      b.innerHTML = `<span class="wx-t">${formatClock(pt.etaMs)}</span><span class="station risk-${level}"></span>${weatherIcon(pt.hour) || '<span class="wx-dash">–</span>'}<span class="wx-deg">${pt.hour ? deg(pt.hour.tempC) : ""}</span><span class="wx-km">${km(pt.distM)}</span>`;
+      b.setAttribute("aria-label", `${formatClock(pt.etaMs)}, ${km(pt.distM)}: ${pt.hour ? t.weather.feltAria(deg(felt(pt)), deg(pt.hour.tempC)) + ", " : ""}${c}`);
+      b.innerHTML = `<span class="wx-t">${formatClock(pt.etaMs)}</span><span class="station risk-${level}"></span>${weatherIcon(pt.hour) || '<span class="wx-dash">–</span>'}<span class="wx-deg">${pt.hour ? deg(felt(pt)) : ""}</span><span class="wx-km">${km(pt.distM)}</span>`;
       const end = i === 0 ? state.ends?.[0] : i === n - 1 ? state.ends?.[1] : undefined;
       if (end) b.querySelector(".wx-km")!.textContent = end;
       b.addEventListener("click", () => state.onOpen(i));
@@ -137,6 +140,10 @@ export function renderStrip(
       list.append(li);
     });
     parts.push(list);
+    const note = document.createElement("p");
+    note.className = "footnote wx-felt-note";
+    note.textContent = t.weather.feltNote;
+    parts.push(note);
   }
   // Re-renders (a new forecast, an edit) keep the place the rider scrolled to.
   const scrolled = el.querySelector(".wx-strip")?.scrollLeft ?? 0;

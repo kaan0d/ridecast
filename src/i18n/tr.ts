@@ -168,6 +168,8 @@ export const tr: Messages = {
     source: (clock) => `Tahmin saati ${clock} · Open-Meteo`,
     far: (days) => `${days} günden uzak tahmin: saat ve miktar belirsiz, yaklaşınca tekrar bak.`,
     stripTitle: "Yol boyunca hava",
+    feltNote: "Şeritteki ve haritadaki sıcaklıklar: sürüşte hissedilen.",
+    feltAria: (felt, air) => `hissedilen ${felt} (hava ${air})`,
     retry: "Tekrar dene",
     loading: "Hava durumu alınıyor…",
     noData: "tahmin yok",

@@ -457,3 +457,7 @@
   text-underline-offset: 3px;
   text-decoration-thickness: 1.5px;
 }
+
+.wx-felt-note {
+  margin-top: 4px;
+}
