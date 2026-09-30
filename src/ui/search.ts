@@ -1,12 +1,26 @@
 import { t } from "../i18n";
 import type { LatLon } from "../core/geo";
 import { searchPlaces, type Place } from "../services/photon";
+import { icons } from "./icons";
 
 const DEBOUNCE_MS = 350;
 const MIN_QUERY = 3;
 
+// The device position once, as a promise; the error message is ready for the UI.
+export function currentPosition(): Promise<LatLon> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error(t.menu.noGeo));
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }),
+      (err) => reject(new Error(err.code === err.PERMISSION_DENIED ? t.menu.denied : t.menu.failed)),
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
+  });
+}
+
 // Address input with Photon suggestions, biased towards `near` (the map centre). Searches after a
 // short pause in typing; arrow keys move through the suggestions, Enter takes the first or focused one.
+// An empty field offers "My location" (the device position) before anything is typed.
 export function placeInput(value: string, placeholder: string, label: string, onPick: (p: Place) => void, near?: () => LatLon): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = "place-input";
@@ -34,9 +48,37 @@ export function placeInput(value: string, placeholder: string, label: string, on
     list.replaceChildren();
   };
 
+  function offerMyLocation() {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "suggest-me";
+    b.innerHTML = icons.locate;
+    b.append(t.app.myLocation);
+    b.addEventListener("click", async () => {
+      const my = ++seq;
+      note(t.menu.locating);
+      try {
+        const pos = await currentPosition();
+        if (my !== seq) return;
+        close();
+        input.value = t.app.myLocation;
+        onPick({ label: t.app.myLocation, pos });
+      } catch (e) {
+        if (my === seq) note((e as Error).message, "error");
+      }
+    });
+    li.append(b);
+    list.replaceChildren(li);
+  }
+  input.addEventListener("focus", () => {
+    if (!input.value.trim()) offerMyLocation();
+  });
+
   input.addEventListener("input", () => {
     clearTimeout(timer);
     const q = input.value.trim();
+    if (!q) return (close(), offerMyLocation());
     if (q.length < MIN_QUERY) return close();
     timer = window.setTimeout(async () => {
       const my = ++seq;

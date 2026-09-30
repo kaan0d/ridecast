@@ -5,6 +5,7 @@ import type { createMap } from "./map";
 import type { createMeasure } from "./measure";
 import { closeMenu, openMenu, type MenuItem } from "./menu";
 import { placeCard } from "./place";
+import { currentPosition } from "./search";
 
 interface Deps {
   map: ReturnType<typeof createMap>;
@@ -54,17 +55,14 @@ export function bindMapActions(deps: Deps) {
   // "Show my location": centre on the device and show a dot (tap it for the place card).
   // With no start yet, the position also becomes the start.
   function locate() {
-    if (!navigator.geolocation) return deps.status(t.menu.noGeo, "error");
     deps.status(t.menu.locating, "loading");
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        const pos = { lat: p.coords.latitude, lon: p.coords.longitude };
+    currentPosition().then(
+      (pos) => {
         deps.status("");
         map.showMe(pos, () => openPlace(pos));
         if (!deps.hasStart()) deps.setStart(pos, t.app.myLocation);
       },
-      (err) => deps.status(err.code === err.PERMISSION_DENIED ? t.menu.denied : t.menu.failed, "error"),
-      { enableHighAccuracy: true, timeout: 15000 },
+      (e) => deps.status((e as Error).message, "error"),
     );
   }
 

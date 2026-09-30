@@ -410,3 +410,17 @@ button.stop-glyph {
     transform: rotate(360deg);
   }
 }
+
+/* "My location" in an empty address field's suggestions. */
+.suggestions .suggest-me {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.suggest-me .icon {
+  width: 18px;
+  height: 18px;
+  color: var(--focus);
+}
