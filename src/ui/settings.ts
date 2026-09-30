@@ -4,7 +4,7 @@ import type { SpeedSetting } from "../core/eta/eta";
 import type { RoadType } from "../core/route/roadType";
 import type { TripState } from "../core/share/state";
 import { avoidFor, type Avoid } from "../services/routing";
-import { t } from "../i18n";
+import { t, u } from "../i18n";
 import { formatClock, formatTime } from "./format";
 
 export type DepartMode = "now" | "at" | "best";
@@ -41,10 +41,14 @@ export function bindSettings(onChange: () => void, onScrub: (departMs: number) =
   const sliderMs = () => scrubFrom + slider.valueAsNumber * STEP_MS;
   slider.min = "0";
   slider.max = String((DEPARTURE.scrubH * 60) / DEPARTURE.scrubStepMin);
+  // Speeds and the fuel range are typed in the viewer's units (km/h or mph, km or miles) and kept in km.
+  const fuelKm = { min: Number(fuelRange.min), max: Number(fuelRange.max) };
+  showRangeLimits(fuelRange);
   const readFuelRange = () => {
-    const v = fuelRange.valueAsNumber;
-    return Number.isFinite(v) && v >= Number(fuelRange.min) && v <= Number(fuelRange.max) ? v : null;
+    const v = Math.round(u.kmFrom(fuelRange.valueAsNumber));
+    return Number.isFinite(v) && v >= fuelKm.min && v <= fuelKm.max ? v : null;
   };
+  const showKmh = (kmh: number) => String(u.speedNum(kmh));
 
   vehicleGroup.replaceChildren(
     ...Object.keys(VEHICLES).map((k) => {
@@ -61,15 +65,15 @@ export function bindSettings(onChange: () => void, onScrub: (departMs: number) =
     }),
   );
   for (const input of [avg, ...Object.values(road)]) {
-    input.min = String(SPEED_LIMITS_KMH.min);
-    input.max = String(SPEED_LIMITS_KMH.max);
+    input.min = String(Math.max(1, u.speedNum(SPEED_LIMITS_KMH.min)));
+    input.max = String(u.speedNum(SPEED_LIMITS_KMH.max));
   }
 
   const radio = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
   const fillSpeeds = () => {
     const d = VEHICLES[radio("vehicle") as VehicleType];
-    avg.value = String(d.avgKmh);
-    for (const r of ROADS) road[r].value = String(d.roadKmh[r]);
+    avg.value = showKmh(d.avgKmh);
+    for (const r of ROADS) road[r].value = showKmh(d.roadKmh[r]);
   };
   const avoidBoxes = [...form.querySelectorAll<HTMLInputElement>('input[name="avoid"]')];
   // Only the avoid options that apply to the vehicle, e.g. no motorways for a bicycle.
@@ -114,7 +118,7 @@ export function bindSettings(onChange: () => void, onScrub: (departMs: number) =
 
   const read = (): TripSettings | string => {
     const kmh = (el: HTMLInputElement) => {
-      const v = el.valueAsNumber;
+      const v = Math.round(u.kmhFrom(el.valueAsNumber));
       return v >= SPEED_LIMITS_KMH.min && v <= SPEED_LIMITS_KMH.max ? v : null;
     };
     let speed: SpeedSetting;
@@ -141,13 +145,13 @@ export function bindSettings(onChange: () => void, onScrub: (departMs: number) =
     if (el) el.checked = true;
   };
   function apply(s: Pick<TripState, "vehicle" | "speed" | "depart" | "avoid" | "fuelRangeKm">) {
-    fuelRange.value = s.fuelRangeKm === null ? "" : String(s.fuelRangeKm);
+    fuelRange.value = s.fuelRangeKm === null ? "" : showRange(s.fuelRangeKm);
     for (const b of avoidBoxes) b.checked = s.avoid[b.value as keyof Avoid];
     setRadio("vehicle", s.vehicle);
     fillSpeeds();
     setRadio("speed-mode", s.speed.mode);
-    if (s.speed.mode === "average") avg.value = String(s.speed.kmh);
-    else for (const r of ROADS) road[r].value = String(s.speed[r]);
+    if (s.speed.mode === "average") avg.value = showKmh(s.speed.kmh);
+    else for (const r of ROADS) road[r].value = showKmh(s.speed[r]);
     setRadio("depart", s.depart.mode);
     if (s.depart.mode === "at") departAt.value = toLocalInput(new Date(s.depart.ms));
     best = null;
@@ -180,6 +184,13 @@ export function bindSettings(onChange: () => void, onScrub: (departMs: number) =
       best = ms;
     },
   };
+}
+
+// A fuel range in the viewer's units, and an input's km limits turned into them.
+export const showRange = (km: number) => String(Math.round(u.kmTo(km)));
+export function showRangeLimits(input: HTMLInputElement) {
+  input.min = showRange(Number(input.min));
+  input.max = showRange(Number(input.max));
 }
 
 const speedError = () => t.settings.speedError(SPEED_LIMITS_KMH.min, SPEED_LIMITS_KMH.max);

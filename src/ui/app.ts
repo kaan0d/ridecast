@@ -1,4 +1,4 @@
-import { t } from "../i18n";
+import { t, u } from "../i18n";
 import { DEFAULT_BREAK_MIN, OVERNIGHT } from "../config/breaks";
 import { DEPARTURE } from "../config/departure";
 import { CURVES } from "../config/curves";
@@ -31,7 +31,7 @@ import { bindMapActions } from "./mapActions";
 import { createMeasure } from "./measure";
 import { closeMenu } from "./menu";
 import { renderProfile, type Profile } from "./profile";
-import { bindSettings, type TripSettings } from "./settings";
+import { bindSettings, showRange, showRangeLimits, type TripSettings } from "./settings";
 import { bindShare } from "./share";
 import { bindSheet } from "./sheet";
 import { renderRouteList as renderRouteOptions, renderSummary as renderSummaryInto, summaryRows } from "./summary";
@@ -483,7 +483,7 @@ export function startApp() {
         const warnings = collectWarnings(points);
         advices.forEach((a, i) => {
           const b = tl.breaks[i];
-          if (a) warnings.push({ level: 2, text: t.app.breakWarning(i + 1, a), when: `${formatClock(b.startMs)}–${formatClock(b.endMs)}`, where: t.km(Math.round(b.distM / 1000)) });
+          if (a) warnings.push({ level: 2, text: t.app.breakWarning(i + 1, a), when: `${formatClock(b.startMs)}–${formatClock(b.endMs)}`, where: t.km(b.distM) });
         });
         renderWarnings($("warnings"), warnings, !error && points.length > 0, openPoint);
         // Change tracking compares planned trips; live mode has its own alerts.
@@ -693,6 +693,7 @@ export function startApp() {
   const fuelAsk = $<HTMLDialogElement>("fuel-ask");
   const askRange = $<HTMLInputElement>("fuel-ask-range");
   const fuelRange = $<HTMLInputElement>("fuel-range");
+  showRangeLimits(askRange);
   const startLive = (fuel: { leftKm: number; fullKm: number } | null) => {
     sheet.collapse();
     live.start(fuel);
@@ -700,13 +701,13 @@ export function startApp() {
   $("live-start").addEventListener("click", () => {
     const settings = readSettings();
     if (typeof settings === "string" || settings.vehicle === "bicycle" || settings.vehicle === "walking") return startLive(null);
-    askRange.value = settings.fuelRangeKm === null ? "" : String(settings.fuelRangeKm);
+    askRange.value = settings.fuelRangeKm === null ? "" : showRange(settings.fuelRangeKm);
     fuelAsk.returnValue = "";
     fuelAsk.onclose = () => {
       const level = fuelAsk.returnValue;
       if (!level) return;
       if (level === "skip") return startLive(null);
-      const fullKm = askRange.valueAsNumber;
+      const fullKm = u.kmFrom(askRange.valueAsNumber);
       if (fuelRange.value !== askRange.value) {
         fuelRange.value = askRange.value;
         fuelRange.dispatchEvent(new Event("input", { bubbles: true })); // settings and the link take it

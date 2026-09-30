@@ -1,4 +1,4 @@
-import { t } from "../i18n";
+import { t, u } from "../i18n";
 import { LIVE } from "../config/live";
 import type { Timeline } from "../core/eta/eta";
 import { etaAtDistance } from "../core/eta/eta";
@@ -241,8 +241,8 @@ export function createLive(deps: Deps) {
     $("live-meta").textContent = remainingM !== null && arrival ? t.live.meta(formatKm(remainingM), formatClock(arrival)) : "";
 
     const h = here?.hour;
-    $("live-weather").innerHTML = h ? `${weatherIcon(h)}<b>${Math.round(h.tempC)}°</b><span></span>` : "";
-    if (h) $("live-weather").querySelector("span")!.textContent = t.conditions[conditionOf(h.code).name] + (here?.risk ? t.live.feels(Math.round(here.risk.feltC)) : "");
+    $("live-weather").innerHTML = h ? `${weatherIcon(h)}<b>${u.temp(h.tempC)}</b><span></span>` : "";
+    if (h) $("live-weather").querySelector("span")!.textContent = t.conditions[conditionOf(h.code).name] + (here?.risk ? t.live.feels(here.risk.feltC) : "");
 
     $("live-fuel").hidden = !fuelLow();
     if (fuelLow()) $("live-fuel-text").textContent = t.live.fuelLow(Math.max(0, Math.round(fuelLeftKm()!)));

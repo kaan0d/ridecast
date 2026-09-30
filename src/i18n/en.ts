@@ -2,15 +2,19 @@ import type { ClothingTexts } from "../core/advice/clothing";
 import type { Level, RiskTexts, RoadState } from "../core/risk/risk";
 import type { ConditionName } from "../core/weather/weather";
 
+import { units, unitsOf } from "./units";
+
 const r = Math.round;
+const u = unitsOf(units);
+const at = (m: number) => `${u.distUnit} ${u.distWhole(m)}`; // a place on the route: "km 12"
 const pl = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 // English UI texts (the default language). tr.ts has the same shape; TypeScript checks that.
 export const en = {
   locale: "en-GB",
   duration: (h: number, m: number) => (h ? `${h} h ${m} min` : `${m} min`),
-  kmh: "km/h",
-  km: (km: number) => `km ${km}`,
+  kmh: u.speedUnit,
+  km: at,
   level: ["None", "Low", "Medium", "High"] as [string, string, string, string],
 
   app: {
@@ -99,7 +103,7 @@ export const en = {
   settings: {
     vehicles: { motorcycle: "Motorcycle", car: "Car", bicycle: "Bicycle", walking: "Walking" },
     pickDeparture: "Choose a departure date and time.",
-    speedError: (min: number, max: number) => `Speed must be between ${min} and ${max} km/h.`,
+    speedError: (min: number, max: number) => `Speed must be between ${u.speed(min)} and ${u.speed(max)}.`,
     scrub: (depart: string, arrive: string) => `Leave ${depart}, arrive ${arrive}`,
   },
 
@@ -138,8 +142,8 @@ export const en = {
   breaks: {
     title: (i: number, auto: boolean) => `Break ${i}${auto ? " (auto)" : ""}`,
     overnightTitle: (i: number) => `Overnight ${i}`,
-    info: (km: number, from: string, to: string) => `km ${km} · ${from}–${to}`,
-    overnightInfo: (km: number, arrive: string, leave: string) => `km ${km} · arrive ${arrive}, ride on ${leave}`,
+    info: (m: number, from: string, to: string) => `${at(m)} · ${from}–${to}`,
+    overnightInfo: (m: number, arrive: string, leave: string) => `${at(m)} · arrive ${arrive}, ride on ${leave}`,
     durationAria: (i: number) => `Break ${i} length (min)`,
     min: "min",
     resumeAria: (i: number) => `Overnight ${i}: time to ride on`,
@@ -168,10 +172,10 @@ export const en = {
     ground: "Ground",
     modelRange: (runs: number) => `Range of ${runs} model runs`,
     precip: "Precipitation",
-    snow: (cm: string) => `snow ${cm} cm`,
+    snow: (cm: number) => `snow ${u.snow(cm)}`,
     wind: "Wind",
     calm: "Calm",
-    gusts: (kmh: number) => `gusts ${kmh}`,
+    gusts: (kmh: number) => `gusts ${u.speedNum(kmh)}`,
     visibility: "Visibility",
     roadEstimate: "Road (estimate)",
     source: (clock: string) => `Forecast hour ${clock} · Open-Meteo`,
@@ -190,12 +194,12 @@ export const en = {
   profile: {
     title: "Height along the route",
     loading: "Getting the heights…",
-    climb: (up: number, down: number) => `Climb ${up} m, descent ${down} m`,
-    highest: (m: number, km: number) => `highest ${m} m at km ${km}`,
-    coldest: (deg: number, km: number, clock: string) => `coldest ${deg}° at km ${km} (${clock})`,
-    at: (km: number, m: number) => `km ${km} · ${m} m`,
-    temp: (deg: number, clock: string) => `${deg}° · ${clock}`,
-    aria: "Height profile, km along the route. Arrow keys move and show the point on the map.",
+    climb: (up: number, down: number) => `Climb ${u.height(up)}, descent ${u.height(down)}`,
+    highest: (m: number, distM: number) => `highest ${u.height(m)} at ${at(distM)}`,
+    coldest: (c: number, distM: number, clock: string) => `coldest ${u.temp(c)} at ${at(distM)} (${clock})`,
+    at: (distM: number, m: number) => `${at(distM)} · ${u.height(m)}`,
+    temp: (c: number, clock: string) => `${u.temp(c)} · ${clock}`,
+    aria: `Height profile, ${u.distUnit} along the route. Arrow keys move and show the point on the map.`,
   },
 
   conditions: {
@@ -222,17 +226,17 @@ export const en = {
     storm: "Thunderstorm",
     snow: "Snowfall",
     rain: (level: Level, mm: number, prob: number | null) =>
-      `${level === 3 ? "Heavy Rain" : level === 1 ? "Light Rain" : "Rain"} · ${mm.toFixed(1)} mm/h${prob === null ? "" : ` · ${prob}% likely`}`,
+      `${level === 3 ? "Heavy Rain" : level === 1 ? "Light Rain" : "Rain"} · ${u.rain(mm)}/h${prob === null ? "" : ` · ${prob}% likely`}`,
     rainProb: (pct: number) => `Chance of Rain · ${pct}%`,
-    gust: (kmh: number) => `Wind Gusts · ${r(kmh)} km/h`,
-    crosswind: (kmh: number, fromRight: boolean) => `${fromRight ? "Right" : "Left"} Crosswind · ${r(kmh)} km/h`,
-    visibility: (km: number, fog: boolean) => (fog ? `Fog · visibility ${km.toFixed(1)} km` : `Low Visibility · ${km.toFixed(1)} km`),
-    ice: (c: number) => `Ice Risk · ${r(c)}° and a wet road (estimate)`,
-    nearFreezing: (c: number) => `Near Freezing · ${r(c)}°`,
+    gust: (kmh: number) => `Wind Gusts · ${u.speed(kmh)}`,
+    crosswind: (kmh: number, fromRight: boolean) => `${fromRight ? "Right" : "Left"} Crosswind · ${u.speed(kmh)}`,
+    visibility: (km: number, fog: boolean) => (fog ? `Fog · visibility ${u.dist(km * 1000)}` : `Low Visibility · ${u.dist(km * 1000)}`),
+    ice: (c: number) => `Ice Risk · ${u.temp(c)} and a wet road (estimate)`,
+    nearFreezing: (c: number) => `Near Freezing · ${u.temp(c)}`,
     wetRoad: "Wet Road · estimate",
     dampRoad: "Damp Road · estimate",
-    cold: (c: number) => `Cold · felt ${r(c)}° while riding`,
-    heat: (c: number, strong: boolean) => `Heat Stress · feels like ${r(c)}°${strong ? " · rest in the shade and drink" : ""}`,
+    cold: (c: number) => `Cold · felt ${u.temp(c)} while riding`,
+    heat: (c: number, strong: boolean) => `Heat Stress · feels like ${u.temp(c)}${strong ? " · rest in the shade and drink" : ""}`,
     dark: "Riding in the Dark",
     glare: (deg: number) => `Low Sun · ahead, ${r(deg)}° · may dazzle`,
   } satisfies RiskTexts,
@@ -252,12 +256,12 @@ export const en = {
       carWinter: "Get the car ready for winter",
     } as Record<string, string>,
     why: {
-      feltMin: (c: number) => `lowest felt ${r(c)}°`,
-      tempMax: (c: number) => `highest ${r(c)}°`,
-      precip: (mm: number) => `rain ${mm.toFixed(1)} mm/h`,
+      feltMin: (c: number) => `lowest felt ${u.temp(c)}`,
+      tempMax: (c: number) => `highest ${u.temp(c)}`,
+      precip: (mm: number) => `rain ${u.rain(mm)}/h`,
       wetRoad: "wet road",
-      gust: (kmh: number) => `gusts ${r(kmh)} km/h`,
-      visibility: (km: number) => `visibility ${km.toFixed(1)} km`,
+      gust: (kmh: number) => `gusts ${u.speed(kmh)}`,
+      visibility: (km: number) => `visibility ${u.dist(km * 1000)}`,
       dark: "riding in the dark",
       snow: "snow",
       ice: "ice risk",
@@ -291,11 +295,11 @@ export const en = {
     noWarning: "No warnings ahead",
     toArrival: "All the way",
     meta: (km: string, clock: string) => `${km} · arrival ${clock}`,
-    feels: (c: number) => ` · feels like ${c}°`,
+    feels: (c: number) => ` · feels like ${u.temp(c)}`,
     offline: "Offline: showing the last weather loaded; it refreshes when the connection is back.",
     soundOn: "Sound on",
     soundOff: "Sound off",
-    fuelLow: (km: number) => `Fuel looks quite low (about ${km} km left). A good time to look for a fuel station.`,
+    fuelLow: (km: number) => `Fuel looks quite low (about ${u.dist(km * 1000)} left). A good time to look for a fuel station.`,
     noGeo: "This browser has no location support; live mode could not start.",
   },
 

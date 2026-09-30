@@ -1,4 +1,4 @@
-import { t } from "../i18n";
+import { t, u } from "../i18n";
 import { AUTO_BREAK_DEFAULT, BREAK_LIMITS_MIN, BREAK_PRESETS_MIN, OVERNIGHT } from "../config/breaks";
 import { BREAK_ADVICE } from "../config/risk";
 import type { AutoBreakRule, Timeline } from "../core/eta/eta";
@@ -46,7 +46,8 @@ export function bindBreaks(h: Handlers) {
   autoForm.addEventListener("submit", (e) => {
     e.preventDefault();
     if (!autoForm.reportValidity()) return;
-    h.onAuto({ every: every.valueAsNumber, unit: unit.value as AutoBreakRule["unit"] }, autoDur.valueAsNumber);
+    const kind = unit.value as AutoBreakRule["unit"]; // a km interval is typed in the viewer's distance unit
+    h.onAuto({ every: kind === "km" ? u.kmFrom(every.valueAsNumber) : every.valueAsNumber, unit: kind }, autoDur.valueAsNumber);
   });
 
   return (rows: BreakRow[]) => {
@@ -64,8 +65,8 @@ export function bindBreaks(h: Handlers) {
           b.distM === undefined || b.startMs === undefined || b.endMs === undefined
             ? "–"
             : overnight
-              ? t.breaks.overnightInfo(Math.round(b.distM / 1000), formatTime(b.startMs), formatTime(b.endMs))
-              : t.breaks.info(Math.round(b.distM / 1000), formatClock(b.startMs), formatClock(b.endMs));
+              ? t.breaks.overnightInfo(b.distM, formatTime(b.startMs), formatTime(b.endMs))
+              : t.breaks.info(b.distM, formatClock(b.startMs), formatClock(b.endMs));
 
         const dur = document.createElement("input");
         dur.type = "number";

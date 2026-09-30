@@ -1,5 +1,6 @@
 import { en, type Messages } from "./en";
 import { tr } from "./tr";
+import { units, unitsOf } from "./units";
 
 export type Lang = "en" | "tr";
 
@@ -16,6 +17,9 @@ function stored(): Lang {
 
 export const lang: Lang = stored();
 export const t: Messages = lang === "tr" ? tr : en;
+// Display units for UI code; the texts above use the same choice.
+export const u = unitsOf(units, t.kmh);
+export { setUnits, units } from "./units";
 
 // The trip lives in the URL hash, so a reload keeps it while every text is built again.
 export function setLang(l: Lang) {
@@ -31,7 +35,12 @@ export function setLang(l: Lang) {
 export function translatePage(root: ParentNode = document) {
   document.documentElement.lang = lang;
   document.title = t.app.title;
-  if (lang === "en") return;
+  // Unit labels next to inputs follow the unit choice (after the texts, which name metric units).
+  const unitLabels = () =>
+    root.querySelectorAll<HTMLElement>("[data-unit]").forEach((el) => {
+      if (units === "imperial") el.textContent = el.dataset.unit === "speed" ? u.speedUnit : u.distUnit;
+    });
+  if (lang === "en") return unitLabels();
   const text = (key: string | undefined) => (key ? t.html[key] : undefined);
   root.querySelectorAll<HTMLElement>("[data-t]").forEach((el) => {
     const v = text(el.dataset.t);
@@ -45,4 +54,5 @@ export function translatePage(root: ParentNode = document) {
     const v = text(el.dataset.tTitle);
     if (v) el.title = v;
   });
+  unitLabels();
 }

@@ -1,7 +1,7 @@
 import type { LatLon } from "../core/geo";
-import { t } from "../i18n";
+import { t, u } from "../i18n";
 
-export const formatKm = (m: number) => `${(m / 1000).toFixed(m < 10000 ? 1 : 0)} km`;
+export const formatKm = (m: number) => u.dist(m); // km or miles
 
 export function formatDuration(s: number) {
   const min = Math.round(s / 60);

@@ -1,6 +1,6 @@
 import { ELEVATION } from "../config/elevation";
 import { climbOf } from "../core/route/elevation";
-import { t } from "../i18n";
+import { t, u } from "../i18n";
 import { formatClock } from "./format";
 import type { WeatherPoint } from "./weather";
 
@@ -15,8 +15,7 @@ const PAD_TOP = 10;
 const MIN_SPAN_M = 200; // a flat route stays flat instead of filling the chart with noise
 const MIN_SPAN_C = 10;
 
-const r = Math.round;
-const km = (m: number) => r(m / 1000);
+const km = (m: number) => u.distWhole(m);
 
 // The nearest weather station to a distance, if it has a forecast.
 function tempAt(points: WeatherPoint[], distM: number) {
@@ -61,9 +60,9 @@ export function renderProfile(
     tempPath = temps.map((p, i) => `${i ? "L" : "M"}${x(p.distM).toFixed(1)},${(PAD_TOP + (1 - (p.hour!.tempC - cLo) / cSpan) * (H / 2)).toFixed(1)}`).join(" ");
   }
 
-  const summary = [t.profile.climb(r(climb.gainM), r(climb.lossM)), t.profile.highest(r(climb.maxM), km(climb.maxAtM))];
+  const summary = [t.profile.climb(climb.gainM, climb.lossM), t.profile.highest(climb.maxM, climb.maxAtM)];
   const coldest = temps.reduce<WeatherPoint | null>((a, b) => (!a || b.hour!.tempC < a.hour!.tempC ? b : a), null);
-  if (coldest) summary.push(t.profile.coldest(r(coldest.hour!.tempC), km(coldest.distM), formatClock(coldest.etaMs)));
+  if (coldest) summary.push(t.profile.coldest(coldest.hour!.tempC, coldest.distM, formatClock(coldest.etaMs)));
   const readout = document.createElement("p");
   readout.className = "profile-readout";
   const idle = summary.join(", ");
@@ -103,14 +102,14 @@ export function renderProfile(
     cursor.setAttribute("x2", String(x(d)));
     cursor.setAttribute("visibility", "visible");
     const w = tempAt(state.points, d);
-    readout.textContent = t.profile.at(km(d), r(heightsM[at])) + (w ? ` · ${t.profile.temp(r(w.hour!.tempC), formatClock(w.etaMs))}` : "");
+    readout.textContent = t.profile.at(d, heightsM[at]) + (w ? ` · ${t.profile.temp(w.hour!.tempC, formatClock(w.etaMs))}` : "");
     chart.setAttribute("aria-valuenow", String(km(d)));
     chart.setAttribute("aria-valuetext", readout.textContent);
     state.onProbe(d);
   };
   const indexAt = (clientX: number) => {
     const box = chart.getBoundingClientRect();
-    return r(((clientX - box.left) / box.width) * (distsM.length - 1));
+    return Math.round(((clientX - box.left) / box.width) * (distsM.length - 1));
   };
   chart.addEventListener("pointermove", (e) => show(indexAt(e.clientX)));
   chart.addEventListener("pointerdown", (e) => show(indexAt(e.clientX)));
