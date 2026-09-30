@@ -85,5 +85,5 @@ export function createForecast(deps: { view(i: number): RouteView; breaks(i: num
     return sampleDistances(route.distanceM, route.durationS, WEATHER_SAMPLE.intervalMin, WEATHER_SAMPLE.maxPoints).length;
   };
 
-  return { pointsFor, scoreOf, scoreDepartures, sampleCount };
+  return { pointsFor, assess, scoreOf, scoreDepartures, sampleCount };
 }

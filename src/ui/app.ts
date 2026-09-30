@@ -19,7 +19,7 @@ import { renderClothing } from "./advice";
 import { renderBest as renderBestList, type BestWindow } from "./best";
 import { adviseBreaks, bindBreaks, type BreakRow } from "./breaks";
 import { bindChanges } from "./changes";
-import { createForecast } from "./forecast";
+import { createForecast, type Sample } from "./forecast";
 import { formatClock, formatCoord, formatDuration } from "./format";
 import { icons } from "./icons";
 import { bindLayers } from "./layers";
@@ -82,6 +82,7 @@ export function startApp() {
   let redrawStrip = () => {};
   let stripFor: Route | null = null; // route whose stations already came into the strip
   let bestWindow: BestWindow = "day"; // "Best time" over the next 24 hours or the next 7 days
+  let lastForecast: { route: Route; samples: Sample[]; forecasts: Forecast[] } | null = null; // for the departure slider
   let heights: { route: Route; profile: Profile | null; error?: string } | null = null; // of the selected route
 
   const stopsEl = $("stops");
@@ -157,7 +158,7 @@ export function startApp() {
     const r = settingsCtl.routing();
     if (routingKey(r.vehicle, r.avoid) !== routedKey) updateRoute();
     else renderRoutes();
-  });
+  }, scrubDeparture);
   const readSettings = settingsCtl.read;
   const changes = bindChanges($("changes"));
   const renderBreakList = bindBreaks({
@@ -389,6 +390,7 @@ export function startApp() {
     share.sync();
     share.renderRecent();
     updateWeather(timelines, typeof settings === "string" ? null : settings);
+    settingsCtl.showDeparture(tl && !live.isActive() ? { departMs: tl.timeMs[0], arrivalMs: tl.timeMs[tl.timeMs.length - 1] } : null);
     if (typeof settings === "string") return renderSummaryInto($("summary"), null, [], settings);
     if (!tl) return renderSummaryInto($("summary"), null, []);
     const rows = summaryRows(
@@ -497,6 +499,7 @@ export function startApp() {
         const main = await forecast.pointsFor(selected, tl, vehicle, until);
         freshWeather = false;
         if (my !== weatherSeq) return;
+        lastForecast = { route, samples: main.samples, forecasts: main.forecasts };
         if (bestMode && settings) {
           const top = pickBest(forecast.scoreDepartures(selected, vehicle, settings.speed, main.samples, main.forecasts, bestHours()));
           // First time in best mode: take the lowest-risk candidate and redo everything for it.
@@ -523,6 +526,25 @@ export function startApp() {
         if (bestMode) renderBest({ top: [], loading: false, error: (e as Error).message });
       }
     }, 300);
+  }
+
+  // The departure slider being dragged: the map, strip and profile follow at once from the
+  // forecast already loaded (no request); letting go plans properly (settings onChange).
+  function scrubDeparture(departMs: number) {
+    const settings = readSettings();
+    const route = routes[selected];
+    if (typeof settings === "string" || !route) return;
+    const tl = buildTimeline(route.steps, departMs, settings.speed, breaksOn(selected));
+    settingsCtl.showScrub(departMs, tl.timeMs[tl.timeMs.length - 1]);
+    if (lastForecast?.route !== route) return; // times only until the first forecast is in
+    clearTimeout(weatherTimer);
+    weatherSeq++; // a forecast still on its way must not undo the preview
+    const points = (weatherPoints = forecast.assess(selected, tl, settings.vehicle, lastForecast.samples, lastForecast.forecasts));
+    map.setWeather(points.map((p) => ({ pos: p.pos, pin: pinHtml(p), card: cardHtml(p), frac: p.distM / route.distanceM })));
+    paintRisk(points);
+    redrawStrip = () => renderStrip($("weather"), { points, loading: false, ends: stripEnds(), onRetry: () => {}, onOpen: (i) => map.openWeather(i) });
+    redrawStrip();
+    renderHeights();
   }
 
   // Height profile of the selected route, fetched once per route; temperatures from its stations.

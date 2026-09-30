@@ -97,6 +97,7 @@ export const en = {
     vehicles: { motorcycle: "Motorcycle", car: "Car", bicycle: "Bicycle", walking: "Walking" },
     pickDeparture: "Choose a departure date and time.",
     speedError: (min: number, max: number) => `Speed must be between ${min} and ${max} km/h.`,
+    scrub: (depart: string, arrive: string) => `Leave ${depart}, arrive ${arrive}`,
   },
 
   summary: {

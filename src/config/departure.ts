@@ -6,4 +6,6 @@ export const DEPARTURE = {
   count: 3,
   minGapH: 2, // the listed departures are at least this far apart, so they are real alternatives
   maxMissing: 0.25, // candidates with more of the route unforecast than this are skipped
+  scrubH: 48, // the departure slider reaches this far ahead (the forecast request covers 3 days)
+  scrubStepMin: 15,
 };

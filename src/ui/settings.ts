@@ -1,9 +1,11 @@
+import { DEPARTURE } from "../config/departure";
 import { DEFAULT_VEHICLE, ROAD_TYPE_RULES, SPEED_LIMITS_KMH, VEHICLES, type VehicleType } from "../config/vehicles";
 import type { SpeedSetting } from "../core/eta/eta";
 import type { RoadType } from "../core/route/roadType";
 import type { TripState } from "../core/share/state";
 import { avoidFor, type Avoid } from "../services/routing";
 import { t } from "../i18n";
+import { formatClock, formatTime } from "./format";
 
 export type DepartMode = "now" | "at" | "best";
 
@@ -21,8 +23,9 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 
 // Wires the vehicle / speed / departure controls. `read` gives the current settings, or an error
 // message when an input is invalid. In "best" mode the departure is whatever `setBest` chose last
-// (until then, the next full hour).
-export function bindSettings(onChange: () => void) {
+// (until then, the next full hour). `onScrub`: the departure slider is being dragged to this time
+// (a preview; letting go sets "Date and time" and calls onChange).
+export function bindSettings(onChange: () => void, onScrub: (departMs: number) => void) {
   let best: number | null = null;
   const form = $<HTMLFormElement>("settings");
   const vehicleGroup = $("vehicle");
@@ -30,6 +33,14 @@ export function bindSettings(onChange: () => void) {
   const road = Object.fromEntries(ROADS.map((r) => [r, $<HTMLInputElement>(`kmh-${r}`)])) as Record<RoadType, HTMLInputElement>;
   const departAt = $<HTMLInputElement>("depart-at");
   const fuelRange = $<HTMLInputElement>("fuel-range");
+  const scrub = $("depart-scrub");
+  const slider = $<HTMLInputElement>("depart-slider");
+  const scrubText = $("depart-scrub-text");
+  const STEP_MS = DEPARTURE.scrubStepMin * 60_000;
+  let scrubFrom = 0; // departure time at the slider's left end
+  const sliderMs = () => scrubFrom + slider.valueAsNumber * STEP_MS;
+  slider.min = "0";
+  slider.max = String((DEPARTURE.scrubH * 60) / DEPARTURE.scrubStepMin);
   const readFuelRange = () => {
     const v = fuelRange.valueAsNumber;
     return Number.isFinite(v) && v >= Number(fuelRange.min) && v <= Number(fuelRange.max) ? v : null;
@@ -88,6 +99,19 @@ export function bindSettings(onChange: () => void) {
   });
   form.addEventListener("submit", (e) => e.preventDefault());
 
+  // Dragging previews without planning again; the form's input handler must not see it.
+  slider.addEventListener("input", (e) => {
+    e.stopPropagation();
+    onScrub(sliderMs());
+  });
+  slider.addEventListener("change", (e) => {
+    e.stopPropagation();
+    setRadio("depart", "at");
+    departAt.value = toLocalInput(new Date(sliderMs()));
+    syncVisibility();
+    onChange();
+  });
+
   const read = (): TripSettings | string => {
     const kmh = (el: HTMLInputElement) => {
       const v = el.valueAsNumber;
@@ -130,10 +154,27 @@ export function bindSettings(onChange: () => void) {
     syncVisibility();
   }
 
+  // The slider under the departure choice: shown with a route (not while riding), at `departMs`,
+  // with the departure and arrival it gives.
+  function showDeparture(times: { departMs: number; arrivalMs: number } | null) {
+    scrub.hidden = !times;
+    if (!times) return;
+    scrubFrom = Math.floor(Date.now() / STEP_MS) * STEP_MS;
+    slider.value = String(Math.round((times.departMs - scrubFrom) / STEP_MS));
+    showScrub(times.departMs, times.arrivalMs);
+  }
+  function showScrub(departMs: number, arrivalMs: number) {
+    const arrive = new Date(arrivalMs).toDateString() === new Date(departMs).toDateString() ? formatClock(arrivalMs) : formatTime(arrivalMs);
+    scrubText.textContent = t.settings.scrub(formatTime(departMs), arrive);
+    slider.setAttribute("aria-valuetext", scrubText.textContent);
+  }
+
   return {
     read,
     routing,
     apply,
+    showDeparture,
+    showScrub,
     best: () => best,
     setBest(ms: number | null) {
       best = ms;
