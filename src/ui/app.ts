@@ -1,12 +1,14 @@
 import { t } from "../i18n";
 import { DEFAULT_BREAK_MIN, OVERNIGHT } from "../config/breaks";
 import { DEPARTURE } from "../config/departure";
+import { CURVES } from "../config/curves";
 import { ELEVATION } from "../config/elevation";
 import { SHARE } from "../config/share";
 import { autoBreakDistances, buildTimeline, resumeAtClock, totalS, type AutoBreakRule, type Break, type Timeline } from "../core/eta/eta";
 import type { LatLon } from "../core/geo";
 import { bestPerDay, rankDepartures, type ScoredDeparture } from "../core/advice/departure";
 import { pointRuns, type RouteScore } from "../core/risk/route";
+import { curvyDistance } from "../core/route/curves";
 import { evenDistances } from "../core/route/elevation";
 import { labelPoint, lineLength, makeLine, pointAtDistance, sliceLine, snapToLine, type Line } from "../core/route/line";
 import type { Forecast } from "../core/weather/weather";
@@ -63,6 +65,7 @@ export function startApp() {
   ];
   let routes: Route[] = [];
   let lines: Line[] = []; // geometry of each route, for snapping
+  let bendsM: number[] = []; // winding road per route (motorcycle measure)
   let breaks: BreakPoint[] = []; // ordered along the selected route
   let routedTitles: string[] = []; // titles of the stops the current routes pass through
   let routeLabels: LatLon[] = []; // duration bubble position per route
@@ -340,6 +343,7 @@ export function startApp() {
       if (my !== routeSeq) return;
       routes = result;
       lines = result.map((r) => makeLine(r.coords));
+      bendsM = lines.map((l) => curvyDistance(l, CURVES));
       routeLabels = lines.map((l, i) => labelPoint(l, lines.filter((_, j) => j !== i)));
       routeScores = []; // scores belong to the old routes
       routedTitles = filled.map((_, k) => titleOfStop(k, filled.length));
@@ -398,6 +402,7 @@ export function startApp() {
       breaks.map((b) => b.resumeMin !== undefined),
       routedTitles,
       settings.speed.mode === "road" ? routes[selected].steps : null,
+      CURVES.vehicles.includes(settings.vehicle) ? bendsM[selected] : null,
     );
     const [from, to] = endNames();
     renderSummaryInto(
@@ -407,7 +412,11 @@ export function startApp() {
     );
   }
 
-  const renderRouteList = (timelines: Timeline[] | null) => renderRouteOptions($("routes"), routes, timelines, routeScores, selected, selectRoute);
+  const renderRouteList = (timelines: Timeline[] | null) => renderRouteOptions($("routes"), routes, timelines, routeScores, selected, selectRoute, showBends() ? bendsM : null);
+  const showBends = () => {
+    const s = readSettings();
+    return typeof s !== "string" && CURVES.vehicles.includes(s.vehicle);
+  };
 
   // ---------- weather ----------
 
