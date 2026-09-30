@@ -50,8 +50,14 @@ describe("wind chill", () => {
     // Environment Canada table: -5 °C at 30 km/h feels like -13
     expect(Math.round(windChillC(-5, 30))).toBe(-13);
     expect(Math.round(windChillC(-10, 20))).toBe(-18);
-    expect(windChillC(12, 100)).toBe(12); // outside the formula's range
     expect(windChillC(0, 3)).toBe(0);
+  });
+
+  test("keeps cooling above 10 °C and never feels warmer than the air", () => {
+    expect(Math.round(windChillC(15, 100))).toBe(11);
+    expect(Math.round(windChillC(20, 100))).toBe(18);
+    expect(windChillC(30, 100)).toBe(30); // the formula would say warmer
+    expect(windChillC(15, 20)).toBeLessThan(15);
   });
 
   test("relative wind adds a headwind and subtracts a tailwind", () => {

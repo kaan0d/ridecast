@@ -166,7 +166,7 @@ src/ui/        MapLibre map and panels; app.ts holds the planner state and wirin
 - Best departure candidates are hourly and only for the selected route; the top 3 can be neighbouring hours when they tie.
 - The route score is my own weighting. It compares routes by the share of distance at each level, not by time spent at each level.
 - Risk levels are per sample point (about every 15 min of driving); a short shower between two points can be missed. Thresholds are my own starting values, not from a published standard, except the wind chill formula.
-- Wind chill is only defined up to 10 °C; above that the felt temperature is the air temperature.
+- Wind chill is published for 10 °C and below; above that the same formula is used (it keeps cooling smoothly: 15 °C at 100 km/h feels 11 °C, 20 °C feels 18 °C), capped at the air temperature, since from the low twenties it would call the riding wind warming. Heat is covered by the heat stress warning, not by the felt temperature.
 - Break advice uses the forecast of the sample point nearest to the break and hourly steps.
 - Map tiles are OSM standard tiles muted with CSS filters; keyless muted basemaps (CARTO) now watermark browser requests. OSM tiles are for light use only.
 - Breaks are stored as map points. On another route (alternative, or new stops) they snap to its nearest point, which can be far from where they were meant to be.

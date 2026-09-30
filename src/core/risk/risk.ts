@@ -79,11 +79,14 @@ const RAD = Math.PI / 180;
 const above = (v: number, t: Triple): Level => (v >= t[2] ? 3 : v >= t[1] ? 2 : v >= t[0] ? 1 : 0);
 const below = (v: number, t: Triple): Level => (v <= t[2] ? 3 : v <= t[1] ? 2 : v <= t[0] ? 1 : 0);
 
-// Wind chill (Environment Canada / NWS 2001). Defined for T <= 10 °C and wind >= 4.8 km/h.
+// Wind chill (Environment Canada / NWS 2001), for wind >= 4.8 km/h. The index is published for
+// T <= 10 °C; above that the same formula keeps cooling smoothly (15 °C at 100 km/h feels 11), until
+// around the low twenties it would call the wind warming, so the air temperature caps it: riding
+// wind never makes it feel warmer (heat has its own warning).
 export function windChillC(tempC: number, windKmh: number): number {
-  if (tempC > 10 || windKmh < 4.8) return tempC;
+  if (windKmh < 4.8) return tempC;
   const v = windKmh ** 0.16;
-  return 13.12 + 0.6215 * tempC - 11.37 * v + 0.3965 * tempC * v;
+  return Math.min(tempC, 13.12 + 0.6215 * tempC - 11.37 * v + 0.3965 * tempC * v);
 }
 
 // Air speed the rider feels: riding speed plus the headwind part of the wind.
