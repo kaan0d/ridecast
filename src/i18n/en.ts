@@ -171,6 +171,8 @@ export const en = {
     source: (clock: string) => `Forecast hour ${clock} · Open-Meteo`,
     far: (days: number) => `More than ${days} days ahead: timing and amounts are uncertain, check again closer to the day.`,
     stripTitle: "Weather along the route",
+    feltNote: "Temperatures on the strip and the map: felt while riding.",
+    feltAria: (felt: string, air: string) => `felt ${felt} (air ${air})`,
     retry: "Try again",
     loading: "Getting the weather…",
     noData: "no forecast",
