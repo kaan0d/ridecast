@@ -72,8 +72,13 @@ export function renderProfile(
   const chart = document.createElement("div");
   chart.className = "profile-chart";
   chart.tabIndex = 0;
-  chart.setAttribute("role", "img");
-  chart.setAttribute("aria-label", `${t.profile.aria} ${idle}`);
+  // A slider over the route's distance: arrow keys move the cursor, the readout is its value text.
+  chart.setAttribute("role", "slider");
+  chart.setAttribute("aria-label", t.profile.aria);
+  chart.setAttribute("aria-valuemin", "0");
+  chart.setAttribute("aria-valuemax", String(km(totalM)));
+  chart.setAttribute("aria-valuenow", "0");
+  chart.setAttribute("aria-valuetext", idle);
   chart.innerHTML =
     `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">` +
     `<path class="profile-area" d="M0,${H} L${line} L${W},${H} Z"/>` +
@@ -89,6 +94,7 @@ export function renderProfile(
       at = -1;
       cursor.setAttribute("visibility", "hidden");
       readout.textContent = idle;
+      chart.setAttribute("aria-valuetext", idle);
       return state.onProbe(null);
     }
     at = Math.max(0, Math.min(distsM.length - 1, i));
@@ -98,6 +104,8 @@ export function renderProfile(
     cursor.setAttribute("visibility", "visible");
     const w = tempAt(state.points, d);
     readout.textContent = t.profile.at(km(d), r(heightsM[at])) + (w ? ` · ${t.profile.temp(r(w.hour!.tempC), formatClock(w.etaMs))}` : "");
+    chart.setAttribute("aria-valuenow", String(km(d)));
+    chart.setAttribute("aria-valuetext", readout.textContent);
     state.onProbe(d);
   };
   const indexAt = (clientX: number) => {

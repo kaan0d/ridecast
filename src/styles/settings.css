@@ -345,6 +345,7 @@ input:invalid {
 
 .depart-scrub input {
   width: 100%;
+  height: 28px; /* a thumb-sized target around the thin track */
   margin: 0;
   accent-color: var(--ink);
 }

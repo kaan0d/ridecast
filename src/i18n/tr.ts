@@ -183,7 +183,7 @@ export const tr: Messages = {
     coldest: (deg, km, clock) => `en soğuk ${deg}°, km ${km} (${clock})`,
     at: (km, m) => `km ${km} · ${m} m`,
     temp: (deg, clock) => `${deg}° · ${clock}`,
-    aria: "Yükseklik profili. Ok tuşları rota boyunca ilerler ve noktayı haritada gösterir.",
+    aria: "Yükseklik profili, rota boyunca km. Ok tuşları ilerler ve noktayı haritada gösterir.",
   },
 
   conditions: {

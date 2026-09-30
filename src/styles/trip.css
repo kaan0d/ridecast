@@ -178,6 +178,10 @@ button.stop-glyph {
   outline: none;
 }
 
+.suggestions button:focus-visible {
+  box-shadow: inset 3px 0 var(--focus);
+}
+
 .suggestions .note {
   padding: 13px 16px;
   font-size: 0.9375rem;
@@ -277,6 +281,10 @@ button.stop-glyph {
 .map-menu button:focus-visible {
   background: var(--fill);
   outline: none;
+}
+
+.map-menu button:focus-visible {
+  box-shadow: inset 3px 0 var(--focus);
 }
 
 .map-menu-hint {

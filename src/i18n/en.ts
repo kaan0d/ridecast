@@ -186,7 +186,7 @@ export const en = {
     coldest: (deg: number, km: number, clock: string) => `coldest ${deg}° at km ${km} (${clock})`,
     at: (km: number, m: number) => `km ${km} · ${m} m`,
     temp: (deg: number, clock: string) => `${deg}° · ${clock}`,
-    aria: "Height profile. Arrow keys move along the route and show the point on the map.",
+    aria: "Height profile, km along the route. Arrow keys move and show the point on the map.",
   },
 
   conditions: {

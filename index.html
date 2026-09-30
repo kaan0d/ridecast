@@ -22,8 +22,8 @@
     <link rel="apple-touch-icon" href="./icon-192.png" />
   </head>
   <body>
-    <main id="map" aria-label="Map" data-t-aria="map"></main>
-    <h1 id="hero" class="hero" hidden><span data-t="hero1">The road ahead,</span> <span data-t="hero2">before you ride.</span></h1>
+    <div id="map" role="region" aria-label="Map" data-t-aria="map"></div>
+    <p id="hero" class="hero" hidden><span data-t="hero1">The road ahead,</span> <span data-t="hero2">before you ride.</span></p>
     <div id="layers-panel" class="layers-panel" role="dialog" aria-label="Layers" data-t-aria="layers" hidden></div>
     <div id="measure" class="measure-card" role="status" hidden>
       <div><strong class="measure-total"></strong><span class="measure-count"></span></div>
@@ -31,14 +31,14 @@
       <button type="button" class="measure-close icon-btn" aria-label="Close the ruler" data-t-aria="measureClose"></button>
     </div>
 
-    <section id="sheet" class="sheet" aria-label="Route panel" data-t-aria="sheet">
+    <main id="sheet" class="sheet" aria-label="Route panel" data-t-aria="sheet">
       <button type="button" id="sheet-toggle" class="sheet-grabber" aria-controls="sheet-body" aria-expanded="false">
         <span class="sr-only">Expand the panel</span>
       </button>
       <div id="sheet-body" class="sheet-body">
         <header class="brand">
           <button type="button" id="sheet-back" class="icon-btn sheet-back" aria-label="Back to the map" title="Back to the map" data-t-aria="back" data-t-title="back"></button>
-          <span class="wordmark">ridecast</span>
+          <h1 class="wordmark">ridecast</h1>
           <button type="button" id="settings-open" class="icon-btn settings-btn" aria-label="Settings" title="Settings" aria-expanded="false" data-t-aria="settings" data-t-title="settings"></button>
         </header>
 
@@ -170,7 +170,7 @@
           <datalist id="break-presets"></datalist>
         </section>
       </div>
-    </section>
+    </main>
     <section id="live" class="live" hidden aria-label="Live mode" data-t-aria="live">
       <div class="live-top">
         <button type="button" id="live-sound" class="live-btn" aria-pressed="false"></button>
