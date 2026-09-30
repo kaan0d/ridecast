@@ -123,6 +123,7 @@
 }
 
 .wordmark {
+  margin: 0;
   font-size: 1.3125rem;
   font-weight: 720;
   letter-spacing: -0.04em;

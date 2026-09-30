@@ -172,15 +172,22 @@ export function bindLayers(map: L.Map, button: HTMLElement, panel: HTMLElement, 
     panel.append(title, row, toggle);
   }
 
+  const open = (on: boolean) => {
+    panel.hidden = !on;
+    button.setAttribute("aria-expanded", String(on));
+  };
+  // Opening moves the focus to the chosen base map; Escape closes and gives it back to the button.
   button.addEventListener("click", () => {
-    panel.hidden = !panel.hidden;
-    button.setAttribute("aria-expanded", String(!panel.hidden));
+    open(panel.hidden === true);
+    if (!panel.hidden) panel.querySelector<HTMLElement>('[aria-pressed="true"]')?.focus();
+  });
+  panel.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    open(false);
+    button.focus();
   });
   addEventListener("pointerdown", (e) => {
-    if (!panel.hidden && !panel.contains(e.target as Node) && !button.contains(e.target as Node)) {
-      panel.hidden = true;
-      button.setAttribute("aria-expanded", "false");
-    }
+    if (!panel.hidden && !panel.contains(e.target as Node) && !button.contains(e.target as Node)) open(false);
   });
 
   // The dark or light map follows the theme (also the light theme while riding).
