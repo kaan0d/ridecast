@@ -96,17 +96,20 @@ The build uses relative asset paths (`base: "./"` in `vite.config.ts`), so `dist
 ## Layout
 
 ```
-src/config/    vehicle defaults, road type rules (all tunable numbers)
+src/config/    vehicle defaults, risk thresholds and every other tunable number
 src/core/      pure TypeScript, no DOM/fetch: coordinates, route geometry (snap, slice, bearing), road type guess, ETA timeline with breaks, weather sampling, forecast hour matching, WMO codes, risk levels, wind chill, wet road estimate, break advice
-src/services/  Photon, OSRM, Valhalla, Open-Meteo clients + in-memory request cache
+src/services/  Photon, OSRM, Valhalla, Open-Meteo (forecast and elevation) clients + in-memory request cache
+src/i18n/      English and Turkish texts
+src/styles/    CSS, one file per section, imported in order by src/style.css
 src/ui/        MapLibre map and panels; app.ts holds the planner state and wiring, forecast.ts the forecast and risk per route, mapActions.ts the map click, menu, locate and shortcuts, and summary / best / share / breaks / trip / changes render their panels
 ```
 
 ## Tested
 
 - `npm run build`: passes (tsc strict, Vite build).
-- `npm run test`: 14 tests pass (coordinate conversions; route geometry: haversine, snapping, point at distance; road type guess and breakdown; ETA with average speed, road speeds, ferry steps, leg arrivals, interpolation and clamping; breaks: later times shift by the break, earlier ones do not, sorting, break at a stop, breaks past the end, automatic breaks by km and by riding minutes).
-- Now 61 tests: stage 10 adds the pace factor (on plan, faster, slower, too little movement, clamping, old fixes forgotten), the live timeline re-anchored at the rider, the next warning ahead, new or worse warnings, and the off-route counter with GPS accuracy.
+- `npm run test`: 90 tests pass.
+- Stage 1: 14 tests (coordinate conversions; route geometry: haversine, snapping, point at distance; road type guess and breakdown; ETA with average speed, road speeds, ferry steps, leg arrivals, interpolation and clamping; breaks: later times shift by the break, earlier ones do not, sorting, break at a stop, breaks past the end, automatic breaks by km and by riding minutes).
+- Stage 10 (61 tests) added the pace factor (on plan, faster, slower, too little movement, clamping, old fixes forgotten), the live timeline re-anchored at the rider, the next warning ahead, new or worse warnings, and the off-route counter with GPS accuracy.
 - Stage 9 added the link format (round trip of every setting, average speed and departure modes, and 9 kinds of broken or tampered links rejected) and the recent list (newest first, replacing the same trip, cap, broken stored data).
 - Stage 8 added the clothing table (nothing on a calm day, items and reasons, wet road asks for rain gear, merged duplicates, vehicles) and the worst-condition summary, OSM tag classification of stops, thinning and shelter filtering, and the route bounding boxes.
 - Stage 7 added departure candidates (next full hour, window, step) and ranking (lowest score, earlier on ties, candidates with too much missing forecast left out).
@@ -163,12 +166,12 @@ src/ui/        MapLibre map and panels; app.ts holds the planner state and wirin
 - Links do not carry the weather; it is fetched again when the link is opened, so a shared link shows the forecast at the time it is opened. A link with departure "now" departs at opening time.
 - Stop labels in links are shortened to their first two parts.
 - The fuel estimate is the tank level the rider picked times the range, minus the straight-line distance between counted fixes; it knows nothing about real consumption, and fixes missed while the page is in the background are counted as one straight line.
-- Best departure candidates are hourly and only for the selected route; the top 3 can be neighbouring hours when they tie.
-- The route score is my own weighting. It compares routes by the share of distance at each level, not by time spent at each level.
+- Best departure candidates are hourly and only for the selected route.
+- The route score is my own weighting (0 / 1 / 3 / 9 per level, weighted by riding time).
 - Risk levels are per sample point (about every 15 min of driving); a short shower between two points can be missed. Thresholds are my own starting values, not from a published standard, except the wind chill formula.
 - Wind chill is published for 10 °C and below; above that the same formula is used (it keeps cooling smoothly: 15 °C at 100 km/h feels 11 °C, 20 °C feels 18 °C), capped at the air temperature, since from the low twenties it would call the riding wind warming. Heat is covered by the heat stress warning, not by the felt temperature.
 - Break advice uses the forecast of the sample point nearest to the break and hourly steps.
-- Map tiles are OSM standard tiles muted with CSS filters; keyless muted basemaps (CARTO) now watermark browser requests. OSM tiles are for light use only.
+- The OSM fallback is muted with MapLibre raster paint properties (keyless muted basemaps such as CARTO watermark browser requests). OSM tiles are for light use only.
 - Breaks are stored as map points. On another route (alternative, or new stops) they snap to its nearest point, which can be far from where they were meant to be.
 
 ## License
