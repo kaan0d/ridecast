@@ -82,6 +82,8 @@ export const tr: Messages = {
     radarLoading: "yükleniyor…",
     radarAt: (time) => `son görüntü ${time}`,
     radarFailed: "Radar alınamadı.",
+    radarFrame: (time) => `görüntü ${time}`,
+    radarPlay: (h) => `Son ${h} saati oynat`,
   },
 
   measure: {

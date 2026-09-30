@@ -398,3 +398,21 @@
   font-weight: 700;
   cursor: grab;
 }
+
+/* Radar loop button under the radar switch. */
+.layers-play {
+  margin: 10px 0 0 54px; /* under the label, past the 44 px switch and its 10 px gap */
+  padding: 6px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.layers-play[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
