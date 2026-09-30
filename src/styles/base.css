@@ -144,8 +144,40 @@ button {
   white-space: nowrap;
 }
 
-/* Scrollbars and native pickers carry the palette too. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--fill-2) transparent;
+/* Scrollbars: a thin rounded bar in the palette, no track and no arrow buttons. Chromium and
+   Safari draw it from ::-webkit-scrollbar (which they ignore once scrollbar-color is set, so that
+   is only for the others, Firefox). The thumb darkens while hovered or dragged. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent; /* inset from the edge: a 4 px bar in a 10 px lane */
+  border-radius: 999px;
+  background: var(--fill-2) padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+  border-width: 2px;
+  background-color: var(--ink-3);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--fill-2) transparent;
+  }
 }
