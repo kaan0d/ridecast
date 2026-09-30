@@ -12,3 +12,7 @@ export const WEATHER_REQUEST = {
   maxHourGapMin: 90, // an ETA further than this from any forecast hour has no data
   farDays: 3, // forecasts further ahead than this are marked as uncertain
 };
+
+// Temperatures are forecast for the height of the rounded grid point; the road can be hundreds of
+// metres higher or lower (a pass above a valley town). Standard atmosphere lapse rate.
+export const LAPSE_C_PER_KM = 6.5;

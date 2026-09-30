@@ -158,6 +158,7 @@ export const tr: Messages = {
     noForecast: "Bu saat için tahmin yok.",
     feelsLike: "Hissedilen",
     ridingFeel: "Sürüşte hissedilen",
+    ground: "Zemin",
     precip: "Yağış",
     snow: (cm) => `kar ${cm} cm`,
     wind: "Rüzgar",

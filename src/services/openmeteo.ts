@@ -6,10 +6,11 @@ import { getJson, HttpError } from "./http";
 
 const BASE = "https://api.open-meteo.com/v1/forecast";
 const HOURLY =
-  "temperature_2m,apparent_temperature,precipitation,precipitation_probability,snowfall,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,visibility,is_day";
+  "temperature_2m,apparent_temperature,precipitation,precipitation_probability,snowfall,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,visibility,is_day,soil_temperature_0cm";
 const DAY_MS = 86_400_000;
 
 interface OmLocation {
+  elevation: number; // m, the height the temperatures are for
   hourly: {
     time: number[]; // unix seconds (timeformat=unixtime)
     temperature_2m: number[];
@@ -23,6 +24,7 @@ interface OmLocation {
     wind_direction_10m: number[];
     visibility: number[];
     is_day: number[];
+    soil_temperature_0cm: (number | null)[];
   };
 }
 
@@ -49,7 +51,8 @@ export async function fetchForecast(points: LatLon[], untilMs: number, fresh = f
     throw new Error(t.errors.weatherDown);
   }
   // One location comes back as an object, several as an array.
-  return (Array.isArray(data) ? data : [data]).map(({ hourly: h }) => ({
+  return (Array.isArray(data) ? data : [data]).map(({ elevation, hourly: h }) => ({
+    heightM: elevation,
     hours: h.time.map((t, i) => ({
       timeMs: t * 1000,
       tempC: h.temperature_2m[i],
@@ -63,6 +66,7 @@ export async function fetchForecast(points: LatLon[], untilMs: number, fresh = f
       windFromDeg: h.wind_direction_10m[i],
       visibilityM: h.visibility[i],
       isDay: h.is_day[i] === 1,
+      groundC: h.soil_temperature_0cm?.[i] ?? null,
     })),
   }));
 }

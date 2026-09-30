@@ -161,6 +161,7 @@ export const en = {
     noForecast: "No forecast for this hour.",
     feelsLike: "Feels like",
     ridingFeel: "Felt while riding",
+    ground: "Ground",
     precip: "Precipitation",
     snow: (cm: string) => `snow ${cm} cm`,
     wind: "Wind",
