@@ -58,7 +58,7 @@
 
   /* Top padding clears the header buttons' circles, which reach 6px above the header row. */
   .sheet-body {
-    padding: 8px 16px calc(28px + env(safe-area-inset-bottom));
+    padding: 8px 16px calc(28px + env(safe-area-inset-bottom) + var(--sheet-hidden, 0px));
   }
 
   .wx-strip {

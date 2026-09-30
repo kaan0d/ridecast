@@ -319,7 +319,7 @@
   height: 3px;
   border-radius: 2px;
   background: var(--rail);
-  z-index: 0;
+  z-index: 1; /* over every station's hover background, including the next one's it runs into */
 }
 
 .wx-strip li:last-child button::before {
@@ -344,7 +344,7 @@
 
 .wx-strip .station {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   align-self: center;
   width: 12px;
   height: 12px;
