@@ -28,7 +28,6 @@
   --risk-3: var(--signal);
   --error: #c4271d;
   --focus: #1f6feb;
-  --map-filter: grayscale(0.94) contrast(0.86) brightness(1.03);
 
   --radius-sheet: 24px;
   --radius-card: 16px;
@@ -73,7 +72,7 @@
   --risk-2: #ff8a3a;
   --error: #ff6b61;
   --focus: #5a9dff;
-  --map-filter: invert(1) hue-rotate(180deg) grayscale(1) brightness(0.7) contrast(0.92);
+  --attrib-button-filter: invert(1);
   color-scheme: dark;
 }
 

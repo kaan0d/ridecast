@@ -1,6 +1,5 @@
 import { t } from "../i18n";
-import L from "leaflet";
-import type { Map as GLMap } from "maplibre-gl";
+import type { Map as GLMap, RasterLayerSpecification, StyleSpecification } from "maplibre-gl";
 import { getJson } from "../services/http";
 import { formatClock } from "./format";
 
@@ -24,16 +23,15 @@ const LABEL_LAYERS: Record<LabelKind, RegExp> = {
 };
 const DEFAULT_LABELS: Labels = { roadNumbers: false, roadNames: false, places: false, pois: false };
 
-// Keyless tile sources. The map is Stadia's Alidade Smooth as vector tiles (MapLibre), light or
-// dark with the theme, so its labels can be turned off; OSM (muted by the CSS filter on
-// `.base-muted` tiles) stands in when Stadia refuses the site. Imagery and topography keep their
-// colours.
-const BASES: Record<BaseId, { label: string; url: string; maxZoom: number; className?: string; attribution: string }> = {
+// Keyless tile sources. The map is Stadia's Alidade Smooth as vector tiles, light or dark with the
+// theme, so its labels can be turned off; OSM (muted to match, see MUTED) stands in when Stadia
+// refuses the site. Imagery and topography keep their colours. maxZoom: of the 256 px tiles.
+const BASES: Record<BaseId, { label: string; url: string; maxZoom: number; muted?: boolean; attribution: string }> = {
   map: {
     label: t.layers.map,
     url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
     maxZoom: 19,
-    className: "base-muted",
+    muted: true,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   },
   satellite: {
@@ -50,12 +48,28 @@ const BASES: Record<BaseId, { label: string; url: string; maxZoom: number; class
   },
 };
 
+// The OSM stand-in, greyed like the Stadia map: light, or inverted to dark (low and high brightness
+// swapped). Paint on the base layer only, so the rain radar keeps its colours.
+const MUTED: Record<"light" | "dark", RasterLayerSpecification["paint"]> = {
+  light: { "raster-saturation": -0.94, "raster-contrast": -0.14 },
+  dark: { "raster-saturation": -1, "raster-brightness-min": 0.7, "raster-brightness-max": 0, "raster-contrast": -0.08 },
+};
+
+const isDark = () => document.documentElement.dataset.theme === "dark";
 // Stadia serves registered domains and localhost without a key (client.stadiamaps.com); anywhere
 // else its tiles are a "401 Invalid Authentication" image.
-const stadiaStyle = () => `https://tiles.stadiamaps.com/styles/alidade_smooth${document.documentElement.dataset.theme === "dark" ? "_dark" : ""}.json`;
+const stadiaStyle = () => `https://tiles.stadiamaps.com/styles/alidade_smooth${isDark() ? "_dark" : ""}.json`;
 const STADIA_PROBE = "https://tiles.stadiamaps.com/tiles/alidade_smooth/0/0/0.png";
 
-// RainViewer serves radar tiles up to zoom 7 ("Zoom Level Not Supported" above); Leaflet scales them.
+function rasterStyle(b: (typeof BASES)[BaseId]): StyleSpecification {
+  return {
+    version: 8,
+    sources: { base: { type: "raster", tiles: [b.url], tileSize: 256, maxzoom: b.maxZoom, attribution: b.attribution } },
+    layers: [{ id: "base", type: "raster", source: "base", paint: b.muted ? MUTED[isDark() ? "dark" : "light"] : {} }],
+  };
+}
+
+// RainViewer serves radar tiles up to zoom 7 ("Zoom Level Not Supported" above); MapLibre scales them.
 const RADAR_INDEX = "https://api.rainviewer.com/public/weather-maps.json";
 const RADAR_MAX_NATIVE_ZOOM = 7;
 const STORAGE_KEY = "ridecast.layers";
@@ -67,51 +81,38 @@ interface RadarIndex {
 
 // Google Maps style "Katmanlar" panel: base map (map, satellite, terrain) and a rain radar overlay.
 // `labels`: the map label switches on the settings page.
-export function bindLayers(map: L.Map, button: HTMLElement, panel: HTMLElement, labels: HTMLElement) {
+export function bindLayers(gl: GLMap, button: HTMLElement, panel: HTMLElement, labels: HTMLElement) {
   const saved = load();
-  let base: L.Layer = L.layerGroup();
-  let gl: GLMap | null = null; // the Stadia map while it shows
   let stadia = true; // false once Stadia refused this site: the map is OSM
-  let shownUrl = "";
-  let pending = 0; // bumps on every base change, so a late MapLibre load cannot undo a newer one
-  let radar: L.TileLayer | null = null;
-  // The vector map sits in its own pane under the tile pane, so radar tiles stay above it.
-  map.createPane("vector-base").style.zIndex = "150";
+  let shown = ""; // what the base shows: the Stadia style URL, or base id and theme
+  let radar: { url: string; attribution: string; time: string } | null = null;
+  let radarError = "";
 
   function applyLabels() {
-    if (!gl) return;
+    if (!shown.startsWith("https://")) return; // only the Stadia map has label layers
     for (const layer of gl.getStyle().layers) {
       const kind = (Object.keys(LABEL_LAYERS) as LabelKind[]).find((k) => LABEL_LAYERS[k].test(layer.id));
       if (kind) gl.setLayoutProperty(layer.id, "visibility", saved.labels[kind] ? "visible" : "none");
     }
   }
 
-  function showTiles(b: (typeof BASES)[BaseId]) {
-    shownUrl = b.url;
-    const tiles = L.tileLayer(b.url, { maxZoom: b.maxZoom, maxNativeZoom: b.maxZoom, attribution: b.attribution, className: b.className }).addTo(map);
-    tiles.bringToBack();
-    base = tiles;
+  // The radar lives in the style, so every new base style gets it again.
+  function addRadar() {
+    if (!radar || gl.getSource("radar")) return;
+    gl.addSource("radar", { type: "raster", tiles: [radar.url], tileSize: 256, maxzoom: RADAR_MAX_NATIVE_ZOOM, attribution: radar.attribution });
+    gl.addLayer({ id: "radar", type: "raster", source: "radar", paint: { "raster-opacity": 0.7 } });
   }
+  gl.on("style.load", () => {
+    applyLabels();
+    addRadar();
+  });
 
+  const wanted = (id: BaseId) => (id === "map" && stadia ? stadiaStyle() : `${id}:${BASES[id].muted && isDark() ? "dark" : "light"}`);
   function setBase(id: BaseId) {
     const b = BASES[id];
-    const mine = ++pending;
-    base.remove();
-    gl = null;
-    if (id === "map" && stadia) {
-      shownUrl = stadiaStyle();
-      import("./vectorMap").then(
-        ({ maplibreGL }) => {
-          if (mine !== pending) return;
-          const layer = maplibreGL({ style: shownUrl, pane: "vector-base" } as L.LeafletMaplibreGLOptions).addTo(map);
-          gl = layer.getMaplibreMap();
-          gl.on("style.load", applyLabels);
-          base = layer;
-        },
-        () => mine === pending && showTiles(b), // offline before MapLibre was ever loaded: OSM
-      );
-    } else showTiles(b);
-    map.setMaxZoom(b.maxZoom);
+    shown = wanted(id);
+    gl.setStyle(shown.startsWith("https://") ? shown : rasterStyle(b), { diff: false });
+    gl.setMaxZoom(b.maxZoom - 1); // MapLibre zoom: 512 px tiles
     saved.base = id;
     save(saved);
     render();
@@ -120,28 +121,29 @@ export function bindLayers(map: L.Map, button: HTMLElement, panel: HTMLElement, 
   async function setRadar(on: boolean) {
     saved.radar = on;
     save(saved);
-    radar?.remove();
     radar = null;
+    radarError = "";
+    if (gl.getLayer("radar")) gl.removeLayer("radar");
+    if (gl.getSource("radar")) gl.removeSource("radar");
     render();
     if (!on) return;
     try {
       const idx = await getJson<RadarIndex>(RADAR_INDEX, 10000, true);
       const last = idx.radar.past[idx.radar.past.length - 1];
       if (!saved.radar || !last) return;
-      radar = L.tileLayer(`${idx.host}${last.path}/256/{z}/{x}/{y}/2/1_1.png`, {
-        maxNativeZoom: RADAR_MAX_NATIVE_ZOOM,
-        maxZoom: 19,
-        opacity: 0.7,
-        className: "radar-layer",
+      radar = {
+        url: `${idx.host}${last.path}/256/{z}/{x}/{y}/2/1_1.png`,
         attribution: `Radar <a href="https://www.rainviewer.com/">RainViewer</a> · ${formatClock(last.time * 1000)}`,
-      }).addTo(map);
-      render(formatClock(last.time * 1000));
+        time: formatClock(last.time * 1000),
+      };
+      if (gl.isStyleLoaded()) addRadar(); // else style.load adds it
     } catch {
-      render(undefined, t.layers.radarFailed);
+      radarError = t.layers.radarFailed;
     }
+    render();
   }
 
-  function render(radarTime?: string, radarError?: string) {
+  function render() {
     panel.replaceChildren();
     const title = document.createElement("h2");
     title.className = "layers-title";
@@ -167,7 +169,7 @@ export function bindLayers(map: L.Map, button: HTMLElement, panel: HTMLElement, 
     const text = document.createElement("span");
     text.textContent = t.layers.radar;
     const note = document.createElement("small");
-    note.textContent = radarError ?? (saved.radar ? (radarTime ? t.layers.radarAt(radarTime) : t.layers.radarLoading) : t.layers.radarIdle);
+    note.textContent = radarError || (saved.radar ? (radar ? t.layers.radarAt(radar.time) : t.layers.radarLoading) : t.layers.radarIdle);
     toggle.append(box, text, note);
     panel.append(title, row, toggle);
   }
@@ -192,7 +194,7 @@ export function bindLayers(map: L.Map, button: HTMLElement, panel: HTMLElement, 
 
   // The dark or light map follows the theme (also the light theme while riding).
   new MutationObserver(() => {
-    if (saved.base === "map" && stadia && stadiaStyle() !== shownUrl) setBase("map");
+    if (wanted(saved.base) !== shown) setBase(saved.base);
   }).observe(document.documentElement, { attributeFilter: ["data-theme"] });
 
   // Label switches on the settings page: not trip settings, so the settings form must not plan again.

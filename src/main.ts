@@ -1,5 +1,5 @@
 import "@fontsource-variable/geist";
-import "leaflet/dist/leaflet.css";
+import "maplibre-gl/dist/maplibre-gl.css"; // before ours, which override it
 import "./style.css";
 import { lang, setLang, translatePage, type Lang } from "./i18n";
 import { startApp } from "./ui/app";

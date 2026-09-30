@@ -117,7 +117,18 @@
   }
 }
 
-.wx-popup .leaflet-popup-content-wrapper {
+/* Cards open over every marker (markers carry z-index 1-6, map.ts). */
+.maplibregl-popup {
+  z-index: 10;
+}
+
+.wx-popup .maplibregl-popup-content {
+  min-width: 240px;
+  padding: 16px 18px;
+  font: inherit;
+  line-height: 1.38;
+  animation: grow-in 0.3s var(--ease-out);
+  transform-origin: bottom center;
   background: var(--material);
   backdrop-filter: blur(28px) saturate(160%);
   -webkit-backdrop-filter: blur(28px) saturate(160%);
@@ -126,19 +137,8 @@
   box-shadow: var(--shadow);
 }
 
-.wx-popup .leaflet-popup-content {
-  margin: 16px 18px;
-  font: inherit;
-  line-height: 1.38;
-}
-
-.wx-popup .leaflet-popup-tip {
-  background: var(--material);
-}
-
-.wx-popup {
-  animation: grow-in 0.3s var(--ease-out);
-  transform-origin: bottom center;
+.wx-popup .maplibregl-popup-tip {
+  border-top-color: var(--material);
 }
 
 .wx-head {

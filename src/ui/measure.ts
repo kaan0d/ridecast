@@ -1,38 +1,38 @@
 import { t } from "../i18n";
-import L from "leaflet";
-import { fromLatLng, toLatLng, type LatLon } from "../core/geo";
+import { fromLngLat, type LatLon } from "../core/geo";
 import { lineLength, makeLine } from "../core/route/line";
 import { formatKm } from "./format";
 import { icons } from "./icons";
+import type { MapView } from "./map";
 
 // "Mesafe ölç", as in Google Maps: each map click adds a point, points can be dragged, clicking a
 // point removes it; a card shows the total. While active, map clicks belong to the tool.
-export function createMeasure(map: L.Map, card: HTMLElement) {
-  const layer = L.layerGroup();
+export function createMeasure(map: MapView, card: HTMLElement) {
+  const layer = map.overlay();
+  let markers: ReturnType<MapView["marker"]>[] = [];
   let points: LatLon[] = [];
   let active = false;
 
   function draw() {
-    layer.clearLayers();
-    if (points.length > 1) L.polyline(points.map(toLatLng), { weight: 3, className: "measure-line", interactive: false }).addTo(layer);
-    points.forEach((p, i) => {
-      const m = L.marker(toLatLng(p), {
-        icon: L.divIcon({ className: "measure-point", iconSize: [14, 14] }),
-        draggable: true,
-        title: t.measure.pointTitle,
-        zIndexOffset: 1200,
-      }).addTo(layer);
-      m.on("drag", () => {
-        points[i] = fromLatLng(m.getLatLng());
-        const line = layer.getLayers().find((l) => l instanceof L.Polyline) as L.Polyline | undefined;
-        line?.setLatLngs(points.map(toLatLng));
-        text();
-      });
-      m.on("dragend", draw);
-      m.on("click", () => {
+    layer.clear();
+    markers.forEach((m) => m.remove());
+    const line = points.length > 1 ? layer.line(points, "measure-line", 3) : null;
+    markers = points.map((p, i) => {
+      const node = document.createElement("div");
+      node.className = "measure-point";
+      node.style.width = node.style.height = "14px";
+      node.addEventListener("click", () => {
         points.splice(i, 1);
         draw();
       });
+      const m = map.marker(p, node, { draggable: true, z: map.Z.measure, title: t.measure.pointTitle }).addTo(map.gl);
+      m.on("drag", () => {
+        points[i] = fromLngLat(m.getLngLat());
+        if (line) layer.move(line, points);
+        text();
+      });
+      m.on("dragend", draw);
+      return m;
     });
     text();
   }
@@ -46,18 +46,17 @@ export function createMeasure(map: L.Map, card: HTMLElement) {
   function start(p: LatLon) {
     active = true;
     points = [p];
-    layer.addTo(map);
     card.hidden = false;
-    map.getContainer().classList.add("measuring");
+    map.gl.getContainer().classList.add("measuring");
     draw();
   }
 
   function stop() {
     active = false;
     points = [];
-    layer.remove();
+    draw();
     card.hidden = true;
-    map.getContainer().classList.remove("measuring");
+    map.gl.getContainer().classList.remove("measuring");
   }
 
   card.querySelector(".measure-clear")!.addEventListener("click", () => {

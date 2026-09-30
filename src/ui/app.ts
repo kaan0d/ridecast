@@ -134,8 +134,8 @@ export function startApp() {
     },
     onRouteDrag,
   });
-  const measure = createMeasure(map.leaflet, $("measure"));
-  bindLayers(map.leaflet, $("layers"), $("layers-panel"), $("map-labels"));
+  const measure = createMeasure(map, $("measure"));
+  bindLayers(map.gl, $("layers"), $("layers-panel"), $("map-labels"));
   const actions = bindMapActions({
     map,
     measure,
