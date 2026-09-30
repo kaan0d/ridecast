@@ -51,6 +51,9 @@ export function bindSheet(onBack: () => void) {
     sheet.classList.toggle("compact", !exp && !routed);
     grab.setAttribute("aria-expanded", String(exp));
     grab.querySelector(".sr-only")!.textContent = exp ? t.sheet.collapse : t.sheet.expand;
+    // Collapsed, the sheet's lower part is below the screen: the body gets that much extra room at
+    // its end, so its last rows still scroll into view. Before peekPx, which reads the padding.
+    sheet.style.setProperty("--sheet-hidden", exp || sheet.classList.contains("compact") ? "0px" : `${maxOffset()}px`);
     setOffset(exp ? 0 : maxOffset());
     document.documentElement.style.setProperty("--sheet-inset", phone.matches ? `${peekPx()}px` : "0px");
   }
