@@ -1,0 +1,152 @@
+/* ridecast: the ride as a timetable. Every weather point is a station with its own arrival time;
+   the panel is a printed sheet over a muted map, not a stack of cards. One ink, one signal red
+   (disruption, the clock hand), amber and orange below it. Risk is a mark and a hue: ring, dot,
+   diamond. Soft grounds, no pure black or white. data-theme on <html> is set before the first
+   paint (index.html) and switched on the settings page (ui/theme.ts). */
+
+:root {
+  --ground: #e9e9e5;
+  --paper: #fafaf8;
+  --raised: #ffffff;
+  --ink: #141517;
+  --ink-2: #5a5e64;
+  --ink-3: #6f7379;
+  --on-ink: #fafaf8;
+  --rule: #deded9;
+  --fill: #ecece8;
+  --fill-2: #e2e2dd;
+  --thumb: #ffffff; /* selected segment */
+  --material: rgb(250 250 248 / 0.94);
+  --shadow: 0 24px 60px -12px rgb(20 21 23 / 0.22), 0 4px 14px -4px rgb(20 21 23 / 0.12);
+  --shadow-small: 0 6px 18px -6px rgb(20 21 23 / 0.28), 0 1px 3px rgb(20 21 23 / 0.1);
+  --route: #141517;
+  --route-casing: #fafaf8;
+  --alt: #a4a7a3;
+  --signal: #dc2a1f;
+  --risk-1: #c99400;
+  --risk-2: #e2650f;
+  --risk-3: var(--signal);
+  --error: #c4271d;
+  --focus: #1f6feb;
+  --map-filter: grayscale(0.94) contrast(0.86) brightness(1.03);
+
+  --radius-sheet: 24px;
+  --radius-card: 16px;
+  --radius-control: 11px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --ease-draw: cubic-bezier(0.65, 0, 0.35, 1);
+  --sheet-inset: 0px; /* map area covered by the sheet, set by sheet.ts */
+
+  color-scheme: light;
+  font-family: "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  font-size: 100%;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "ss01", "tnum";
+  line-height: 1.38;
+  -webkit-font-smoothing: antialiased;
+  accent-color: var(--ink);
+  caret-color: var(--focus);
+  view-transition-name: none;
+}
+
+:root[data-theme="dark"] {
+  --ground: #0e0f11;
+  --paper: #17181b;
+  --raised: #1f2024;
+  --ink: #ecece9;
+  --ink-2: #a4a8ae;
+  --ink-3: #8b9096;
+  --on-ink: #141517;
+  --rule: #2b2d31;
+  --fill: #242629;
+  --fill-2: #2e3034;
+  --thumb: #45484e;
+  --material: rgb(23 24 27 / 0.94);
+  --shadow: 0 24px 60px -12px rgb(0 0 0 / 0.6), 0 4px 14px -4px rgb(0 0 0 / 0.45);
+  --shadow-small: 0 6px 18px -6px rgb(0 0 0 / 0.7), 0 1px 3px rgb(0 0 0 / 0.4);
+  --route: #ecece9;
+  --route-casing: #0e0f11;
+  --alt: #5c6066;
+  --signal: #ff4a3d;
+  --risk-1: #f2b632;
+  --risk-2: #ff8a3a;
+  --error: #ff6b61;
+  --focus: #5a9dff;
+  --map-filter: invert(1) hue-rotate(180deg) grayscale(1) brightness(0.7) contrast(0.92);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--focus) 26%, transparent);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+ol,
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+  font-feature-settings: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* Scrollbars and native pickers carry the palette too. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fill-2) transparent;
+}

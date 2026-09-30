@@ -1,0 +1,150 @@
+/* ---------- Breaks ---------- */
+
+.break-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0 8px;
+  padding: 11px 8px 11px 16px;
+}
+
+.break-row + .break-row {
+  border-top: 1px solid var(--rule);
+}
+
+.break-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* The same platform-number square as the map marker. */
+.break-title::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 9px;
+  background: var(--ink);
+}
+
+.break-info {
+  grid-column: 1;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+.break-duration {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.break-duration input {
+  width: 4em;
+  text-align: right;
+  color: var(--ink);
+}
+
+.break-row .icon-btn {
+  grid-row: 1 / span 2;
+  grid-column: 3;
+}
+
+.break-night {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+.break-duration input[type="time"] {
+  width: auto;
+}
+
+.break-list .empty {
+  padding: 13px 16px;
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+}
+
+.auto-breaks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--rule);
+  font-size: 0.9375rem;
+}
+
+.auto-breaks input[type="number"] {
+  width: 4.5em;
+}
+
+.button-secondary {
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-weight: 650;
+  font-size: 0.9375rem;
+  transition: transform 0.35s var(--ease-spring);
+}
+
+/* Compact search bar: collapsed with no route (sheet.ts). Only the trip card's last row shows,
+   plus the status line when it has a message. */
+.sheet.compact .sheet-body > :not(.trip, #status),
+.sheet.compact .trip > :not(.trip-stops),
+.sheet.compact .stop-row:not(:last-child),
+.sheet.compact .trip-stops::before {
+  display: none;
+}
+
+.sheet.compact .trip .trip-stops {
+  margin-right: 0;
+}
+
+.sheet.compact .stop-row .place-input input {
+  border-top: none;
+}
+
+.sheet.compact .stop-glyph {
+  pointer-events: none;
+}
+
+@media (min-width: 721px) {
+  .sheet.compact {
+    bottom: auto;
+  }
+
+  .sheet.compact .sheet-body {
+    padding: 8px;
+  }
+
+  .sheet.compact .trip {
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .sheet.compact .stop-row {
+    background: transparent;
+  }
+}
+
+/* First arrival of the search bar on the bare map. */
+.sheet.compact {
+  animation: bar-in 0.7s var(--ease-out) 0.25s backwards;
+}
+
+@keyframes bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.97);
+    filter: blur(6px);
+  }
+}
