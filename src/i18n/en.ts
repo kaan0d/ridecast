@@ -84,6 +84,8 @@ export const en = {
     radarLoading: "loading…",
     radarAt: (time: string) => `latest image ${time}`,
     radarFailed: "Radar not available.",
+    radarFrame: (time: string) => `image ${time}`,
+    radarPlay: (h: number) => `Play the last ${h} h`,
   },
 
   measure: {

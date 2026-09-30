@@ -72,6 +72,9 @@ function rasterStyle(b: (typeof BASES)[BaseId]): StyleSpecification {
 // RainViewer serves radar tiles up to zoom 7 ("Zoom Level Not Supported" above); MapLibre scales them.
 const RADAR_INDEX = "https://api.rainviewer.com/public/weather-maps.json";
 const RADAR_MAX_NATIVE_ZOOM = 7;
+const RADAR_OPACITY = 0.7;
+const RADAR_STEP_MS = 500; // one frame per step while playing
+const RADAR_HOLD_STEPS = 3; // the latest frame stays this many steps before the loop starts again
 const STORAGE_KEY = "ridecast.layers";
 
 interface RadarIndex {
@@ -85,8 +88,11 @@ export function bindLayers(gl: GLMap, button: HTMLElement, panel: HTMLElement, l
   const saved = load();
   let stadia = true; // false once Stadia refused this site: the map is OSM
   let shown = ""; // what the base shows: the Stadia style URL, or base id and theme
-  let radar: { url: string; attribution: string; time: string } | null = null;
+  // Frames oldest first; only the latest is loaded until the loop is played (every frame is a tile set).
+  let radar: { frames: { url: string; time: string }[]; attribution: string; at: number; all: boolean; spanH: number } | null = null;
   let radarError = "";
+  let playing = 0; // interval id while the loop plays
+  let note: HTMLElement | null = null;
 
   function applyLabels() {
     if (!shown.startsWith("https://")) return; // only the Stadia map has label layers
@@ -96,11 +102,40 @@ export function bindLayers(gl: GLMap, button: HTMLElement, panel: HTMLElement, l
     }
   }
 
-  // The radar lives in the style, so every new base style gets it again.
+  // The radar lives in the style, so every new base style gets it again. One source and layer per
+  // frame; the loop only changes which one is visible, so played frames are not fetched again.
+  const frameId = (k: number) => `radar-${k}`;
   function addRadar() {
-    if (!radar || gl.getSource("radar")) return;
-    gl.addSource("radar", { type: "raster", tiles: [radar.url], tileSize: 256, maxzoom: RADAR_MAX_NATIVE_ZOOM, attribution: radar.attribution });
-    gl.addLayer({ id: "radar", type: "raster", source: "radar", paint: { "raster-opacity": 0.7 } });
+    if (!radar) return;
+    const r = radar;
+    r.frames.forEach((f, k) => {
+      if ((!r.all && k !== r.frames.length - 1) || gl.getSource(frameId(k))) return;
+      gl.addSource(frameId(k), { type: "raster", tiles: [f.url], tileSize: 256, maxzoom: RADAR_MAX_NATIVE_ZOOM, attribution: r.attribution });
+      gl.addLayer({ id: frameId(k), type: "raster", source: frameId(k), paint: { "raster-opacity": k === r.at ? RADAR_OPACITY : 0, "raster-fade-duration": 0 } });
+    });
+  }
+  function removeRadar() {
+    for (const layer of gl.getStyle()?.layers ?? []) if (layer.id.startsWith("radar-")) gl.removeLayer(layer.id);
+    for (const id of Object.keys(gl.getStyle()?.sources ?? {})) if (id.startsWith("radar-")) gl.removeSource(id);
+  }
+  function showFrame(k: number) {
+    if (!radar) return;
+    radar.at = k;
+    radar.frames.forEach((_, j) => gl.getLayer(frameId(j)) && gl.setPaintProperty(frameId(j), "raster-opacity", j === k ? RADAR_OPACITY : 0));
+    if (note) note.textContent = (k === radar.frames.length - 1 ? t.layers.radarAt : t.layers.radarFrame)(radar.frames[k].time);
+  }
+  function play(on: boolean) {
+    clearInterval(playing);
+    playing = 0;
+    if (!radar) return;
+    const n = radar.frames.length;
+    if (on) {
+      radar.all = true;
+      addRadar();
+      let step = 0;
+      showFrame(0);
+      playing = setInterval(() => showFrame(Math.min(++step % (n + RADAR_HOLD_STEPS), n - 1)), RADAR_STEP_MS);
+    } else showFrame(n - 1);
   }
   gl.on("style.load", () => {
     applyLabels();
@@ -121,20 +156,22 @@ export function bindLayers(gl: GLMap, button: HTMLElement, panel: HTMLElement, l
   async function setRadar(on: boolean) {
     saved.radar = on;
     save(saved);
+    play(false);
     radar = null;
     radarError = "";
-    if (gl.getLayer("radar")) gl.removeLayer("radar");
-    if (gl.getSource("radar")) gl.removeSource("radar");
+    removeRadar();
     render();
     if (!on) return;
     try {
       const idx = await getJson<RadarIndex>(RADAR_INDEX, 10000, true);
-      const last = idx.radar.past[idx.radar.past.length - 1];
-      if (!saved.radar || !last) return;
+      const past = idx.radar.past;
+      if (!saved.radar || !past.length) return;
       radar = {
-        url: `${idx.host}${last.path}/256/{z}/{x}/{y}/2/1_1.png`,
-        attribution: `Radar <a href="https://www.rainviewer.com/">RainViewer</a> · ${formatClock(last.time * 1000)}`,
-        time: formatClock(last.time * 1000),
+        frames: past.map((f) => ({ url: `${idx.host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`, time: formatClock(f.time * 1000) })),
+        attribution: `Radar <a href="https://www.rainviewer.com/">RainViewer</a> · ${formatClock(past[past.length - 1].time * 1000)}`,
+        at: past.length - 1,
+        all: false,
+        spanH: Math.max(1, Math.round((past[past.length - 1].time - past[0].time) / 3600)),
       };
       if (gl.isStyleLoaded()) addRadar(); // else style.load adds it
     } catch {
@@ -168,10 +205,24 @@ export function bindLayers(gl: GLMap, button: HTMLElement, panel: HTMLElement, l
     box.addEventListener("change", () => void setRadar(box.checked));
     const text = document.createElement("span");
     text.textContent = t.layers.radar;
-    const note = document.createElement("small");
-    note.textContent = radarError || (saved.radar ? (radar ? t.layers.radarAt(radar.time) : t.layers.radarLoading) : t.layers.radarIdle);
+    note = document.createElement("small");
+    note.textContent = radarError || (saved.radar ? (radar ? t.layers.radarAt(radar.frames[radar.at].time) : t.layers.radarLoading) : t.layers.radarIdle);
     toggle.append(box, text, note);
     panel.append(title, row, toggle);
+    // Where the rain is heading: the past frames in a loop.
+    if (radar && radar.frames.length > 1) {
+      const r = radar;
+      const loop = document.createElement("button");
+      loop.type = "button";
+      loop.className = "layers-play";
+      loop.setAttribute("aria-pressed", String(playing !== 0));
+      loop.textContent = t.layers.radarPlay(r.spanH);
+      loop.addEventListener("click", () => {
+        play(!playing);
+        loop.setAttribute("aria-pressed", String(playing !== 0));
+      });
+      panel.append(loop);
+    }
   }
 
   const open = (on: boolean) => {
