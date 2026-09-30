@@ -4,6 +4,7 @@ import type { Assessment, Level, RoadState } from "../core/risk/risk";
 import { compassIndex, conditionOf, type Condition, type WeatherHour } from "../core/weather/weather";
 import { t } from "../i18n";
 import type { LatLon } from "../core/geo";
+import { fetchModelRange } from "../services/ensemble";
 import { formatClock } from "./format";
 import { icons, type WeatherIcon } from "./icons";
 
@@ -13,6 +14,7 @@ export interface WeatherPoint {
   etaMs: number;
   hour: WeatherHour | null; // null: no forecast for that time
   risk: Assessment | null;
+  heightM?: number; // road height the temperatures are for
 }
 
 export const LEVEL_LABEL = t.level;
@@ -52,8 +54,27 @@ export function pinHtml(p: WeatherPoint): string {
     : `<span class="wx-pin wx-none"><span class="wx-tag">–</span></span>`;
 }
 
+// The card as an element, with the model range added once it arrives (asked only for opened cards).
+export function cardNode(p: WeatherPoint): HTMLElement {
+  const box = document.createElement("div");
+  box.innerHTML = cardHtml(p);
+  const card = box.firstElementChild as HTMLElement;
+  const h = p.hour;
+  if (h)
+    fetchModelRange(p.pos, h.timeMs, p.heightM)
+      .then((r) => {
+        if (!r) return;
+        const row = document.createElement("div");
+        const mm = (v: number) => v.toFixed(1);
+        row.innerHTML = `<dt>${t.weather.modelRange(r.runs)}</dt><dd>${deg(r.tempC.lo)}–${deg(r.tempC.hi)} · ${mm(r.precipMm.lo)}–${mm(r.precipMm.hi)} mm</dd>`;
+        card.querySelector(".wx-rows")?.append(row);
+      })
+      .catch(() => {}); // the card is complete without it
+  return card;
+}
+
 // Card shown when a capsule is opened.
-export function cardHtml(p: WeatherPoint): string {
+function cardHtml(p: WeatherPoint): string {
   const head = `<div class="wx-head"><span>${t.weather.arrival(formatClock(p.etaMs))}</span><span>${km(p.distM)}</span></div>`;
   const h = p.hour;
   if (!h) return `<div class="wx-card">${head}<p class="wx-empty">${t.weather.noForecast}</p></div>`;

@@ -161,6 +161,7 @@ export const tr: Messages = {
     feelsLike: "Hissedilen",
     ridingFeel: "Sürüşte hissedilen",
     ground: "Zemin",
+    modelRange: (runs) => `${runs} model çalıştırmasının aralığı`,
     precip: "Yağış",
     snow: (cm) => `kar ${cm} cm`,
     wind: "Rüzgar",

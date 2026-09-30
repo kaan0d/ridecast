@@ -42,13 +42,13 @@ export function createForecast(deps: { view(i: number): RouteView; breaks(i: num
       const etaMs = etaAtDistance(tl, s.distM);
       const f = forecasts[k] ?? { hours: [] };
       const around = bracketHours(f.hours, etaMs, WEATHER_REQUEST.maxHourGapMin);
-      if (!around.length) return { ...s, etaMs, hour: null, risk: null };
+      if (!around.length) return { ...s, etaMs, hour: null, risk: null, heightM: f.heightM };
       const rideKmh = speedAtDistance(tl, s.distM);
       const headingDeg = bearingAt(line, s.distM / scale);
       const worst = around
         .map((i) => ({ i, risk: assessPoint({ hours: f.hours, i, etaMs, rideKmh, headingDeg, pos: s.pos }, RISK[vehicle], WET_ROAD, GLARE, t.risk) }))
         .reduce((a, b) => (b.risk.level > a.risk.level ? b : a));
-      return { ...s, etaMs, hour: f.hours[worst.i], risk: worst.risk };
+      return { ...s, etaMs, hour: f.hours[worst.i], risk: worst.risk, heightM: f.heightM };
     });
   }
 

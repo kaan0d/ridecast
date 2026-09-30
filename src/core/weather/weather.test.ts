@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { atHeight, bracketHours, compassIndex, conditionOf, sampleDistances, type WeatherHour } from "./weather";
+import { atHeight, bracketHours, spread, compassIndex, conditionOf, sampleDistances, type WeatherHour } from "./weather";
 
 describe("sampleDistances", () => {
   test("one point per interval of driving time, start and end included", () => {
@@ -87,5 +87,17 @@ describe("atHeight", () => {
     expect(atHeight({ hours: [{ ...h, groundC: null }], heightM: 800 }, 600, 6.5).hours[0].groundC).toBeNull();
     const bare = { hours: [h] };
     expect(atHeight(bare, 600, 6.5)).toBe(bare);
+  });
+});
+
+describe("spread", () => {
+  test("10th and 90th percentile by nearest rank; missing values left out", () => {
+    const v = [5, 1, 9, 3, 7, 2, 8, 4, 6, 10]; // 1..10
+    expect(spread(v, 10, 90)).toEqual({ lo: 1, hi: 9 });
+    expect(spread([...v, NaN], 10, 90)).toEqual({ lo: 1, hi: 9 });
+    // 31 runs: the 4th lowest and the 28th
+    const runs = Array.from({ length: 31 }, (_, i) => i);
+    expect(spread(runs, 10, 90)).toEqual({ lo: 3, hi: 27 });
+    expect(spread([4], 10, 90)).toEqual({ lo: 4, hi: 4 });
   });
 });

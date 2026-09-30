@@ -164,6 +164,7 @@ export const en = {
     feelsLike: "Feels like",
     ridingFeel: "Felt while riding",
     ground: "Ground",
+    modelRange: (runs: number) => `Range of ${runs} model runs`,
     precip: "Precipitation",
     snow: (cm: string) => `snow ${cm} cm`,
     wind: "Wind",
