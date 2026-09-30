@@ -95,6 +95,7 @@ export const tr: Messages = {
     vehicles: { motorcycle: "Motosiklet", car: "Araba", bicycle: "Bisiklet", walking: "Yürüyüş" },
     pickDeparture: "Çıkış tarihi ve saati seçin.",
     speedError: (min, max) => `Hız ${min}-${max} km/sa arasında olmalı.`,
+    scrub: (depart, arrive) => `Çıkış ${depart}, varış ${arrive}`,
   },
 
   summary: {
@@ -355,6 +356,7 @@ export const tr: Messages = {
     dateTime: "Tarih ve saat",
     bestTime: "En iyi saat",
     departureDateTime: "Çıkış tarihi ve saati",
+    departureSlider: "Çıkışı kaydır",
     breaks: "Molalar",
     breaksHint: "Seçili rotaya dokunarak mola ekle, işaretini sürükleyerek taşı.",
     every: "Her",

@@ -325,3 +325,26 @@ input:invalid {
 .group .footnote {
   margin: 8px 16px 10px;
 }
+
+/* Departure slider: drag to see the ride at another departure (app.ts previews, release plans). */
+.depart-scrub {
+  display: grid;
+  gap: 6px;
+  padding: 4px 12px 12px;
+}
+
+.depart-scrub[hidden] {
+  display: none;
+}
+
+.depart-scrub-text {
+  font-size: 0.875rem;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.depart-scrub input {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--ink);
+}
