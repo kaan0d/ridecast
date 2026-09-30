@@ -82,6 +82,7 @@ export const WET_ROAD = {
   wetNowMm: 0.5,
   wetRecentMm: 1.5,
   dampRecentMm: 0.2,
+  iceGroundC: 0, // a wet road freezes when the ground surface is at or below this, whatever the air
 };
 
 // A break gets advice when rain starts within it, or stops within this many minutes after it.

@@ -69,6 +69,7 @@ export function cardHtml(p: WeatherPoint): string {
     <dl class="wx-rows">
       <div><dt>${t.weather.feelsLike}</dt><dd>${deg(h.feelsC)}</dd></div>
       ${p.risk ? `<div><dt>${t.weather.ridingFeel}</dt><dd>${deg(p.risk.feltC)}</dd></div>` : ""}
+      ${h.groundC == null ? "" : `<div><dt>${t.weather.ground}</dt><dd>${deg(h.groundC)}</dd></div>`}
       <div><dt>${t.weather.precip}</dt><dd>${precip}</dd></div>
       <div><dt>${t.weather.wind}</dt><dd>${wind}</dd></div>
       <div><dt>${t.weather.visibility}</dt><dd>${vis}</dd></div>

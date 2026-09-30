@@ -37,6 +37,7 @@ export interface WetRoadRules {
   wetNowMm: number;
   wetRecentMm: number;
   dampRecentMm: number;
+  iceGroundC: number;
 }
 
 // Warning texts in the UI language (src/i18n); core only decides levels and numbers.
@@ -109,7 +110,8 @@ export function roadState(hours: WeatherHour[], i: number, rules: WetRoadRules, 
   for (let k = Math.max(0, i - rules.recentHours + 1); k <= i; k++) recent += hours[k].precipMm;
   const wet = now.precipMm >= rules.wetNowMm || recent >= rules.wetRecentMm;
   const damp = now.precipMm > 0 || recent >= rules.dampRecentMm || now.snowCm > 0;
-  if ((wet || damp) && now.tempC <= iceTempC) return "ice";
+  const iced = now.tempC <= iceTempC || (now.groundC != null && now.groundC <= rules.iceGroundC);
+  if ((wet || damp) && iced) return "ice";
   return wet ? "wet" : damp ? "damp" : "dry";
 }
 
@@ -154,9 +156,11 @@ export function assessPoint(p: PointInput, t: RiskThresholds, wet: WetRoadRules,
   add("visibility", vis, tx.visibility(h.visibilityM / 1000, fog));
 
   const road = roadState(p.hours, p.i, wet, t.iceTempC);
-  if (road === "ice") add("ice", 3, tx.ice(h.tempC));
+  // A clear night can cool the ground below the air: the colder of the two decides.
+  const coldC = Math.min(h.tempC, h.groundC ?? h.tempC);
+  if (road === "ice") add("ice", 3, tx.ice(coldC));
   else {
-    if (h.tempC <= t.nearFreezingC) add("ice", 2, tx.nearFreezing(h.tempC));
+    if (coldC <= t.nearFreezingC) add("ice", 2, tx.nearFreezing(coldC));
     if (road === "wet") add("road", t.road.wet, tx.wetRoad);
     if (road === "damp") add("road", t.road.damp, tx.dampRoad);
   }

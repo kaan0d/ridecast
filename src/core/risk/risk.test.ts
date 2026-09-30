@@ -39,7 +39,7 @@ const moto: RiskThresholds = {
   heatC: [30, 35, 40],
 };
 const car: RiskThresholds = { ...moto, rainMm: [1, 4, 10], rainProbPct: null, heatC: null, gustKmh: [50, 70, 90], coldC: null, windChill: false, dark: 1, road: { damp: 0, wet: 1 } };
-const wet = { recentHours: 3, wetNowMm: 0.5, wetRecentMm: 1.5, dampRecentMm: 0.2 };
+const wet = { recentHours: 3, wetNowMm: 0.5, wetRecentMm: 1.5, dampRecentMm: 0.2, iceGroundC: 0 };
 const glare = { maxElevationDeg: 15, maxAngleDeg: 30, maxCode: 2 };
 const POS = { lat: 41, lon: 29 };
 const at = (hours: WeatherHour[], i: number, t = moto, rideKmh = 90, headingDeg = 0) =>
@@ -77,6 +77,10 @@ describe("road state", () => {
     // rain four hours ago is outside the 3 hour window
     expect(roadState([hour(0, { precipMm: 5 }), hour(1), hour(2), hour(3)], 3, wet, 1)).toBe("dry");
     expect(roadState([hour(0), hour(1, { precipMm: 0.3, tempC: 0 })], 1, wet, 1)).toBe("ice");
+    // air 4° but the ground at -1° after a clear night: a damp road still freezes; a dry one does not
+    expect(roadState([hour(0), hour(1, { precipMm: 0.3, tempC: 4, groundC: -1 })], 1, wet, 1)).toBe("ice");
+    expect(roadState([hour(0), hour(1, { tempC: 4, groundC: -1 })], 1, wet, 1)).toBe("dry");
+    expect(roadState([hour(0), hour(1, { precipMm: 0.3, tempC: 4, groundC: 2 })], 1, wet, 1)).toBe("damp");
   });
 });
 

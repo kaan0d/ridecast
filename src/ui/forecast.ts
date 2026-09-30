@@ -2,14 +2,15 @@ import { t } from "../i18n";
 import { DEPARTURE } from "../config/departure";
 import { GLARE, RISK, RISK_WEIGHTS, WET_ROAD } from "../config/risk";
 import type { VehicleType } from "../config/vehicles";
-import { WEATHER_REQUEST, WEATHER_SAMPLE } from "../config/weather";
+import { LAPSE_C_PER_KM, WEATHER_REQUEST, WEATHER_SAMPLE } from "../config/weather";
 import { departureCandidates, type ScoredDeparture } from "../core/advice/departure";
 import { buildTimeline, etaAtDistance, speedAtDistance, type Break, type SpeedSetting, type Timeline } from "../core/eta/eta";
 import type { LatLon } from "../core/geo";
 import { assessPoint } from "../core/risk/risk";
 import { routeScore } from "../core/risk/route";
 import { bearingAt, pointAtDistance, type Line } from "../core/route/line";
-import { bracketHours, sampleDistances, type Forecast } from "../core/weather/weather";
+import { atHeight, bracketHours, sampleDistances, type Forecast } from "../core/weather/weather";
+import { fetchElevation } from "../services/elevation";
 import { fetchForecast } from "../services/openmeteo";
 import type { Route } from "../services/osrm";
 import type { WeatherPoint } from "./weather";
@@ -64,11 +65,12 @@ export function createForecast(deps: { view(i: number): RouteView; breaks(i: num
   async function pointsFor(i: number, tl: Timeline, vehicle: VehicleType, untilMs = 0) {
     const samples = samplesOf(i);
     const lastEta = etaAtDistance(tl, deps.view(i).route.distanceM);
-    const forecasts = await fetchForecast(
-      samples.map((p) => p.pos),
-      Math.max(lastEta, untilMs),
-      deps.fresh(),
-    );
+    // The road's own height, asked alongside; without it the grid point's temperatures stay.
+    const [raw, heights] = await Promise.all([
+      fetchForecast(samples.map((p) => p.pos), Math.max(lastEta, untilMs), deps.fresh()),
+      fetchElevation(samples.map((p) => p.pos)).catch(() => null),
+    ]);
+    const forecasts = heights ? raw.map((f, k) => atHeight(f, heights[k], LAPSE_C_PER_KM)) : raw;
     return { samples, forecasts, points: assess(i, tl, vehicle, samples, forecasts) };
   }
 

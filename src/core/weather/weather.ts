@@ -13,12 +13,25 @@ export interface WeatherHour {
   windFromDeg: number; // meteorological: direction the wind comes from
   visibilityM: number;
   isDay: boolean;
+  groundC?: number | null; // ground surface temperature (soil at 0 cm); missing in older data
 }
 
 export type WeatherSeries = WeatherHour[]; // sorted by time
 
 export interface Forecast {
   hours: WeatherSeries;
+  heightM?: number; // height the temperatures are for (the grid point's terrain)
+}
+
+// Temperatures moved from the forecast's height to the road's: `lapseCPerKm` warmer per km lower.
+export function atHeight(f: Forecast, roadM: number, lapseCPerKm: number): Forecast {
+  if (f.heightM === undefined || !Number.isFinite(roadM)) return f;
+  const d = ((f.heightM - roadM) * lapseCPerKm) / 1000;
+  if (!d) return f;
+  return {
+    heightM: roadM,
+    hours: f.hours.map((h) => ({ ...h, tempC: h.tempC + d, feelsC: h.feelsC + d, groundC: h.groundC == null ? h.groundC : h.groundC + d })),
+  };
 }
 
 // Distances (m) from start to end inclusive, evenly spaced so that there is roughly one point per
