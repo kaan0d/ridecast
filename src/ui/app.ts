@@ -34,7 +34,7 @@ import { bindShare } from "./share";
 import { bindSheet } from "./sheet";
 import { renderRouteList as renderRouteOptions, renderSummary as renderSummaryInto, summaryRows } from "./summary";
 import { kindOf as kindOfStop, renderTrip, titleOf as titleOfStop, type TripStop } from "./trip";
-import { cardHtml, collectWarnings, pinHtml, renderStrip, renderWarnings, type WeatherPoint } from "./weather";
+import { cardNode, collectWarnings, pinHtml, renderStrip, renderWarnings, type WeatherPoint } from "./weather";
 
 interface BreakPoint {
   pos: LatLon; // where the user put it; shown snapped to the selected route
@@ -463,7 +463,7 @@ export function startApp() {
     };
     const show = (points: WeatherPoint[], loading: boolean, error?: string, extra?: { samples: { distM: number }[]; forecasts: Forecast[] }) => {
       weatherPoints = points;
-      map.setWeather(points.map((p) => ({ pos: p.pos, pin: pinHtml(p), card: cardHtml(p), frac: p.distM / route.distanceM })));
+      map.setWeather(points.map((p) => ({ pos: p.pos, pin: pinHtml(p), card: () => cardNode(p), frac: p.distM / route.distanceM })));
       // The strip's stations come in once per route, with its first forecast.
       const arrive = !loading && points.length > 0 && stripFor !== route;
       if (arrive) stripFor = route;
@@ -540,7 +540,7 @@ export function startApp() {
     clearTimeout(weatherTimer);
     weatherSeq++; // a forecast still on its way must not undo the preview
     const points = (weatherPoints = forecast.assess(selected, tl, settings.vehicle, lastForecast.samples, lastForecast.forecasts));
-    map.setWeather(points.map((p) => ({ pos: p.pos, pin: pinHtml(p), card: cardHtml(p), frac: p.distM / route.distanceM })));
+    map.setWeather(points.map((p) => ({ pos: p.pos, pin: pinHtml(p), card: () => cardNode(p), frac: p.distM / route.distanceM })));
     paintRisk(points);
     redrawStrip = () => renderStrip($("weather"), { points, loading: false, ends: stripEnds(), onRetry: () => {}, onOpen: (i) => map.openWeather(i) });
     redrawStrip();

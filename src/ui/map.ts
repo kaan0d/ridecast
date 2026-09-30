@@ -488,7 +488,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
     // Weather tags with a card popup each, over the stop pins (the first and last sit on them).
     // The first forecast of a route brings its stations in as the hand passes them (`frac`: share
     // of the route); afterwards the plain tag, so tags re-added by zoom thinning do not replay it.
-    setWeather(points: { pos: LatLon; pin: string; card: string; frac: number }[]) {
+    setWeather(points: { pos: LatLon; pin: string; card: () => HTMLElement; frac: number }[]) {
       const arrive = points.length > 0 && !!drawn && weatherFor !== drawn && !reducedMotion.matches;
       if (arrive) weatherFor = drawn;
       weatherMarkers.forEach((w) => w.m.remove());
@@ -499,7 +499,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
         const node = document.createElement("div");
         node.className = arrive ? "wx-marker arrive" : "wx-marker";
         node.innerHTML = arrive ? `<span style="--at:${Math.round(delay)}ms">${p.pin}</span>` : p.pin;
-        node.addEventListener("click", () => openPopup(p.pos, p.card, { className: "wx-popup", closeButton: false, offset: 44, maxWidth: 280 }));
+        node.addEventListener("click", () => openPopup(p.pos, p.card(), { className: "wx-popup", closeButton: false, offset: 44, maxWidth: 280 }));
         return { m: marker(p.pos, node, { anchor: "top-left", z: Z.weather }), pos: p.pos, shown: false };
       });
       if (arrive) {

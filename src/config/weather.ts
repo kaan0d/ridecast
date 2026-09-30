@@ -16,3 +16,7 @@ export const WEATHER_REQUEST = {
 // Temperatures are forecast for the height of the rounded grid point; the road can be hundreds of
 // metres higher or lower (a pass above a valley town). Standard atmosphere lapse rate.
 export const LAPSE_C_PER_KM = 6.5;
+
+// Model range on the weather card: the same hour in every run of an ensemble model (GFS, 31 runs),
+// from the low to the high percentile, so one wild run does not stretch it.
+export const ENSEMBLE = { model: "gfs025", lowPct: 10, highPct: 90 };
