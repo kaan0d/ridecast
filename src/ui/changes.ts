@@ -9,7 +9,7 @@ interface Snapshot {
   runs: WarningSnap[]; // startMs relative to the departure, so "now" trips compare too
 }
 
-const km = (m: number) => t.km(Math.round(m / 1000));
+const km = (m: number) => t.km(m);
 
 function describe(c: WarningChange): string {
   switch (c.type) {

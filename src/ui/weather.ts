@@ -2,7 +2,7 @@ import { WEATHER_REQUEST } from "../config/weather";
 import type { WarningSnap } from "../core/advice/changes";
 import type { Assessment, Level, RoadState } from "../core/risk/risk";
 import { compassIndex, conditionOf, type Condition, type WeatherHour } from "../core/weather/weather";
-import { t } from "../i18n";
+import { t, u } from "../i18n";
 import type { LatLon } from "../core/geo";
 import { fetchModelRange } from "../services/ensemble";
 import { formatClock } from "./format";
@@ -31,11 +31,11 @@ const ICON: Record<Condition, WeatherIcon> = {
   storm: "storm",
 };
 
-const deg = (v: number) => `${Math.round(v)}°`;
+const deg = (v: number) => u.temp(v);
 // The temperature the strip and map tags show: felt while riding (wind chill from the riding
 // wind), the air temperature where there is no assessment.
 const felt = (p: WeatherPoint) => p.risk?.feltC ?? p.hour!.tempC;
-const km = (m: number) => t.km(Math.round(m / 1000));
+const km = (m: number) => t.km(m);
 
 export function weatherIcon(h: WeatherHour | null): string {
   if (!h) return "";
@@ -64,8 +64,8 @@ export function cardNode(p: WeatherPoint): HTMLElement {
       .then((r) => {
         if (!r) return;
         const row = document.createElement("div");
-        const mm = (v: number) => v.toFixed(1);
-        row.innerHTML = `<dt>${t.weather.modelRange(r.runs)}</dt><dd>${deg(r.tempC.lo)}–${deg(r.tempC.hi)} · ${mm(r.precipMm.lo)}–${mm(r.precipMm.hi)} mm</dd>`;
+        const span = (lo: string, hi: string) => (lo === hi ? lo : `${lo}–${hi}`); // all runs agree: one value
+        row.innerHTML = `<dt>${t.weather.modelRange(r.runs)}</dt><dd>${span(deg(r.tempC.lo), deg(r.tempC.hi))} · ${span(u.rain(r.precipMm.lo), u.rain(r.precipMm.hi))}</dd>`;
         card.querySelector(".wx-rows")?.append(row);
       })
       .catch(() => {}); // the card is complete without it
@@ -78,12 +78,12 @@ function cardHtml(p: WeatherPoint): string {
   const h = p.hour;
   if (!h) return `<div class="wx-card">${head}<p class="wx-empty">${t.weather.noForecast}</p></div>`;
   const c = conditionOf(h.code);
-  const precip = `${h.precipMm.toFixed(1)} mm${h.precipProb === null ? "" : ` · ${h.precipProb}%`}${h.snowCm > 0 ? ` · ${t.weather.snow(h.snowCm.toFixed(1))}` : ""}`;
+  const precip = `${u.rain(h.precipMm)}${h.precipProb === null ? "" : ` · ${h.precipProb}%`}${h.snowCm > 0 ? ` · ${t.weather.snow(h.snowCm)}` : ""}`;
   // The arrow points where the wind blows to.
   const arrow = `<span class="wx-arrow" style="transform:rotate(${h.windFromDeg + 180}deg)">${icons.arrowUp}</span>`;
-  const gust = t.weather.gusts(Math.round(h.gustKmh));
-  const wind = h.windKmh < 1 ? `${t.weather.calm} · ${gust}` : `${arrow}${Math.round(h.windKmh)} ${t.kmh} ${t.compass[compassIndex(h.windFromDeg)]} · ${gust}`;
-  const vis = h.visibilityM >= 10_000 ? `${Math.round(h.visibilityM / 1000)} km` : `${(h.visibilityM / 1000).toFixed(1)} km`;
+  const gust = t.weather.gusts(h.gustKmh);
+  const wind = h.windKmh < 1 ? `${t.weather.calm} · ${gust}` : `${arrow}${u.speed(h.windKmh)} ${t.compass[compassIndex(h.windFromDeg)]} · ${gust}`;
+  const vis = u.dist(h.visibilityM);
   return `<div class="wx-card">${head}
     <div class="wx-main"><span class="wx-big">${weatherIcon(h)}</span><span class="wx-temp">${deg(h.tempC)}</span><span class="wx-cond">${t.conditions[c.name]}</span></div>
     <dl class="wx-rows">
@@ -196,7 +196,7 @@ export function collectWarnings(points: WeatherPoint[]): Warning[] {
       level: worst.level,
       text: worst.text,
       when: r.from === r.to ? formatClock(a.etaMs) : `${formatClock(a.etaMs)}–${formatClock(b.etaMs)}`,
-      where: r.from === r.to ? km(a.distM) : `${km(a.distM)}–${Math.round(b.distM / 1000)}`,
+      where: r.from === r.to ? km(a.distM) : `${km(a.distM)}–${u.distWhole(b.distM)}`,
       open: r.worst,
       startMs: a.etaMs,
       run: { kind: worst.kind, level: worst.level, text: worst.text, fromM: a.distM, toM: b.distM, startMs: a.etaMs },

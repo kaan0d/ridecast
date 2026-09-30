@@ -1,14 +1,17 @@
 import type { Level } from "../core/risk/risk";
 import type { Messages } from "./en";
+import { units, unitsOf } from "./units";
 
 const r = Math.round;
+const u = unitsOf(units, "km/sa");
+const at = (m: number) => `${u.distUnit} ${u.distWhole(m)}`;
 
 // Türkçe arayüz metinleri. Şekli en.ts ile aynı olmak zorunda (Messages tipi).
 export const tr: Messages = {
   locale: "tr-TR",
   duration: (h, m) => (h ? `${h} sa ${m} dk` : `${m} dk`),
-  kmh: "km/sa",
-  km: (km) => `km ${km}`,
+  kmh: u.speedUnit,
+  km: at,
   level: ["Yok", "Düşük", "Orta", "Yüksek"],
 
   app: {
@@ -97,7 +100,7 @@ export const tr: Messages = {
   settings: {
     vehicles: { motorcycle: "Motosiklet", car: "Araba", bicycle: "Bisiklet", walking: "Yürüyüş" },
     pickDeparture: "Çıkış tarihi ve saati seçin.",
-    speedError: (min, max) => `Hız ${min}-${max} km/sa arasında olmalı.`,
+    speedError: (min, max) => `Hız ${u.speed(min)} ile ${u.speed(max)} arasında olmalı.`,
     scrub: (depart, arrive) => `Çıkış ${depart}, varış ${arrive}`,
   },
 
@@ -135,8 +138,8 @@ export const tr: Messages = {
   breaks: {
     title: (i, auto) => `Mola ${i}${auto ? " (oto)" : ""}`,
     overnightTitle: (i) => `Konaklama ${i}`,
-    info: (km, from, to) => `km ${km} · ${from}–${to}`,
-    overnightInfo: (km, arrive, leave) => `km ${km} · varış ${arrive}, yola çıkış ${leave}`,
+    info: (m, from, to) => `${at(m)} · ${from}–${to}`,
+    overnightInfo: (m, arrive, leave) => `${at(m)} · varış ${arrive}, yola çıkış ${leave}`,
     durationAria: (i) => `Mola ${i} süresi (dk)`,
     min: "dk",
     resumeAria: (i) => `Konaklama ${i}: yola çıkış saati`,
@@ -165,10 +168,10 @@ export const tr: Messages = {
     ground: "Zemin",
     modelRange: (runs) => `${runs} model çalıştırmasının aralığı`,
     precip: "Yağış",
-    snow: (cm) => `kar ${cm} cm`,
+    snow: (cm) => `kar ${u.snow(cm)}`,
     wind: "Rüzgar",
     calm: "Sakin",
-    gusts: (kmh) => `hamle ${kmh}`,
+    gusts: (kmh) => `hamle ${u.speedNum(kmh)}`,
     visibility: "Görüş",
     roadEstimate: "Yol (tahmin)",
     source: (clock) => `Tahmin saati ${clock} · Open-Meteo`,
@@ -187,12 +190,12 @@ export const tr: Messages = {
   profile: {
     title: "Rota boyunca yükseklik",
     loading: "Yükseklikler alınıyor…",
-    climb: (up, down) => `Tırmanış ${up} m, iniş ${down} m`,
-    highest: (m, km) => `en yüksek ${m} m, km ${km}`,
-    coldest: (deg, km, clock) => `en soğuk ${deg}°, km ${km} (${clock})`,
-    at: (km, m) => `km ${km} · ${m} m`,
-    temp: (deg, clock) => `${deg}° · ${clock}`,
-    aria: "Yükseklik profili, rota boyunca km. Ok tuşları ilerler ve noktayı haritada gösterir.",
+    climb: (up, down) => `Tırmanış ${u.height(up)}, iniş ${u.height(down)}`,
+    highest: (m, distM) => `en yüksek ${u.height(m)}, ${at(distM)}`,
+    coldest: (c, distM, clock) => `en soğuk ${u.temp(c)}, ${at(distM)} (${clock})`,
+    at: (distM, m) => `${at(distM)} · ${u.height(m)}`,
+    temp: (c, clock) => `${u.temp(c)} · ${clock}`,
+    aria: `Yükseklik profili, rota boyunca ${u.distUnit}. Ok tuşları ilerler ve noktayı haritada gösterir.`,
   },
 
   conditions: {
@@ -219,17 +222,17 @@ export const tr: Messages = {
     storm: "Gök Gürültülü Fırtına",
     snow: "Kar Yağışı",
     rain: (level: Level, mm, prob) =>
-      `${level === 3 ? "Şiddetli Yağmur" : level === 1 ? "Hafif Yağmur" : "Yağmur"} · ${mm.toFixed(1)} mm/sa${prob === null ? "" : ` · olasılık %${prob}`}`,
+      `${level === 3 ? "Şiddetli Yağmur" : level === 1 ? "Hafif Yağmur" : "Yağmur"} · ${u.rain(mm)}/sa${prob === null ? "" : ` · olasılık %${prob}`}`,
     rainProb: (pct) => `Yağış Olasılığı · %${pct}`,
-    gust: (kmh) => `Rüzgar Hamlesi · ${r(kmh)} km/sa`,
-    crosswind: (kmh, fromRight) => `${fromRight ? "Sağ" : "Sol"} Yan Rüzgar · ${r(kmh)} km/sa`,
-    visibility: (km, fog) => (fog ? `Sis · görüş ${km.toFixed(1)} km` : `Düşük Görüş · ${km.toFixed(1)} km`),
-    ice: (c) => `Buzlanma Riski · ${r(c)}° ve ıslak yol (tahmin)`,
-    nearFreezing: (c) => `Donma Sınırı · ${r(c)}°`,
+    gust: (kmh) => `Rüzgar Hamlesi · ${u.speed(kmh)}`,
+    crosswind: (kmh, fromRight) => `${fromRight ? "Sağ" : "Sol"} Yan Rüzgar · ${u.speed(kmh)}`,
+    visibility: (km, fog) => (fog ? `Sis · görüş ${u.dist(km * 1000)}` : `Düşük Görüş · ${u.dist(km * 1000)}`),
+    ice: (c) => `Buzlanma Riski · ${u.temp(c)} ve ıslak yol (tahmin)`,
+    nearFreezing: (c) => `Donma Sınırı · ${u.temp(c)}`,
     wetRoad: "Islak Yol · tahmin",
     dampRoad: "Nemli Yol · tahmin",
-    cold: (c) => `Soğuk · sürüşte hissedilen ${r(c)}°`,
-    heat: (c, strong) => `Sıcak Stresi · hissedilen ${r(c)}°${strong ? " · gölgede mola ve su" : ""}`,
+    cold: (c) => `Soğuk · sürüşte hissedilen ${u.temp(c)}`,
+    heat: (c, strong) => `Sıcak Stresi · hissedilen ${u.temp(c)}${strong ? " · gölgede mola ve su" : ""}`,
     dark: "Karanlıkta Sürüş",
     glare: (deg) => `Alçak Güneş · karşıdan, ${r(deg)}° · göz kamaşabilir`,
   },
@@ -249,12 +252,12 @@ export const tr: Messages = {
       carWinter: "Aracın kışa hazır olmalı",
     },
     why: {
-      feltMin: (c) => `hissedilen en düşük ${r(c)}°`,
-      tempMax: (c) => `en yüksek ${r(c)}°`,
-      precip: (mm) => `yağış ${mm.toFixed(1)} mm/sa`,
+      feltMin: (c) => `hissedilen en düşük ${u.temp(c)}`,
+      tempMax: (c) => `en yüksek ${u.temp(c)}`,
+      precip: (mm) => `yağış ${u.rain(mm)}/sa`,
       wetRoad: "ıslak yol",
-      gust: (kmh) => `hamle ${r(kmh)} km/sa`,
-      visibility: (km) => `görüş ${km.toFixed(1)} km`,
+      gust: (kmh) => `hamle ${u.speed(kmh)}`,
+      visibility: (km) => `görüş ${u.dist(km * 1000)}`,
       dark: "karanlıkta sürüş",
       snow: "kar",
       ice: "buzlanma riski",
@@ -288,11 +291,11 @@ export const tr: Messages = {
     noWarning: "Önünde uyarı yok",
     toArrival: "Varışa kadar",
     meta: (km, clock) => `${km} · varış ${clock}`,
-    feels: (c) => ` · hissedilen ${c}°`,
+    feels: (c) => ` · hissedilen ${u.temp(c)}`,
     offline: "Çevrimdışı: son alınan hava verisi gösteriliyor, bağlantı gelince yenilenir.",
     soundOn: "Ses açık",
     soundOff: "Ses kapalı",
-    fuelLow: (km) => `Yakıtın epey azalmış görünüyor (~${km} km kaldı). Benzinlik aramak için uygun bir vakit.`,
+    fuelLow: (km) => `Yakıtın epey azalmış görünüyor (~${u.dist(km * 1000)} kaldı). Benzinlik aramak için uygun bir vakit.`,
     noGeo: "Bu tarayıcı konum desteklemiyor; canlı mod açılamadı.",
   },
 
@@ -324,6 +327,9 @@ export const tr: Messages = {
     themeLight: "Açık",
     themeDark: "Koyu",
     language: "Dil",
+    units: "Birimler",
+    metric: "km, °C",
+    imperial: "mil, °F",
     mapLabels: "Harita etiketleri",
     labelRoadNumbers: "Yol numaraları",
     labelRoadNames: "Cadde ve yol adları",

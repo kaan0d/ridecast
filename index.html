@@ -98,6 +98,14 @@
             </div>
           </div>
 
+          <h2 class="group-title" data-t="units">Units</h2>
+          <div class="group">
+            <div id="units" class="segmented" role="radiogroup" aria-label="Units" data-t-aria="units">
+              <label><input type="radio" name="units" value="metric" /><span data-t="metric">km, °C</span></label>
+              <label><input type="radio" name="units" value="imperial" /><span data-t="imperial">mi, °F</span></label>
+            </div>
+          </div>
+
           <h2 class="group-title" data-t="routeOptions">Route options</h2>
           <div class="group" id="avoid">
             <label class="row" data-avoid="highways"><span data-t="avoidHighways">Avoid motorways</span> <input type="checkbox" name="avoid" value="highways" /></label>
@@ -105,7 +113,7 @@
             <label class="row" data-avoid="ferries"><span data-t="avoidFerries">Avoid ferries</span> <input type="checkbox" name="avoid" value="ferries" /></label>
             <label class="row"
               ><span data-t="fuelRange">Fuel range</span>
-              <span class="row-value"><input type="number" id="fuel-range" min="10" max="3000" step="10" placeholder="–" aria-describedby="fuel-range-note" /> km</span></label
+              <span class="row-value"><input type="number" id="fuel-range" min="10" max="3000" step="10" placeholder="–" aria-describedby="fuel-range-note" /> <span data-unit="dist">km</span></span></label
             >
             <p class="footnote" id="fuel-range-note" data-t="fuelRangeNote">Filled in when a ride starts; the ride warns when fuel runs low.</p>
           </div>
@@ -117,12 +125,12 @@
               <label><input type="radio" name="speed-mode" value="road" /><span data-t="speedRoad">By road type</span></label>
             </div>
             <div id="speed-average">
-              <label class="row"><span data-t="averageSpeed">Average speed</span> <span class="row-value"><input type="number" id="kmh-average" step="1" /> <span data-t="kmh">km/h</span></span></label>
+              <label class="row"><span data-t="averageSpeed">Average speed</span> <span class="row-value"><input type="number" id="kmh-average" step="1" /> <span data-t="kmh" data-unit="speed">km/h</span></span></label>
             </div>
             <div id="speed-road" hidden>
-              <label class="row"><span data-t="motorway">Motorway</span> <span class="row-value"><input type="number" id="kmh-motorway" step="1" /> <span data-t="kmh">km/h</span></span></label>
-              <label class="row"><span data-t="primary">Main road</span> <span class="row-value"><input type="number" id="kmh-primary" step="1" /> <span data-t="kmh">km/h</span></span></label>
-              <label class="row"><span data-t="urban">Town</span> <span class="row-value"><input type="number" id="kmh-urban" step="1" /> <span data-t="kmh">km/h</span></span></label>
+              <label class="row"><span data-t="motorway">Motorway</span> <span class="row-value"><input type="number" id="kmh-motorway" step="1" /> <span data-t="kmh" data-unit="speed">km/h</span></span></label>
+              <label class="row"><span data-t="primary">Main road</span> <span class="row-value"><input type="number" id="kmh-primary" step="1" /> <span data-t="kmh" data-unit="speed">km/h</span></span></label>
+              <label class="row"><span data-t="urban">Town</span> <span class="row-value"><input type="number" id="kmh-urban" step="1" /> <span data-t="kmh" data-unit="speed">km/h</span></span></label>
               <p class="footnote" data-t="roadTypeNote">The road type is guessed from the routing data.</p>
             </div>
           </div>
@@ -159,7 +167,7 @@
               <span data-t="every">Every</span>
               <input type="number" id="auto-every" min="1" step="1" required aria-label="Automatic break interval" data-t-aria="autoEvery" />
               <select id="auto-unit" aria-label="Interval unit" data-t-aria="autoUnit">
-                <option value="km" data-t="autoKm">km</option>
+                <option value="km" data-t="autoKm" data-unit="dist">km</option>
                 <option value="min" data-t="autoMin">min of riding</option>
               </select>
               <span class="nowrap"
@@ -205,7 +213,7 @@
         <h2 id="fuel-ask-title" data-t="fuelAsk">How full is the tank?</h2>
         <label class="fuel-ask-range"
           ><span data-t="fuelAskRange">Range on a full tank</span>
-          <span class="row-value"><input type="number" id="fuel-ask-range" min="10" max="3000" step="10" required /> km</span></label
+          <span class="row-value"><input type="number" id="fuel-ask-range" min="10" max="3000" step="10" required /> <span data-unit="dist">km</span></span></label
         >
         <div class="fuel-ask-levels">
           <button value="1" class="button-secondary" data-t="fuelFull">Full</button>

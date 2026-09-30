@@ -1,4 +1,4 @@
-import { t } from "../i18n";
+import { t, units } from "../i18n";
 import { LngLatBounds, Map as GLMap, Marker, Popup, ScaleControl, setWorkerUrl, type IControl, type LngLatLike, type MapMouseEvent, type Point, type PositionAnchor } from "maplibre-gl";
 // MapLibre looks for its worker next to its own file, which bundling moves; Vite builds the worker
 // as a file of its own and gives its URL.
@@ -150,7 +150,7 @@ export function createMap(el: HTMLElement, h: MapHandlers) {
   el.style.setProperty("--pin-scale", "1");
 
   // Bottom-right stack like Google Maps: scale, zoom, compass, then "my location" on top.
-  gl.addControl(new ScaleControl({ maxWidth: 100, unit: "metric" }), "bottom-right");
+  gl.addControl(new ScaleControl({ maxWidth: 100, unit: units }), "bottom-right");
   const zoom = document.createElement("div");
   zoom.className = "map-zoom";
   zoom.append(mapButton(icons.plus, t.map.zoomIn, () => gl.zoomIn()), mapButton(icons.minus, t.map.zoomOut, () => gl.zoomOut()));

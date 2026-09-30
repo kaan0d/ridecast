@@ -1,7 +1,8 @@
 import "@fontsource-variable/geist";
 import "maplibre-gl/dist/maplibre-gl.css"; // before ours, which override it
 import "./style.css";
-import { lang, setLang, translatePage, type Lang } from "./i18n";
+import { lang, setLang, setUnits, translatePage, units, type Lang } from "./i18n";
+import type { Units } from "./i18n/units";
 import { startApp } from "./ui/app";
 import { bindTheme } from "./ui/theme";
 
@@ -13,6 +14,12 @@ langGroup.querySelector<HTMLInputElement>(`input[value="${lang}"]`)!.checked = t
 langGroup.addEventListener("input", (e) => {
   e.stopPropagation(); // not a trip setting: the settings form would plan again
   setLang((e.target as HTMLInputElement).value as Lang);
+});
+const unitsGroup = document.getElementById("units")!;
+unitsGroup.querySelector<HTMLInputElement>(`input[value="${units}"]`)!.checked = true;
+unitsGroup.addEventListener("input", (e) => {
+  e.stopPropagation();
+  setUnits((e.target as HTMLInputElement).value as Units);
 });
 
 bindTheme(document.getElementById("theme")!);
