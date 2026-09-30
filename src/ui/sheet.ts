@@ -25,7 +25,7 @@ export function bindSheet(onBack: () => void) {
   const maxOffset = () => Math.max(0, sheet.offsetHeight - peekPx());
   const setOffset = (px: number) => sheet.style.setProperty("--sheet-offset", `${px}px`);
 
-  // Page push and the bar-to-panel morph run as view transitions where the browser has them
+  // The settings fade and the bar-to-panel morph run as view transitions where the browser has them
   // (style.css owns the motion); elsewhere, and with reduced motion, the change is instant.
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   const transition = (kind: "push" | "pop" | "morph", update: () => void) => {

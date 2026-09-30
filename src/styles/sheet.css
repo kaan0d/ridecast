@@ -178,11 +178,11 @@
   cursor: default;
 }
 
-/* Page push inside the sheet (settings, back): the old page slides left and dims, the new one
-   comes in from the right; a view transition started by sheet.ts. Back reverses it. */
+/* Settings page and back inside the sheet: the old page fades out as the new one fades in, in
+   place; a view transition started by sheet.ts. */
 ::view-transition-group(sheet),
 ::view-transition-group(sheet-page) {
-  animation-duration: 0.42s;
+  animation-duration: 0.3s;
   animation-timing-function: var(--ease-out);
 }
 
@@ -193,33 +193,16 @@
   object-position: top;
 }
 
-:root.vt-push::view-transition-old(sheet-page) {
-  animation: page-out 0.42s var(--ease-out) both;
+:root:is(.vt-push, .vt-pop)::view-transition-old(sheet-page) {
+  animation: page-fade 0.22s var(--ease-out) reverse both;
 }
 
-:root.vt-push::view-transition-new(sheet-page) {
-  animation: page-in 0.42s var(--ease-out) both;
+:root:is(.vt-push, .vt-pop)::view-transition-new(sheet-page) {
+  animation: page-fade 0.3s var(--ease-out) 0.06s both;
 }
 
-:root.vt-pop::view-transition-old(sheet-page) {
-  animation: page-in 0.42s var(--ease-out) reverse both;
-}
-
-:root.vt-pop::view-transition-new(sheet-page) {
-  animation: page-out 0.42s var(--ease-out) reverse both;
-}
-
-@keyframes page-out {
-  to {
-    transform: translateX(-28%);
-    opacity: 0;
-    filter: blur(2px);
-  }
-}
-
-@keyframes page-in {
+@keyframes page-fade {
   from {
-    transform: translateX(42%);
     opacity: 0;
   }
 }
